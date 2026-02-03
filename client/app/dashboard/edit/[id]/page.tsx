@@ -29,7 +29,7 @@ const COMPONENT_TEMPLATES = {
   text: { type: 'text', content: 'Double click to edit text', styles: { fontSize: '24px', fontWeight: 'bold' } },
   image: { type: 'image', content: 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1000&auto=format&fit=crop', styles: { borderRadius: '12px' } },
   button: { type: 'button', content: 'Click Me', styles: { backgroundColor: '#10b981', color: '#fff', padding: '12px 24px', borderRadius: '8px' } },
-};
+} as const;
 
 export default function PortfolioEditorPage() {
   const { id } = useParams();
