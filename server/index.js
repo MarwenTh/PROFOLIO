@@ -1,37 +1,31 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const { Pool } = require('pg');
+const { pool } = require('./src/config/db');
+const { initDb } = require('./src/config/initDb');
+const authRoutes = require('./src/routes/authRoutes');
+const portfolioRoutes = require('./src/routes/portfolioRoutes');
 
 const app = express();
 const port = process.env.PORT || 3001;
 
+// Init DB
+initDb();
+
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:3000', // Allow client
+  credentials: true
+}));
 app.use(express.json());
 
-// Database Connection
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
-});
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/portfolios', portfolioRoutes);
 
 // Health Check
 app.get('/', (req, res) => {
   res.json({ message: 'Server is running', timestamp: new Date() });
-});
-
-// Example Endpoint: Get Users (only for testing DB connection)
-app.get('/api/users', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT id, name, email FROM "User" LIMIT 10');
-    res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Database error' });
-  }
 });
 
 app.listen(port, () => {

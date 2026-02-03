@@ -1,11 +1,39 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { MoveLeft } from "lucide-react";
+import { MoveLeft, Loader2 } from "lucide-react";
 import { AuthCarousel } from "@/components/AuthCarousel";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function SignupPage() {
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+  });
+  const { signup, loading, error, setError } = useAuth();
+  const router = useRouter();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const result = await signup({
+      name: `${formData.firstName} ${formData.lastName}`.trim(),
+      email: formData.email,
+      password: formData.password,
+    });
+
+    if (result.success) {
+      router.push("/login?message=Account created successfully. Please log in.");
+    }
+  };
+
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen bg-white dark:bg-black transition-colors duration-300">
        {/* Left Side - Visual */}
@@ -31,7 +59,7 @@ export default function SignupPage() {
             className="mx-auto grid w-[350px] gap-8 relative z-10"
         >
           <div className="grid gap-2 text-center">
-             <motion.h1 
+            <motion.h1 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
@@ -74,58 +102,75 @@ export default function SignupPage() {
                 </div>
             </motion.div>
 
-            <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.7 }}
-                className="grid gap-4"
-            >
-                <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                    <label htmlFor="first-name" className="text-sm font-medium text-neutral-900 dark:text-neutral-300">First name</label>
-                    <input
-                    id="first-name"
-                    placeholder="Max"
-                    required
-                    className="flex h-11 w-full rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 px-3 py-2 text-sm text-neutral-900 dark:text-white placeholder:text-neutral-500 dark:placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-300 hover:border-neutral-300 dark:hover:border-neutral-700"
-                    />
-                </div>
-                <div className="grid gap-2">
-                    <label htmlFor="last-name" className="text-sm font-medium text-neutral-900 dark:text-neutral-300">Last name</label>
-                    <input
-                    id="last-name"
-                    placeholder="Robinson"
-                    required
-                    className="flex h-11 w-full rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 px-3 py-2 text-sm text-neutral-900 dark:text-white placeholder:text-neutral-500 dark:placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-300 hover:border-neutral-300 dark:hover:border-neutral-700"
-                    />
-                </div>
-                </div>
-                <div className="grid gap-2">
-                <label htmlFor="email" className="text-sm font-medium text-neutral-900 dark:text-neutral-300">Email</label>
-                <input
-                    id="email"
-                    type="email"
-                    placeholder="m@example.com"
-                    required
-                    className="flex h-11 w-full rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 px-3 py-2 text-sm text-neutral-900 dark:text-white placeholder:text-neutral-500 dark:placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-300 hover:border-neutral-300 dark:hover:border-neutral-700"
-                />
-                </div>
-                <div className="grid gap-2">
-                <label htmlFor="password" className="text-sm font-medium text-neutral-900 dark:text-neutral-300">Password</label>
-                <input
-                    id="password"
-                    type="password"
-                    className="flex h-11 w-full rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 px-3 py-2 text-sm text-neutral-900 dark:text-white placeholder:text-neutral-500 dark:placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-300 hover:border-neutral-300 dark:hover:border-neutral-700"
-                />
-                </div>
-                <button
-                type="submit"
-                className="group relative inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:pointer-events-none disabled:opacity-50 bg-neutral-900 dark:bg-white text-white dark:text-black hover:opacity-90 h-11 px-4 py-2 w-full hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-emerald-500/20 dark:hover:shadow-white/20"
-                >
-                Get Started
-                <div className="absolute inset-0 rounded-xl ring-2 ring-white/20 group-active:ring-white/0 transition-all" />
-                </button>
-            </motion.div>
+            <form onSubmit={handleSubmit}>
+              <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.7 }}
+                  className="grid gap-4"
+              >
+                  {error && (
+                    <div className="p-3 text-xs text-red-500 bg-red-500/10 rounded-lg border border-red-500/20">
+                      {error}
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                      <label htmlFor="firstName" className="text-sm font-medium text-neutral-900 dark:text-neutral-300">First name</label>
+                      <input
+                      id="firstName"
+                      placeholder="Max"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      required
+                      className="flex h-11 w-full rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 px-3 py-2 text-sm text-neutral-900 dark:text-white placeholder:text-neutral-500 dark:placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-300 hover:border-neutral-300 dark:hover:border-neutral-700"
+                      />
+                  </div>
+                  <div className="grid gap-2">
+                      <label htmlFor="lastName" className="text-sm font-medium text-neutral-900 dark:text-neutral-300">Last name</label>
+                      <input
+                      id="lastName"
+                      placeholder="Robinson"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      required
+                      className="flex h-11 w-full rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 px-3 py-2 text-sm text-neutral-900 dark:text-white placeholder:text-neutral-500 dark:placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-300 hover:border-neutral-300 dark:hover:border-neutral-700"
+                      />
+                  </div>
+                  </div>
+                  <div className="grid gap-2">
+                  <label htmlFor="email" className="text-sm font-medium text-neutral-900 dark:text-neutral-300">Email</label>
+                  <input
+                      id="email"
+                      type="email"
+                      placeholder="m@example.com"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                      className="flex h-11 w-full rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 px-3 py-2 text-sm text-neutral-900 dark:text-white placeholder:text-neutral-500 dark:placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-300 hover:border-neutral-300 dark:hover:border-neutral-700"
+                  />
+                  </div>
+                  <div className="grid gap-2">
+                  <label htmlFor="password" className="text-sm font-medium text-neutral-900 dark:text-neutral-300">Password</label>
+                  <input
+                      id="password"
+                      type="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      required
+                      className="flex h-11 w-full rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 px-3 py-2 text-sm text-neutral-900 dark:text-white placeholder:text-neutral-500 dark:placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-300 hover:border-neutral-300 dark:hover:border-neutral-700"
+                  />
+                  </div>
+                  <button
+                  type="submit"
+                  disabled={loading}
+                  className="group relative inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:pointer-events-none disabled:opacity-50 bg-neutral-900 dark:bg-white text-white dark:text-black hover:opacity-90 h-11 px-4 py-2 w-full hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-emerald-500/20 dark:hover:shadow-white/20"
+                  >
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Get Started"}
+                  <div className="absolute inset-0 rounded-xl ring-2 ring-white/20 group-active:ring-white/0 transition-all" />
+                  </button>
+              </motion.div>
+            </form>
           </div>
           <motion.div 
             initial={{ opacity: 0 }}

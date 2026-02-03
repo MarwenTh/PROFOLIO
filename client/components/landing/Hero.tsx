@@ -2,8 +2,12 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import React, { useRef } from "react";
 import { cn } from "@/lib/utils";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export const Hero = () => {
+    const { status } = useSession();
+    const router = useRouter();
     const targetRef = useRef<HTMLDivElement>(null);
     const { scrollYProgress } = useScroll({
         target: targetRef,
@@ -12,6 +16,14 @@ export const Hero = () => {
     
     const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
     const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.8]);
+
+    const handleStart = () => {
+        if (status === "authenticated") {
+            router.push("/dashboard");
+        } else {
+            router.push("/login");
+        }
+    };
     const position = useTransform(scrollYProgress, (pos) => {
         return pos === 1 ? "relative" : "fixed";
     });
@@ -72,7 +84,10 @@ export const Hero = () => {
                 transition={{ duration: 0.5, delay: 0.3 }}
                 className="flex items-center gap-4"
             >
-                <button className="px-8 py-4 rounded-full bg-black text-white dark:bg-white dark:text-black font-bold text-lg hover:scale-105 transition-transform shadow-xl">
+                <button 
+                  onClick={handleStart}
+                  className="px-8 py-4 rounded-full bg-black text-white dark:bg-white dark:text-black font-bold text-lg hover:scale-105 transition-transform shadow-xl"
+                >
                     Start Building Free
                 </button>
                 <button className="px-8 py-4 rounded-full border border-neutral-200 dark:border-white/20 text-neutral-900 dark:text-white font-medium text-lg hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors backdrop-blur-sm">

@@ -34,3 +34,11 @@ The landing page serves as the main entry point to convert visitors into users.
 - **Template Showcase:** A specialized section showing off the beautiful templates available.
 - **Testimonials/Social Proof:** (Optional but recommended) To build trust.
 - **Final CTA:** A strong reminder to get started for free.
+
+
+### API Interaction
+To ensure stability, code reusability, and easier maintenance in production, all calls to server endpoints **must** be implemented using **custom React hooks**.
+
+- **Rule**: Do not call `api` or `axios` directly inside components.
+- **Location**: Define hooks in `src/hooks/` (e.g., `useAuth.ts`).
+- **Configuration**: Use the centralized Axios instance in `src/lib/api.ts`.
