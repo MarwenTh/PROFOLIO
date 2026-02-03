@@ -50,6 +50,21 @@ export const usePortfolio = () => {
     }
   }, []);
 
+  const getPortfolioBySlug = useCallback(async (slug: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.get(`/portfolios/slug/${slug}`);
+      return response.data;
+    } catch (err: any) {
+      const message = err.response?.data?.message || err.message || "An error occurred fetching portfolio by slug";
+      setError(message);
+      return { success: false, message };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const updatePortfolio = async (id: string, data: { title?: string; description?: string; content?: any; status?: string }) => {
     setLoading(true);
     setError(null);
@@ -69,6 +84,7 @@ export const usePortfolio = () => {
     getUserPortfolios,
     createPortfolio,
     getPortfolioById,
+    getPortfolioBySlug,
     updatePortfolio,
     loading,
     error

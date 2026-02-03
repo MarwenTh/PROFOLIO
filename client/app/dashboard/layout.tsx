@@ -37,6 +37,16 @@ export default function DashboardLayout({
   const [isCollapsed, setIsCollapsed] = React.useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
+  const isEditor = pathname.includes("/dashboard/edit/");
+
+  if (isEditor) {
+    return (
+      <div className="h-screen bg-white dark:bg-neutral-950 overflow-hidden">
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white selection:bg-indigo-500/30 transition-colors duration-300 relative overflow-hidden">
       {/* Aurora Background Effect */}

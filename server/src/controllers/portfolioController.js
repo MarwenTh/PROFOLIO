@@ -72,17 +72,22 @@ const getPortfolioById = async (req, res) => {
 const updatePortfolio = async (req, res) => {
   const { id } = req.params;
   const { title, description, content, status } = req.body;
+  
+  console.log('Update Portfolio Request:', { id, title, description, status, contentType: typeof content });
+  if (content && typeof content === 'object') {
+    console.log('Content Structure:', Object.keys(content));
+  }
 
   try {
     const result = await pool.query(
       `UPDATE portfolios 
        SET title = COALESCE($1, title), 
            description = COALESCE($2, description), 
-           content = COALESCE($3, content), 
+           content = COALESCE($3::jsonb, content), 
            status = COALESCE($4, status),
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $5 RETURNING *`,
-      [title, description, content, status, id]
+      [title, description, content ? JSON.stringify(content) : null, status, id]
     );
 
     if (result.rows.length === 0) {
@@ -99,9 +104,30 @@ const updatePortfolio = async (req, res) => {
   }
 };
 
+const getPortfolioBySlug = async (req, res) => {
+  const { slug } = req.params;
+
+  try {
+    const result = await pool.query('SELECT * FROM portfolios WHERE slug = $1', [slug]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Portfolio not found' });
+    }
+
+    res.json({
+      success: true,
+      portfolio: result.rows[0]
+    });
+  } catch (err) {
+    console.error('Error fetching portfolio by slug:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 module.exports = {
   getUserPortfolios,
   createPortfolio,
   getPortfolioById,
-  updatePortfolio
+  updatePortfolio,
+  getPortfolioBySlug
 };

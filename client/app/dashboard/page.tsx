@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { usePortfolio } from "@/hooks/usePortfolio";
-import { Loader2, Plus, Globe } from "lucide-react";
+import { Loader2, Plus, Globe, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function DashboardPage() {
@@ -25,7 +25,7 @@ export default function DashboardPage() {
         }
       });
     }
-  }, [session, status, getUserPortfolios, router]);
+  }, [session?.user?.id, status, getUserPortfolios, router]);
 
   if (status === "loading" || loading) {
     return (
@@ -112,13 +112,25 @@ export default function DashboardPage() {
                     <div className="w-12 h-12 rounded-2xl bg-neutral-900 dark:bg-white text-white dark:text-black flex items-center justify-center shadow-lg transform group-hover:rotate-12 transition-transform">
                         <Globe className="w-6 h-6" /> 
                     </div>
-                    <div className={cn(
-                        "text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border",
-                        portfolio.status === 'published' 
-                            ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
-                            : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 border-transparent"
-                    )}>
-                        {portfolio.status}
+                    <div className="flex items-center gap-2">
+                      <div className={cn(
+                          "text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border",
+                          portfolio.status === 'published' 
+                              ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
+                              : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 border-transparent"
+                      )}>
+                          {portfolio.status}
+                      </div>
+                      {portfolio.status === 'published' && (
+                        <Link 
+                          href={`/p/${portfolio.slug}`} 
+                          target="_blank"
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-1.5 rounded-lg bg-white dark:bg-neutral-800 text-neutral-400 hover:text-emerald-500 transition-colors shadow-sm border border-neutral-200 dark:border-white/5"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                        </Link>
+                      )}
                     </div>
                     </div>
 
