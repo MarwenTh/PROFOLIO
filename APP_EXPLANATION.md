@@ -1,44 +1,56 @@
-# PROFOLIO - App Explanation
+# PROFOLIO - Architecture & Features
 
 ## Overview
-PROFOLIO is a dynamic portfolio builder application designed to empower users to create stunning, personalized portfolios with ease. Users can join the platform, choose from a variety of professionally designed templates, and customize them to showcase their work, skills, and achievements.
+PROFOLIO is a professional-grade, drag-and-drop portfolio builder. It allows users to build, style, and publish personalized landing pages using a structured slot-based editor.
 
-## Core Features
+## Tech Stack
+- **Frontend**: Next.js 16 (App Router), Tailwind CSS, Framer Motion.
+- **Backend**: Node.js, Express.
+- **Database**: PostgreSQL (NeonDB) with JSONB for flexible layout storage.
+- **Authentication**: NextAuth.js (Credentials Provider).
+- **Icons**: Lucide React.
+- **Communication**: Axios with custom React hooks (`usePortfolio`, `useAuth`).
 
-### 1. User Authentication
-- **Sign Up / Login:** Secure authentication system for users to create accounts and manage their portfolios.
-- **Dashboard:** A personalized area where users can view their created portfolios, analytics (optional), and account settings.
+## Core Architecture
 
-### 2. Portfolio Builder
-- **Template Selection:** Users can browse and select from a diverse range of templates (e.g., Minimalist, Creative, Corporate, Developer).
-- **Drag-and-Drop Editor:** (Potential feature) An intuitive interface to rearrange sections, add new blocks (Text, Image, Video, Projects).
-- **Customization:**
-    - **Themes:** Change color schemes, fonts, and layout styles.
-    - **Content Management:** Easy forms to input projects, work history, skills, and contact info.
+### 1. Data Flow & Storage
+Unlike traditional builders that use fixed columns, Profolio uses a **JSONB architecture**. 
+- The `portfolios` table has a `content` column of type `JSONB`.
+- This stores a structured object: `{ header: [], body: [], footer: [] }`.
+- Each element in these arrays is a **Component Object** containing `type`, `content`, and `styles`.
+- This allows for infinite customization without requiring database schema changes when new components are added.
 
-### 3. Public Portfolio Generation
-- **Unique URL:** Each user gets a unique URL (e.g., `profolio.com/username`) or custom domain support.
-- **SEO Optimization:** Portfolios are optimized for search engines.
-- **Responsive Design:** All portfolios look great on mobile, tablet, and desktop.
+### 2. Structured Slot Editor
+The editor uses a weight-driven, structured approach:
+- **Sections**: Dedicated slots for Header, Body, and Footer to ensure logical page flow.
+- **Drag-to-Add**: Users can drag elements (Text, Image, Button, Divider, Socials) from the sidebar directly into any section.
+- **Live Preview**: An instant toggle to see the portfolio exactly as it will appear to the public.
+- **Inline Styling**: Direct control over font sizes, colors, background colors, and border-radii via a settings interface.
+- **Reordering**: Smooth, spring-animated reordering using `framer-motion`'s `Reorder` components.
 
-## Architecture Guidelines
-- **Frontend:** Next.js (React) for a fast, SEO-friendly, and interactive user experience.
-- **Styling:** Tailwind CSS for rapid, responsive styling.
-- **Animation:** Framer Motion for smooth transitions and engaging interactions.
-- **Icons:** Lucide React for modern, consistent iconography.
+### 3. Public Publishing Flow
+- **Slugs**: Each portfolio has a unique, SEO-friendly URL slug.
+- **Status Management**: Portfolios can be toggled between `draft` and `published`.
+- **Public Route**: A specialized dynamic route at `/p/[slug]` renders the portfolio in a high-performance, read-only mode.
+- **SEO**: Dynamic metadata (title, descriptions) is generated based on the portfolio content.
 
-## Landing Page Strategy
-The landing page serves as the main entry point to convert visitors into users.
-- **Hero Section:** High-impact visual with a clear value proposition and specific Call-to-Action (CTA).
-- **Features Breakdown:** visually appealing grid or list highlighting the key benefits.
-- **Template Showcase:** A specialized section showing off the beautiful templates available.
-- **Testimonials/Social Proof:** (Optional but recommended) To build trust.
-- **Final CTA:** A strong reminder to get started for free.
+## Directory Structure
 
+### Client (`/client`)
+- `app/`: Next.js App Router routes.
+  - `(auth)/`: Login and Sign-up pages.
+  - `dashboard/`: User workspace and Portfolio Editor.
+  - `p/[slug]/`: Public portfolio rendering.
+- `hooks/`: Custom React hooks for API management (The only way to interact with the backend).
+- `lib/`: Centralized API instances and utility functions.
+- `components/`: UI components and providers.
 
-### API Interaction
-To ensure stability, code reusability, and easier maintenance in production, all calls to server endpoints **must** be implemented using **custom React hooks**.
+### Server (`/server`)
+- `src/controllers/`: Business logic for portfolios and auth.
+- `src/routes/`: API endpoint definitions.
+- `src/config/`: Database connection and initialization (`initDb.js` handles schema migrations).
 
-- **Rule**: Do not call `api` or `axios` directly inside components.
-- **Location**: Define hooks in `src/hooks/` (e.g., `useAuth.ts`).
-- **Configuration**: Use the centralized Axios instance in `src/lib/api.ts`.
+## Development Rules
+1. **API Interaction**: Always use the custom hooks (`usePortfolio`, `useAuth`). Direct `axios` calls in components are prohibited.
+2. **Styling**: Stick to the curated HSL color palette and Glassmorphism principles defined in the design system.
+3.  **Animations**: Use `framer-motion` for all transitions. Keep durations between 0.2s and 0.4s for a professional feel.
