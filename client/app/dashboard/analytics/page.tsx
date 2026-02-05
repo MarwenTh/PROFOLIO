@@ -1,11 +1,26 @@
 "use client";
-import React from "react";
-import { BarChart3, Users, TrendingUp, ArrowUpRight, ArrowDownRight, Globe, ChevronDown, Loader2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { 
+    BarChart3, 
+    Users, 
+    TrendingUp, 
+    ArrowUpRight, 
+    ArrowDownRight, 
+    Globe, 
+    ChevronDown, 
+    Loader2 
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { useSession } from "next-auth/react";
-import { useState, useEffect } from "react";
+import { 
+    PageHeader, 
+    DashboardCard, 
+    DashboardButton, 
+    DashboardBadge,
+    DashboardSection 
+} from "@/components/dashboard/Shared";
+import { cn } from "@/lib/utils";
 
 export default function AnalyticsPage() {
   const { data: session } = useSession();
@@ -36,12 +51,10 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-4xl font-black tracking-tighter">Analytics</h1>
-          <p className="text-neutral-500 dark:text-neutral-400 mt-1">
-            Performance for <span className="text-indigo-500 font-bold">{selectedPortfolio?.title || "all projects"}</span>
-          </p>
-        </div>
+        <PageHeader 
+            title="Analytics" 
+            description={selectedPortfolio ? `Performance metrics for ${selectedPortfolio.title}` : "Comprehensive performance tracking for your projects."}
+        />
 
         {/* Portfolio Selector */}
         <div className="relative">
@@ -98,40 +111,38 @@ export default function AnalyticsPage() {
           { label: "Avg. Duration", value: "2m 45s", trend: "-2.1%", positive: false, icon: TrendingUp },
           { label: "Conversion Rate", value: "4.8%", trend: "+1.2%", positive: true, icon: Globe },
         ].map((stat, i) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            className="p-6 rounded-[2rem] border border-neutral-200/50 dark:border-white/5 bg-white dark:bg-neutral-900 overflow-hidden relative group"
-          >
+          <DashboardCard key={stat.label} padding="small" className="relative group overflow-hidden">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center transform group-hover:scale-110 transition-transform">
                 <stat.icon className="w-5 h-5" />
               </div>
-              <div className={cn(
-                "flex items-center gap-0.5 text-[10px] font-black px-2 py-1 rounded-lg",
-                stat.positive ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"
-              )}>
-                {stat.positive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+              <DashboardBadge variant={stat.positive ? "success" : "warning"}>
                 {stat.trend}
-              </div>
+              </DashboardBadge>
             </div>
             <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-1">{stat.label}</p>
-            <h4 className="text-2xl font-black tracking-tight">{stat.value}</h4>
-          </motion.div>
+            <h4 className="text-2xl font-black tracking-tight italic">{stat.value}</h4>
+          </DashboardCard>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="h-96 rounded-[2.5rem] border border-neutral-200/50 dark:border-white/5 bg-white dark:bg-neutral-900/40 backdrop-blur-xl flex items-center justify-center relative overflow-hidden">
+        <DashboardCard padding="none" className="h-96 relative overflow-hidden flex items-center justify-center">
             <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_50%_50%,#6366f1_0%,transparent_50%)]" />
-            <p className="text-sm font-bold text-neutral-400">Traffic Distribution Chart (Frontend Only)</p>
-        </div>
-        <div className="h-96 rounded-[2.5rem] border border-neutral-200/50 dark:border-white/5 bg-white dark:bg-neutral-900/40 backdrop-blur-xl flex items-center justify-center relative overflow-hidden">
+            <div className="relative z-10 text-center">
+                <BarChart3 className="w-12 h-12 text-indigo-500/20 mx-auto mb-4" />
+                <p className="text-sm font-black italic text-neutral-400 uppercase tracking-widest underline decoration-indigo-500/30">Traffic Distribution</p>
+                <p className="text-[10px] text-neutral-500 font-medium italic mt-2">Visualization pending integration</p>
+            </div>
+        </DashboardCard>
+        <DashboardCard padding="none" className="h-96 relative overflow-hidden flex items-center justify-center">
             <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_50%_50%,#10b981_0%,transparent_50%)]" />
-            <p className="text-sm font-bold text-neutral-400">Visitor Geography Map (Frontend Only)</p>
-        </div>
+            <div className="relative z-10 text-center">
+                <Globe className="w-12 h-12 text-emerald-500/20 mx-auto mb-4" />
+                <p className="text-sm font-black italic text-neutral-400 uppercase tracking-widest underline decoration-emerald-500/30">Visitor Geography</p>
+                <p className="text-[10px] text-neutral-500 font-medium italic mt-2">Mapping pending integration</p>
+            </div>
+        </DashboardCard>
       </div>
     </div>
   );

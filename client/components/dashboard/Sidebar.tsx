@@ -81,7 +81,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
       initial={false}
       animate={{ width: isCollapsed ? 100 : 300 }}
       transition={{ type: "spring", stiffness: 200, damping: 25, mass: 1 }}
-      className="fixed left-0 top-0 h-screen bg-card border-r border-border z-50 flex flex-col shadow-2xl overflow-hidden"
+      className="fixed left-0 top-0 h-screen bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-white/5 z-50 flex flex-col shadow-2xl overflow-hidden"
     >
       {/* Glossy Aura */}
       <div className="absolute top-0 left-0 w-full h-32 bg-indigo-500/5 dark:bg-indigo-500/10 blur-[60px] pointer-events-none" />
@@ -233,7 +233,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
       </div>
 
       {/* User Actions / Footer */}
-      <div className="p-6 border-t border-border bg-card backdrop-blur-md shrink-0 space-y-4">
+      <div className="p-6 border-t border-neutral-200 dark:border-white/5 bg-neutral-50 dark:bg-neutral-900/50 backdrop-blur-md shrink-0 space-y-4">
         <div className={cn(
           "flex items-center gap-4",
           isCollapsed ? "flex-col" : "flex-row"
@@ -261,8 +261,8 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
           </button>
           
           <div className={cn(
-            "shrink-0 flex items-center justify-center",
-            isCollapsed ? "mt-2" : "p-1"
+            "shrink-0",
+            isCollapsed && "mt-2"
           )}>
             <ModeToggle />
           </div>

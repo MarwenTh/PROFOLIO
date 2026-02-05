@@ -1,11 +1,19 @@
 "use client";
 import React from "react";
-import { PageHeader, EmptyState } from "@/components/dashboard/Shared";
-import { FolderOpen, Plus } from "lucide-react";
+import { 
+    PageHeader, 
+    EmptyState, 
+    DashboardCard, 
+    DashboardButton 
+} from "@/components/dashboard/Shared";
+import { FolderOpen, Plus, LayoutGrid } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function ProjectsPage() {
+  const router = useRouter();
+  
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       <PageHeader 
         title="Portfolios" 
         description="Centralized management for all your created portfolios and web projects."
@@ -16,20 +24,24 @@ export default function ProjectsPage() {
         }}
       />
       
-      <div className="p-12 rounded-[3rem] bg-white dark:bg-neutral-900 border border-border text-foreground shadow-2xl relative overflow-hidden">
-        <div className="relative z-10">
-            <h3 className="text-2xl font-black italic mb-2 tracking-tighter">PROJECT MANAGER</h3>
-            <p className="text-neutral-500 dark:text-neutral-400 font-medium mb-8 max-w-sm">Use the overview page to see a summarized view, or manage specific project configurations here.</p>
-            <button className="px-8 py-4 bg-indigo-500 text-white rounded-2xl font-black hover:scale-105 transition-all shadow-xl active:scale-95">
+      <DashboardCard className="bg-neutral-900 dark:bg-white text-white dark:text-black border-transparent" padding="none">
+        <div className="p-16 relative z-10">
+            <h3 className="text-4xl font-black italic mb-3 tracking-tighter">PROJECT MANAGER</h3>
+            <p className="text-neutral-400 dark:text-neutral-500 font-medium mb-12 max-w-sm italic">Use the centralized dashboard to see a summarized view, or manage specific project configurations here.</p>
+            <DashboardButton 
+                variant="secondary" 
+                className="bg-indigo-500 text-white hover:bg-indigo-600 h-14 px-10"
+                onClick={() => router.push("/dashboard")}
+            >
                 Visit Overview &rarr;
-            </button>
+            </DashboardButton>
         </div>
-        <div className="absolute top-0 right-0 p-8 opacity-10 text-neutral-400">
-            <FolderOpen className="w-48 h-48 rotate-12" />
+        <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none">
+            <LayoutGrid className="w-64 h-64 rotate-12" />
         </div>
-      </div>
+      </DashboardCard>
 
-      <div className="mt-12">
+      <div className="pt-10">
         <EmptyState 
             title="Projects list loading..."
             description="We are synchronizing your project settings with our secure global infrastructure."

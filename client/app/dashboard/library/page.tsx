@@ -1,11 +1,14 @@
 "use client";
 import React from "react";
-import { PageHeader, EmptyState } from "@/components/dashboard/Shared";
+import { 
+    PageHeader, 
+    EmptyState 
+} from "@/components/dashboard/Shared";
 import { Image as ImageIcon, Upload } from "lucide-react";
 
 export default function MediaLibraryPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       <PageHeader 
         title="Media Library" 
         description="Global assets and media storage for your portfolio projects."
