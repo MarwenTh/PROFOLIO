@@ -16,15 +16,15 @@ export default function ProjectsPage() {
         }}
       />
       
-      <div className="p-12 rounded-[3rem] bg-neutral-900 dark:bg-white text-white dark:text-black shadow-2xl relative overflow-hidden">
+      <div className="p-12 rounded-[3rem] bg-white dark:bg-neutral-900 border border-border text-foreground shadow-2xl relative overflow-hidden">
         <div className="relative z-10">
             <h3 className="text-2xl font-black italic mb-2 tracking-tighter">PROJECT MANAGER</h3>
-            <p className="opacity-70 font-medium mb-8 max-w-sm">Use the overview page to see a summarized view, or manage specific project configurations here.</p>
+            <p className="text-neutral-500 dark:text-neutral-400 font-medium mb-8 max-w-sm">Use the overview page to see a summarized view, or manage specific project configurations here.</p>
             <button className="px-8 py-4 bg-indigo-500 text-white rounded-2xl font-black hover:scale-105 transition-all shadow-xl active:scale-95">
                 Visit Overview &rarr;
             </button>
         </div>
-        <div className="absolute top-0 right-0 p-8 opacity-10">
+        <div className="absolute top-0 right-0 p-8 opacity-10 text-neutral-400">
             <FolderOpen className="w-48 h-48 rotate-12" />
         </div>
       </div>

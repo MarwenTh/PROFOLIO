@@ -21,10 +21,10 @@ export function PageHeader({ title, description, action }: PageHeaderProps) {
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
       >
-        <h1 className="text-4xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-neutral-900 to-neutral-500 dark:from-white dark:to-neutral-500">
+        <h1 className="text-3xl md:text-4xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-neutral-900 to-neutral-500 dark:from-white dark:to-neutral-500">
           {title}
         </h1>
-        <p className="text-neutral-500 dark:text-neutral-400 mt-1 font-medium italic">
+        <p className="text-sm md:text-base text-neutral-500 dark:text-neutral-400 mt-1 font-medium italic">
           {description}
         </p>
       </motion.div>
@@ -49,16 +49,16 @@ export function PageHeader({ title, description, action }: PageHeaderProps) {
 
 export function EmptyState({ title, description, icon: Icon, actionLabel, onAction }: any) {
     return (
-        <div className="flex-1 flex flex-col items-center justify-center text-center p-12 rounded-[3rem] border border-dashed border-neutral-200 dark:border-white/5 bg-neutral-50/50 dark:bg-white/5">
-            <div className="w-20 h-20 rounded-3xl bg-white dark:bg-neutral-900 shadow-xl flex items-center justify-center text-neutral-400 dark:text-neutral-600 mb-6">
-                <Icon className="w-10 h-10" />
+        <div className="flex-1 flex flex-col items-center justify-center text-center p-6 md:p-12 rounded-[2rem] md:rounded-[3rem] border border-dashed border-border bg-card">
+            <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl bg-neutral-100 dark:bg-neutral-800 shadow-xl flex items-center justify-center text-neutral-400 dark:text-neutral-600 mb-6">
+                <Icon className="w-8 h-8 md:w-10 md:h-10" />
             </div>
-            <h3 className="text-2xl font-black mb-2 tracking-tight">{title}</h3>
-            <p className="text-neutral-500 dark:text-neutral-400 max-w-sm font-medium mb-8 italic">{description}</p>
+            <h3 className="text-xl md:text-2xl font-black mb-2 tracking-tight">{title}</h3>
+            <p className="text-xs md:text-sm text-neutral-500 dark:text-neutral-400 max-w-sm font-medium mb-8 italic">{description}</p>
             {actionLabel && (
                 <button 
                   onClick={onAction}
-                  className="px-8 py-4 rounded-2xl bg-neutral-900 dark:bg-white text-white dark:text-black font-black active:scale-95 transition-all shadow-2xl"
+                  className="w-full md:w-auto px-8 py-4 rounded-2xl bg-neutral-900 dark:bg-white text-white dark:text-black font-black active:scale-95 transition-all shadow-2xl"
                 >
                   {actionLabel}
                 </button>

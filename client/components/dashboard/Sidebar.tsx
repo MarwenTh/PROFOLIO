@@ -24,6 +24,8 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { signOut } from "next-auth/react";
+import { ModeToggle } from "@/components/ModeToggle";
+import { useTheme } from "next-themes";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -36,7 +38,7 @@ const sidebarLinks = [
   { name: "AI Assistant", href: "/dashboard/ai", icon: Wand2, category: "Main" },
   
   { name: "Portfolios", href: "/dashboard/projects", icon: FolderOpen, category: "Manage" },
-  { name: "Custom Domains", href: "/dashboard/domains", icon: Globe, category: "Manage" },
+  { name: "Domain & Slug", href: "/dashboard/domains", icon: Globe, category: "Manage" },
   { name: "Subscribers", href: "/dashboard/subscribers", icon: Users2, category: "Manage" },
   { name: "SEO & Social", href: "/dashboard/seo", icon: Search, category: "Manage" },
   
@@ -53,6 +55,21 @@ const sidebarLinks = [
 export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   const pathname = usePathname();
 
+  const [expandedCategories, setExpandedCategories] = React.useState<Record<string, boolean>>({
+    "Main": true,
+    "Manage": true,
+    "Tools": true,
+    "System": true
+  });
+
+  const toggleCategory = (category: string) => {
+    if (category === "Main") return; // Keep Main always expanded
+    setExpandedCategories(prev => ({
+      ...prev,
+      [category]: !prev[category]
+    }));
+  };
+
   const groupedLinks = sidebarLinks.reduce((acc, link) => {
     if (!acc[link.category]) acc[link.category] = [];
     acc[link.category].push(link);
@@ -64,10 +81,10 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
       initial={false}
       animate={{ width: isCollapsed ? 100 : 300 }}
       transition={{ type: "spring", stiffness: 200, damping: 25, mass: 1 }}
-      className="fixed left-0 top-0 h-screen bg-white/70 dark:bg-neutral-900/40 backdrop-blur-3xl border-r border-neutral-200/50 dark:border-white/5 z-50 flex flex-col shadow-2xl overflow-hidden"
+      className="fixed left-0 top-0 h-screen bg-card border-r border-border z-50 flex flex-col shadow-2xl overflow-hidden"
     >
       {/* Glossy Aura */}
-      <div className="absolute top-0 left-0 w-full h-32 bg-indigo-500/10 blur-[60px] pointer-events-none" />
+      <div className="absolute top-0 left-0 w-full h-32 bg-indigo-500/5 dark:bg-indigo-500/10 blur-[60px] pointer-events-none" />
 
       {/* Header & Toggle Section */}
       <div className="p-8 flex flex-col items-center justify-center shrink-0">
@@ -119,83 +136,137 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
       <div className="flex-1 overflow-y-auto no-scrollbar px-6 space-y-8 py-4">
         {Object.entries(groupedLinks).map(([category, links]) => (
           <div key={category} className="space-y-3">
-            {!isCollapsed && (
-              <motion.p 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-400/80 px-4 mb-4 whitespace-nowrap"
-              >
-                {category}
-              </motion.p>
-            )}
-            <div className="space-y-1.5">
-              {links.map((link) => {
-                const isActive = link.exact 
-                  ? pathname === link.href 
-                  : pathname.startsWith(link.href);
-                
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={cn(
-                      "group flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 relative overflow-hidden",
-                      isActive 
-                        ? "bg-neutral-900 text-white dark:bg-white dark:text-black shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] dark:shadow-[0_10px_30px_-10px_rgba(255,255,255,0.2)]" 
-                        : "text-neutral-500 hover:bg-white dark:hover:bg-white/5 hover:text-neutral-900 dark:hover:text-white hover:shadow-md",
-                      isCollapsed && "justify-center px-0"
-                    )}
-                  >
-                    <link.icon className={cn(
-                        "w-5 h-5 shrink-0 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3", 
-                        isActive ? "animate-pulse" : "opacity-70 group-hover:opacity-100"
-                    )} />
-                    {!isCollapsed && (
+            <button 
+              onClick={() => toggleCategory(category)}
+              disabled={category === "Main"}
+              className={cn(
+                "w-full flex items-center group/cat text-[10px] font-black uppercase tracking-[0.3em] mb-2 transition-all",
+                expandedCategories[category] ? "text-neutral-400" : "text-neutral-500 hover:text-indigo-500",
+                isCollapsed ? "justify-center px-0" : "justify-between px-4",
+                category === "Main" ? "cursor-default" : "cursor-pointer"
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <div className={cn(
+                  "w-1.5 h-1.5 rounded-full transition-colors shrink-0",
+                  expandedCategories[category] ? "bg-indigo-500" : "bg-neutral-300 dark:bg-neutral-700",
+                  category === "Main" && "bg-indigo-500"
+                )} />
+                {!isCollapsed && (
+                  <span className="flex items-center gap-1.5">
+                    {category}
+                    {category !== "Main" && !expandedCategories[category] && (
                       <motion.span 
-                        initial={{ opacity: 0, x: -5 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="font-bold text-sm tracking-tight truncate leading-none whitespace-nowrap"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="text-[8px] font-bold text-indigo-500 normal-case tracking-normal opacity-0 group-hover/cat:opacity-100 transition-opacity"
                       >
-                        {link.name}
+                        (Click to see)
                       </motion.span>
                     )}
-                    {isActive && !isCollapsed && (
-                      <motion.div 
-                        layoutId="sidebar-active-indicator"
-                        className="absolute right-3 w-1.5 h-1.5 rounded-full bg-indigo-500 dark:bg-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.8)]" 
-                      />
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
+                  </span>
+                )}
+              </div>
+              {!isCollapsed && category !== "Main" && (
+                <motion.div
+                  animate={{ rotate: expandedCategories[category] ? 0 : -90 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ChevronLeft className="w-3 h-3" />
+                </motion.div>
+              )}
+            </button>
+            
+            <AnimatePresence initial={false}>
+              {expandedCategories[category] && (
+                <motion.div 
+                  initial={isCollapsed ? false : { height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="space-y-1.5 overflow-hidden"
+                >
+                  {links.map((link) => {
+                    const isActive = link.exact 
+                      ? pathname === link.href 
+                      : pathname.startsWith(link.href);
+                    
+                    return (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className={cn(
+                          "group flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 relative overflow-hidden",
+                          isActive 
+                            ? "bg-neutral-900 text-white dark:bg-white dark:text-black shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] dark:shadow-[0_10px_30px_-10px_rgba(255,255,255,0.2)]" 
+                            : "text-neutral-500 hover:bg-white dark:hover:bg-white/5 hover:text-neutral-900 dark:hover:text-white hover:shadow-md",
+                          isCollapsed && "justify-center px-0"
+                        )}
+                      >
+                        <link.icon className={cn(
+                            "w-5 h-5 shrink-0 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3", 
+                            isActive ? "animate-pulse" : "opacity-70 group-hover:opacity-100"
+                        )} />
+                        {!isCollapsed && (
+                          <motion.span 
+                            initial={{ opacity: 0, x: -5 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="font-bold text-sm tracking-tight truncate leading-none whitespace-nowrap"
+                          >
+                            {link.name}
+                          </motion.span>
+                        )}
+                        {isActive && !isCollapsed && (
+                          <motion.div 
+                            layoutId="sidebar-active-indicator"
+                            className="absolute right-3 w-1.5 h-1.5 rounded-full bg-indigo-500 dark:bg-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.8)]" 
+                          />
+                        )}
+                      </Link>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         ))}
       </div>
 
       {/* User Actions / Footer */}
-      <div className="p-6 border-t border-neutral-200/50 dark:border-white/5 bg-neutral-50/30 dark:bg-white/5 backdrop-blur-md shrink-0">
-        <button
-          onClick={() => signOut()}
-          className={cn(
-            "w-full group flex items-center gap-4 px-4 py-4 rounded-2xl text-red-500 hover:bg-red-500 hover:text-white transition-all duration-500 overflow-hidden shadow-sm hover:shadow-red-500/20",
-            isCollapsed ? "justify-center px-0" : "bg-white dark:bg-neutral-800/50 border border-neutral-200/50 dark:border-white/5"
-          )}
-        >
-          <div className="relative shrink-0">
-            <LogOut className="w-5 h-5 relative z-10 transition-transform group-hover:-translate-x-1" />
-            <div className="absolute inset-0 bg-red-400 blur-lg opacity-0 group-hover:opacity-40 transition-opacity" />
+      <div className="p-6 border-t border-border bg-card backdrop-blur-md shrink-0 space-y-4">
+        <div className={cn(
+          "flex items-center gap-4",
+          isCollapsed ? "flex-col" : "flex-row"
+        )}>
+          <button
+            onClick={() => signOut()}
+            className={cn(
+              "group flex items-center gap-4 px-4 py-4 rounded-2xl text-red-500 hover:bg-red-500 hover:text-white transition-all duration-500 overflow-hidden shadow-sm hover:shadow-red-500/20 flex-1",
+              isCollapsed ? "justify-center px-0 w-full" : "bg-white dark:bg-neutral-800/50 border border-neutral-200/50 dark:border-white/5"
+            )}
+          >
+            <div className="relative shrink-0">
+              <LogOut className="w-5 h-5 relative z-10 transition-transform group-hover:-translate-x-1" />
+              <div className="absolute inset-0 bg-red-400 blur-lg opacity-0 group-hover:opacity-40 transition-opacity" />
+            </div>
+            {!isCollapsed && (
+              <motion.span 
+                initial={{ opacity: 0, x: -5 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="font-black text-xs uppercase tracking-widest whitespace-nowrap"
+              >
+                Sign Out
+              </motion.span>
+            )}
+          </button>
+          
+          <div className={cn(
+            "shrink-0 flex items-center justify-center",
+            isCollapsed ? "mt-2" : "p-1"
+          )}>
+            <ModeToggle />
           </div>
-          {!isCollapsed && (
-            <motion.span 
-              initial={{ opacity: 0, x: -5 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="font-black text-xs uppercase tracking-widest whitespace-nowrap"
-            >
-              Sign Out
-            </motion.span>
-          )}
-        </button>
+        </div>
       </div>
     </motion.aside>
   );

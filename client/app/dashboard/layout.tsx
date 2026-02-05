@@ -19,6 +19,7 @@ import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sidebar } from "@/components/dashboard/Sidebar";
+import { ModeToggle } from "@/components/ModeToggle";
 
 export default function DashboardLayout({
   children,
@@ -48,11 +49,11 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white selection:bg-indigo-500/30 transition-colors duration-300 relative overflow-hidden">
+    <div className="flex h-screen bg-background text-foreground selection:bg-indigo-500/30 transition-colors duration-500 relative overflow-hidden">
       {/* Aurora Background Effect */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-50">
-        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-500/10 dark:bg-indigo-500/20 blur-[120px] rounded-full animate-pulse" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-500/5 dark:bg-emerald-500/10 blur-[100px] rounded-full animate-pulse delay-700" />
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-30 dark:opacity-50">
+        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-500/20 dark:bg-indigo-500/20 blur-[120px] rounded-full animate-pulse" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-500/10 dark:bg-emerald-500/10 blur-[100px] rounded-full animate-pulse delay-700" />
       </div>
 
       {/* Mobile Nav Header */}
@@ -110,8 +111,8 @@ export default function DashboardLayout({
                     <Sidebar isCollapsed={false} setIsCollapsed={() => {}} />
                 </div>
 
-                <div className="mt-auto pt-6 border-t border-neutral-200 dark:border-white/5 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                <div className="mt-auto pt-6 border-t border-neutral-200 dark:border-white/5 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 flex-1">
                         <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center overflow-hidden border border-neutral-200 dark:border-white/10">
                             {session?.user?.image ? (
                                 <Image src={session.user.image} alt="User" width={40} height={40} className="object-cover" />
@@ -119,14 +120,17 @@ export default function DashboardLayout({
                                 <Users2 className="w-5 h-5 text-neutral-400" />
                             )}
                         </div>
-                        <div>
+                        <div className="flex-1 min-w-0">
                             <p className="text-xs font-bold line-clamp-1">{session?.user?.name}</p>
                             <p className="text-[10px] text-neutral-500 font-medium line-clamp-1 italic">{session?.user?.email}</p>
                         </div>
                     </div>
-                    <button onClick={() => signOut()} className="p-3 rounded-xl bg-red-500/10 text-red-500">
-                        <LogOut className="w-5 h-5" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <ModeToggle />
+                        <button onClick={() => signOut()} className="p-3 rounded-xl bg-red-500/10 text-red-500">
+                            <LogOut className="w-5 h-5" />
+                        </button>
+                    </div>
                 </div>
             </motion.div>
           </>
@@ -140,7 +144,7 @@ export default function DashboardLayout({
           !isEditor && (isCollapsed ? "lg:pl-[80px]" : "lg:pl-[280px]")
         )}
       >
-        <div className="p-6 md:p-12 max-w-[1600px] mx-auto min-h-full flex flex-col">
+        <div className="p-4 md:p-12 max-w-[1600px] mx-auto min-h-full flex flex-col">
           {children}
         </div>
       </main>
