@@ -20,6 +20,8 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { ModeToggle } from "@/components/ModeToggle";
+import { TopNavbar } from "@/components/dashboard/TopNavbar";
+import { CommandPalette } from "@/components/dashboard/CommandPalette";
 
 export default function DashboardLayout({
   children,
@@ -30,6 +32,7 @@ export default function DashboardLayout({
   const { data: session, status } = useSession();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -37,6 +40,18 @@ export default function DashboardLayout({
       router.push("/login");
     }
   }, [status, router]);
+
+  // Global K Shortcut for Search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setIsSearchOpen(prev => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const isEditor = pathname.includes("/dashboard/edit/");
 
@@ -50,6 +65,9 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen bg-[#fbfbfc] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50 selection:bg-indigo-500/30 transition-colors duration-500 relative overflow-hidden">
+      {/* Search Palette */}
+      <CommandPalette isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+
       {/* Aurora Background Effect */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-30 dark:opacity-50">
         <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-500/20 dark:bg-indigo-500/20 blur-[120px] rounded-full animate-pulse" />
@@ -73,7 +91,7 @@ export default function DashboardLayout({
       </div>
 
       {/* Sidebar - Desktop Only with its own logic */}
-      <div className="hidden lg:block shrink-0">
+      <div className="hidden lg:block shrink-0 h-full">
           <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
       </div>
 
@@ -107,7 +125,7 @@ export default function DashboardLayout({
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto -mx-6 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto -mx-6 custom-scrollbar px-6">
                     <Sidebar isCollapsed={false} setIsCollapsed={() => {}} />
                 </div>
 
@@ -138,16 +156,22 @@ export default function DashboardLayout({
       </AnimatePresence>
 
       {/* Main Content Area */}
-      <main 
+      <div 
         className={cn(
-          "flex-1 overflow-y-auto z-10 custom-scrollbar pt-20 lg:pt-0 transition-all duration-300",
-          !isEditor && (isCollapsed ? "lg:pl-[80px]" : "lg:pl-[280px]")
+          "flex-1 flex flex-col min-w-0 transition-all duration-300",
+          !isEditor && (isCollapsed ? "lg:ml-[100px]" : "lg:ml-[300px]")
         )}
       >
-        <div className="p-4 md:p-12 max-w-[1600px] mx-auto min-h-full flex flex-col">
-          {children}
+        <div className="hidden lg:block w-full">
+            <TopNavbar onSearchOpen={() => setIsSearchOpen(true)} />
         </div>
-      </main>
+        
+        <main className="flex-1 overflow-y-auto custom-scrollbar pt-20 lg:pt-0">
+          <div className="p-4 md:p-12 max-w-[1600px] mx-auto min-h-full flex flex-col">
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

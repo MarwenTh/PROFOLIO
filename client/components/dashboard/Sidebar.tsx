@@ -19,7 +19,11 @@ import {
   Wand2,
   Code,
   Gift,
-  Search
+  Search,
+  Palette,
+  ShoppingBag,
+  Heart,
+  LineChart
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -37,12 +41,17 @@ const sidebarLinks = [
   { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3, category: "Main" },
   { name: "AI Assistant", href: "/dashboard/ai", icon: Wand2, category: "Main" },
   
+  { name: "Store Templates", href: "/dashboard/templates", icon: ShoppingBag, category: "Marketplace" },
+  { name: "My Creations", href: "/dashboard/marketplace/creations", icon: Palette, category: "Marketplace" },
+  { name: "Purchases", href: "/dashboard/marketplace/purchases", icon: Layers, category: "Marketplace" },
+  { name: "Saved", href: "/dashboard/marketplace/saved", icon: Heart, category: "Marketplace" },
+  { name: "Store Stats", href: "/dashboard/marketplace/analytics", icon: LineChart, category: "Marketplace" },
+
   { name: "Portfolios", href: "/dashboard/projects", icon: FolderOpen, category: "Manage" },
   { name: "Domain & Slug", href: "/dashboard/domains", icon: Globe, category: "Manage" },
   { name: "Subscribers", href: "/dashboard/subscribers", icon: Users2, category: "Manage" },
   { name: "SEO & Social", href: "/dashboard/seo", icon: Search, category: "Manage" },
   
-  { name: "Templates", href: "/dashboard/templates", icon: Layers, category: "Tools" },
   { name: "Media Library", href: "/dashboard/library", icon: ImageIcon, category: "Tools" },
   { name: "Integrations", href: "/dashboard/integrations", icon: Zap, category: "Tools" },
   { name: "Custom Code", href: "/dashboard/code", icon: Code, category: "Tools" },
@@ -57,6 +66,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
 
   const [expandedCategories, setExpandedCategories] = React.useState<Record<string, boolean>>({
     "Main": true,
+    "Marketplace": true,
     "Manage": true,
     "Tools": true,
     "System": true

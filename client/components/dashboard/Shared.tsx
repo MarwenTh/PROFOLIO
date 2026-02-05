@@ -325,11 +325,12 @@ interface DashboardSectionProps {
   title: string;
   description?: string;
   children: React.ReactNode;
+  className?: string;
 }
 
-export function DashboardSection({ title, description, children }: DashboardSectionProps) {
+export function DashboardSection({ title, description, children, className }: DashboardSectionProps) {
   return (
-    <div className="space-y-4">
+    <div className={cn("space-y-6", className)}>
       <div className="px-2">
         <h3 className="text-xl font-black italic tracking-tight">{title}</h3>
         {description && <p className="text-xs text-neutral-500 font-medium italic">{description}</p>}
