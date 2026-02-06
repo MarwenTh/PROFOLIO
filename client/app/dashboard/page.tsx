@@ -86,12 +86,21 @@ export default function DashboardPage() {
       <PageHeader 
         title="Workspace" 
         description={`Welcome back, ${session?.user?.name || 'User'}`}
-        action={{
-          label: "Create Portfolio",
-          icon: Plus,
-          onClick: () => setIsCreateModalOpen(true)
-        }}
-      />
+      >
+        <div className="relative w-full md:w-80 group">
+          <div className="absolute inset-0 bg-neutral-100 dark:bg-white/5 rounded-2xl group-hover:bg-neutral-200 dark:group-hover:bg-white/10 transition-colors" />
+          <div className="relative flex items-center gap-3 px-4 h-12">
+            <Search className="w-5 h-5 text-neutral-400 group-hover:text-indigo-500 transition-colors" />
+            <input 
+              type="text"
+              placeholder="Search portfolios..."
+              className="bg-transparent border-none outline-none text-sm font-medium w-full placeholder:text-neutral-400"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+      </PageHeader>
 
       <DashboardModal
         isOpen={isCreateModalOpen}
@@ -100,6 +109,7 @@ export default function DashboardPage() {
         description="Give your masterpiece a name and a unique digital address."
         icon={Rocket}
       >
+        {/* ... (form contents remain same) ... */}
         <form onSubmit={handleCreateSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <DashboardInput 
@@ -163,25 +173,33 @@ export default function DashboardPage() {
           actionLabel="Get Started"
           onAction={() => setIsCreateModalOpen(true)}
         />
-      ) : (
-        <div className="space-y-8">
-          <div className="flex items-center justify-between px-2">
-            <div className="relative w-full max-w-md">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-              <input 
-                type="text"
-                placeholder="Search portfolios..."
-                className="w-full h-11 pl-11 pr-4 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/5 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
+      ) : (() => {
+        const filteredPortfolios = portfolios.filter(p => 
+          p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (p.slug && p.slug.toLowerCase().includes(searchQuery.toLowerCase()))
+        );
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {portfolios
-              .filter(p => p.title.toLowerCase().includes(searchQuery.toLowerCase()))
-              .map((portfolio, index) => (
+        return (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {/* Create New Portfolio Card Trigger - Always show first */}
+              <motion.div
+                whileHover={{ y: -5, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setIsCreateModalOpen(true)}
+                className="relative group cursor-pointer h-full min-h-[250px]"
+              >
+                <div className="absolute inset-0 rounded-[2.5rem] border-2 border-dashed border-neutral-200 dark:border-white/5 bg-neutral-50/50 dark:bg-white/[0.02] transition-colors group-hover:border-indigo-500/50 group-hover:bg-indigo-500/[0.02]" />
+                <div className="relative h-full flex flex-col items-center justify-center p-8 text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/5 shadow-xl flex items-center justify-center text-neutral-400 group-hover:text-indigo-500 group-hover:scale-110 transition-all duration-500 mb-4">
+                    <Plus className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-lg font-black italic tracking-tight text-neutral-900 dark:text-white mb-2">Initialize Site</h3>
+                  <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 italic px-4">Start crafting your next digital masterpiece.</p>
+                </div>
+              </motion.div>
+
+              {filteredPortfolios.map((portfolio) => (
                 <Link key={portfolio.id} href={`/dashboard/edit/${portfolio.id}`}>
                   <DashboardCard className="group cursor-pointer">
                     <div className="flex items-center justify-between mb-8">
@@ -234,9 +252,29 @@ export default function DashboardPage() {
                   </DashboardCard>
                 </Link>
               ))}
+            </div>
+
+            {filteredPortfolios.length === 0 && searchQuery !== "" && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col items-center justify-center py-20 border border-dashed border-neutral-200 dark:border-white/5 rounded-[2.5rem] bg-neutral-50/50 dark:bg-white/[0.01]"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-white dark:bg-neutral-900 shadow-xl flex items-center justify-center text-neutral-300 mb-4">
+                  <Search className="w-6 h-6" />
+                </div>
+                <p className="text-sm font-bold text-neutral-500 italic">No portfolios match your search "{searchQuery}"</p>
+                <button 
+                  onClick={() => setSearchQuery("")}
+                  className="mt-4 text-xs font-black uppercase tracking-widest text-indigo-500 hover:underline"
+                >
+                  Clear search
+                </button>
+              </motion.div>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

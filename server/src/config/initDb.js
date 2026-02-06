@@ -112,6 +112,20 @@ const initDb = async () => {
     END $$;
   `;
 
+  const createIntegrationsTable = `
+    CREATE TABLE IF NOT EXISTS user_integrations (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      service_name VARCHAR(100) NOT NULL,
+      api_key TEXT NOT NULL,
+      status VARCHAR(50) DEFAULT 'connected',
+      metadata JSONB DEFAULT '{}',
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, service_name)
+    );
+  `;
+
   try {
     await pool.query(createUsersTable);
     console.log('✅ Users table initialized');
@@ -121,7 +135,8 @@ const initDb = async () => {
     await pool.query(createVerificationTokenTable);
     await pool.query(createPortfoliosTable);
     await pool.query(addDescriptionColumn);
-    console.log('✅ Portfolios and NextAuth tables initialized');
+    await pool.query(createIntegrationsTable);
+    console.log('✅ Portfolios, NextAuth, and Integrations tables initialized');
   } catch (err) {
     console.error('❌ Error initializing database:', err);
   }

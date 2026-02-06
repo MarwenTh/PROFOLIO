@@ -6,6 +6,7 @@ const { pool } = require('./src/config/db');
 const { initDb } = require('./src/config/initDb');
 const authRoutes = require('./src/routes/authRoutes');
 const portfolioRoutes = require('./src/routes/portfolioRoutes');
+const integrationRoutes = require('./src/routes/integrationRoutes');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -24,6 +25,7 @@ app.use(cookieParser());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/portfolios', portfolioRoutes);
+app.use('/api/integrations', integrationRoutes);
 
 // Health Check
 app.get('/', (req, res) => {

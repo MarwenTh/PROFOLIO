@@ -19,6 +19,8 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { usePortfolio } from "@/hooks/usePortfolio";
+import { useSession } from "next-auth/react";
 
 interface SearchItem {
     id: string;
@@ -26,7 +28,7 @@ interface SearchItem {
     description: string;
     icon: any;
     href: string;
-    category: "Pages" | "Marketplace" | "Shortcuts";
+    category: "Pages" | "Marketplace" | "Shortcuts" | "Portfolios";
 }
 
 const SEARCH_ITEMS: SearchItem[] = [
@@ -34,7 +36,6 @@ const SEARCH_ITEMS: SearchItem[] = [
     { id: "overview", title: "Overview", description: "View your workspace dashboard", icon: LayoutDashboard, href: "/dashboard", category: "Pages" },
     { id: "analytics", title: "Analytics", description: "Monitor your performance", icon: BarChart3, href: "/dashboard/analytics", category: "Pages" },
     { id: "ai", title: "AI Assistant", description: "Generate content with AI", icon: Wand2, href: "/dashboard/ai", category: "Pages" },
-    { id: "portfolios", title: "Portfolios", description: "Manage your digital works", icon: FolderOpen, href: "/dashboard/projects", category: "Pages" },
     { id: "domains", title: "Domain & Slug", description: "Configure your site address", icon: Globe, href: "/dashboard/domains", category: "Pages" },
     { id: "settings", title: "Settings", description: "Account and site preferences", icon: Settings, href: "/dashboard/settings", category: "Pages" },
     
@@ -50,13 +51,38 @@ const SEARCH_ITEMS: SearchItem[] = [
 
 export function CommandPalette({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
     const router = useRouter();
+    const { data: session } = useSession();
+    const { getUserPortfolios } = usePortfolio();
+    const [userItems, setUserItems] = useState<SearchItem[]>([]);
     const [query, setQuery] = useState("");
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
 
+    useEffect(() => {
+        const fetchItems = async () => {
+            if (session?.user?.id && isOpen) {
+                const data = await getUserPortfolios(session.user.id);
+                if (data.success) {
+                    const portfolios = data.portfolios.map((p: any) => ({
+                        id: p.id,
+                        title: p.title,
+                        description: `Edit portfolio: ${p.slug}`,
+                        icon: Globe,
+                        href: `/dashboard/edit/${p.id}`,
+                        category: "Portfolios"
+                    }));
+                    setUserItems(portfolios);
+                }
+            }
+        };
+        fetchItems();
+    }, [session?.user?.id, isOpen, getUserPortfolios]);
+
+    const allItems = [...SEARCH_ITEMS, ...userItems];
+
     const filteredItems = query === "" 
-        ? SEARCH_ITEMS.slice(0, 8)
-        : SEARCH_ITEMS.filter(item => 
+        ? allItems.slice(0, 10)
+        : allItems.filter(item => 
             item.title.toLowerCase().includes(query.toLowerCase()) ||
             item.description.toLowerCase().includes(query.toLowerCase()) ||
             item.category.toLowerCase().includes(query.toLowerCase())
@@ -144,7 +170,7 @@ export function CommandPalette({ isOpen, onClose }: { isOpen: boolean; onClose: 
                                 </div>
                             ) : (
                                 <div className="space-y-4">
-                                    {["Pages", "Marketplace", "Shortcuts"].map(category => {
+                                    {["Portfolios", "Pages", "Marketplace", "Shortcuts"].map(category => {
                                         const categoryItems = filteredItems.filter(item => item.category === category);
                                         if (categoryItems.length === 0) return null;
 
