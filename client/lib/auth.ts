@@ -48,11 +48,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               name: data.user.name,
               email: data.user.email,
               isVerified: data.user.isVerified,
+              accessToken: data.token, // Store the backend JWT
             };
           }
 
           return null;
         } catch (err: any) {
+          
           if (axios.isAxiosError(err) && err.response) {
             throw new Error(err.response.data?.message || "Login failed");
           }
@@ -68,17 +70,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/login",
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
-        token.isVerified = (user as any).isVerified;
       }
+      
+      if (trigger === "update" && session) {
+        return { ...token, ...session.user };
+      }
+
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         (session.user as any).id = token.id;
-        (session.user as any).isVerified = token.isVerified;
       }
       return session;
     },

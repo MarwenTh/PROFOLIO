@@ -22,6 +22,7 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 import { ModeToggle } from "@/components/ModeToggle";
 import { TopNavbar } from "@/components/dashboard/TopNavbar";
 import { CommandPalette } from "@/components/dashboard/CommandPalette";
+import { AuthSync } from "@/components/auth/AuthSync";
 
 export default function DashboardLayout({
   children,
@@ -65,6 +66,7 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen bg-[#fbfbfc] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50 selection:bg-indigo-500/30 transition-colors duration-500 relative overflow-hidden">
+      <AuthSync />
       {/* Search Palette */}
       <CommandPalette isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 

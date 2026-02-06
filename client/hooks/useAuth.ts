@@ -1,5 +1,6 @@
 import { useState } from "react";
 import api from "@/lib/api";
+import { signOut } from "next-auth/react";
 
 export const useAuth = () => {
   const [loading, setLoading] = useState(false);
@@ -35,9 +36,21 @@ export const useAuth = () => {
     }
   };
 
+  const logout = async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch (err) {
+      console.error("Logout failed:", err);
+    } finally {
+      // Always sign out from NextAuth
+      signOut({ callbackUrl: "/login" });
+    }
+  };
+
   return {
     signup,
     login,
+    logout,
     loading,
     error,
     setError

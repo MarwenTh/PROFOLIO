@@ -6,6 +6,7 @@ import { AuthCarousel } from "@/components/AuthCarousel";
 import { motion } from "framer-motion";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import api from "@/lib/api";
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -28,6 +29,17 @@ export default function LoginPage() {
     setError("");
 
     try {
+      // 1. Call Backend Login Directly (sets httpOnly cookies in browser)
+      const { data } = await api.post("/auth/login", {
+        email: formData.email,
+        password: formData.password
+      });
+
+      if (!data.success) {
+        throw new Error(data.message || "Login failed");
+      }
+
+      // 2. Establish NextAuth session (UI state only)
       const result = await signIn("credentials", {
         email: formData.email,
         password: formData.password,
@@ -41,7 +53,7 @@ export default function LoginPage() {
         router.refresh();
       }
     } catch (err: any) {
-      setError("An unexpected error occurred. Please try again.");
+      setError(err.response?.data?.message || err.message || "An unexpected error occurred.");
     } finally {
       setLoading(false);
     }

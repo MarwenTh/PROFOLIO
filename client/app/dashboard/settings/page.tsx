@@ -1,10 +1,11 @@
 "use client";
-import React, { useState } from "react";
-import { User, Shield, Bell, CreditCard, Mail, Lock, Camera, Check, Eye, EyeOff, Trash2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { User, Shield, Bell, CreditCard, Mail, Lock, Camera, Check, Eye, EyeOff, Trash2, Globe, Twitter, Github, Linkedin, MapPin, Briefcase } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import api from "@/lib/api";
 import { 
     PageHeader, 
     DashboardCard, 
@@ -13,11 +14,76 @@ import {
     DashboardSection,
     DashboardBadge 
 } from "@/components/dashboard/Shared";
+import { toast } from "sonner";
 
 export default function SettingsPage() {
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
   const [activeTab, setActiveTab] = useState("profile");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
+
+  // Profile Form State
+  const [formData, setFormData] = useState({
+    name: "",
+    profession: "",
+    bio: "",
+    website: "",
+    twitter: "",
+    github: "",
+    linkedin: "",
+    location: ""
+  });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+        try {
+            const { data } = await api.get("/auth/me");
+            if (data.success) {
+                setFormData({
+                    name: data.user.name || "",
+                    profession: data.user.profession || "",
+                    bio: data.user.bio || "",
+                    website: data.user.website || "",
+                    twitter: data.user.twitter || "",
+                    github: data.user.github || "",
+                    linkedin: data.user.linkedin || "",
+                    location: data.user.location || ""
+                });
+            }
+        } catch (err) {
+            console.error("Failed to fetch profile:", err);
+            toast.error("Failed to load profile data");
+        } finally {
+            setFetching(false);
+        }
+    };
+
+    if (session) {
+        fetchProfile();
+    }
+  }, [session]);
+
+  const handleUpdateProfile = async () => {
+    setLoading(true);
+    try {
+        const { data } = await api.put("/auth/profile", formData);
+        if (data.success) {
+            toast.success("Profile updated successfully!");
+            // Update NextAuth session to reflect name change globally
+            await update({
+                user: {
+                    ...session?.user,
+                    name: formData.name
+                }
+            });
+        }
+    } catch (err: any) {
+        toast.error(err.response?.data?.message || "Failed to update profile");
+    } finally {
+        setLoading(false);
+    }
+  };
 
   const tabs = [
     { id: "profile", label: "Profile Information", icon: User },
@@ -25,6 +91,14 @@ export default function SettingsPage() {
     { id: "notifications", label: "Notifications", icon: Bell },
     { id: "billing", label: "Billing & Plans", icon: CreditCard },
   ];
+
+  if (fetching) {
+    return (
+        <div className="flex items-center justify-center min-h-[400px]">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500" />
+        </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl space-y-10">
@@ -85,26 +159,80 @@ export default function SettingsPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <DashboardInput 
                                     label="Full Name"
-                                    defaultValue={session?.user?.name || ""}
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 />
                                 <DashboardInput 
-                                    label="Email Address"
-                                    defaultValue={session?.user?.email || ""}
-                                    disabled
-                                    hint="Email cannot be changed."
+                                    label="Profession / Title"
+                                    placeholder="e.g. Senior Product Designer"
+                                    value={formData.profession}
+                                    onChange={(e) => setFormData({ ...formData, profession: e.target.value })}
+                                    icon={Briefcase}
+                                />
+                                <DashboardInput 
+                                    label="Location"
+                                    placeholder="e.g. Casablanca, Morocco"
+                                    value={formData.location}
+                                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                    icon={MapPin}
+                                />
+                                <DashboardInput 
+                                    label="Personal Website"
+                                    placeholder="https://yourlink.com"
+                                    value={formData.website}
+                                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                                    icon={Globe}
                                 />
                             </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <DashboardInput 
+                                    label="Twitter / X"
+                                    placeholder="@username"
+                                    value={formData.twitter}
+                                    onChange={(e) => setFormData({ ...formData, twitter: e.target.value })}
+                                    icon={Twitter}
+                                />
+                                <DashboardInput 
+                                    label="GitHub"
+                                    placeholder="github.com/..."
+                                    value={formData.github}
+                                    onChange={(e) => setFormData({ ...formData, github: e.target.value })}
+                                    icon={Github}
+                                />
+                                <DashboardInput 
+                                    label="LinkedIn"
+                                    placeholder="linkedin.com/in/..."
+                                    value={formData.linkedin}
+                                    onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
+                                    icon={Linkedin}
+                                />
+                            </div>
+
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-neutral-400 px-1">Bio (Optional)</label>
                                 <textarea 
                                     rows={4}
-                                    className="w-full p-5 rounded-2xl bg-neutral-50 dark:bg-white/5 border border-transparent focus:border-indigo-500/50 outline-none transition-all font-bold resize-none"
+                                    value={formData.bio}
+                                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                                    className="w-full p-5 rounded-3xl bg-neutral-50 dark:bg-white/5 border border-transparent focus:border-indigo-500/50 outline-none transition-all font-bold resize-none italic text-sm"
                                     placeholder="Tell us a bit about yourself..."
                                 />
                             </div>
-                            <DashboardButton variant="primary">
-                                Save Changes
-                            </DashboardButton>
+
+                            <div className="flex items-center gap-4 pt-4">
+                                <DashboardButton 
+                                    variant="primary" 
+                                    onClick={handleUpdateProfile}
+                                    loading={loading}
+                                    className="h-14 px-10"
+                                >
+                                    Save Changes
+                                </DashboardButton>
+                                <DashboardButton variant="secondary" className="h-14 px-8">
+                                    Cancel
+                                </DashboardButton>
+                            </div>
                         </div>
                     </div>
                   </DashboardCard>
@@ -126,21 +254,24 @@ export default function SettingsPage() {
                             <DashboardInput 
                                 label="Current Password"
                                 type={showPassword ? "text" : "password"}
+                                icon={Lock}
                             />
                             <DashboardInput 
                                 label="New Password"
                                 type={showPassword ? "text" : "password"}
+                                icon={Shield}
                             />
                             <div className="flex items-center gap-2 px-1">
                                 <input 
                                     type="checkbox" 
                                     id="show" 
+                                    checked={showPassword}
                                     onChange={() => setShowPassword(!showPassword)}
                                     className="w-4 h-4 rounded-lg accent-indigo-500" 
                                 />
                                 <label htmlFor="show" className="text-[10px] font-black uppercase tracking-widest text-neutral-500 cursor-pointer">Show Passwords</label>
                             </div>
-                            <DashboardButton variant="primary" className="w-full" icon={Shield}>
+                            <DashboardButton variant="primary" className="w-full h-14" icon={Shield}>
                                 Update Password
                             </DashboardButton>
                         </div>
@@ -148,13 +279,13 @@ export default function SettingsPage() {
                 </DashboardSection>
 
                 <DashboardSection title="Danger Zone" description="Irreversible actions for your account.">
-                    <DashboardCard className="border-red-500/20 bg-red-500/5">
+                    <DashboardCard className="border-red-500/20 bg-red-500/5 backdrop-blur-sm">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                             <div>
                                 <h4 className="text-lg font-black text-red-500 italic tracking-tight">Delete Account</h4>
-                                <p className="text-xs text-neutral-500 font-medium italic">All your data and portfolios will be permanently erased.</p>
+                                <p className="text-xs text-neutral-500 font-medium italic">All your data and portfolios will be permanently erased. Please think twice.</p>
                             </div>
-                            <DashboardButton variant="danger" icon={Trash2}>
+                            <DashboardButton variant="danger" icon={Trash2} className="h-14 px-8 shadow-xl shadow-red-500/10">
                                 Delete Forever
                             </DashboardButton>
                         </div>
@@ -206,7 +337,7 @@ export default function SettingsPage() {
                 className="space-y-8"
               >
                 <DashboardSection title="Subscription" description="Manage your current plan and usage limits.">
-                    <DashboardCard className="bg-gradient-to-br from-indigo-500 to-indigo-700 text-white border-transparent">
+                    <DashboardCard className="bg-gradient-to-br from-indigo-500 to-indigo-700 text-white border-transparent relative overflow-hidden">
                         <div className="relative z-10">
                             <div className="flex items-center justify-between mb-8">
                                 <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center">
@@ -216,7 +347,7 @@ export default function SettingsPage() {
                             </div>
                             <h3 className="text-4xl font-black italic tracking-tighter mb-4">FREE PLAN</h3>
                             <p className="text-indigo-100 font-medium mb-10 max-w-sm italic">You are currently using the free tier. Upgrade to unlock custom domains and unlimited portfolios.</p>
-                            <DashboardButton variant="secondary" className="bg-white text-indigo-500 hover:bg-neutral-100 w-full md:w-auto h-14 px-10">
+                            <DashboardButton variant="secondary" className="bg-white text-indigo-500 hover:bg-neutral-100 w-full md:w-auto h-14 px-10 shadow-2xl">
                                 Upgrade Plan &rarr;
                             </DashboardButton>
                         </div>

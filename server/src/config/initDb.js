@@ -10,8 +10,42 @@ const initDb = async () => {
       is_verified BOOLEAN DEFAULT FALSE,
       image TEXT,
       email_verified TIMESTAMP WITH TIME ZONE,
+      profession VARCHAR(255),
+      bio TEXT,
+      website VARCHAR(255),
+      twitter VARCHAR(255),
+      github VARCHAR(255),
+      linkedin VARCHAR(255),
+      location VARCHAR(255),
       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
+  `;
+
+  const addNewUserColumns = `
+    DO $$ 
+    BEGIN 
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='profession') THEN
+        ALTER TABLE users ADD COLUMN profession VARCHAR(255);
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='bio') THEN
+        ALTER TABLE users ADD COLUMN bio TEXT;
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='website') THEN
+        ALTER TABLE users ADD COLUMN website VARCHAR(255);
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='twitter') THEN
+        ALTER TABLE users ADD COLUMN twitter VARCHAR(255);
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='github') THEN
+        ALTER TABLE users ADD COLUMN github VARCHAR(255);
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='linkedin') THEN
+        ALTER TABLE users ADD COLUMN linkedin VARCHAR(255);
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='location') THEN
+        ALTER TABLE users ADD COLUMN location VARCHAR(255);
+      END IF;
+    END $$;
   `;
 
   // NextAuth expects these tables for full functionality (OAuth etc)
@@ -81,6 +115,7 @@ const initDb = async () => {
   try {
     await pool.query(createUsersTable);
     console.log('✅ Users table initialized');
+    await pool.query(addNewUserColumns);
     await pool.query(createAccountsTable);
     await pool.query(createSessionsTable);
     await pool.query(createVerificationTokenTable);
