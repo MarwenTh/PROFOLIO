@@ -5,6 +5,7 @@ import { Image as ImageIcon, Trash2, Plus, ExternalLink } from "lucide-react";
 import { useLibrary } from "@/hooks/useLibrary";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { PageLoader } from "@/components/ui/Loader";
 
 export default function LibraryPage() {
   const { media, loading, addMedia, deleteMedia } = useLibrary();
@@ -23,7 +24,7 @@ export default function LibraryPage() {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-[400px]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500" /></div>;
+    return <PageLoader />;
   }
 
   return (

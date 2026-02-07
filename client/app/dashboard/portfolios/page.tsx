@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { useSession } from "next-auth/react";
-import { Loader2, Globe, Plus, Search, ExternalLink, ArrowRight } from "lucide-react";
+import { Globe, Plus, Search, ExternalLink, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { 
@@ -12,7 +12,7 @@ import {
     DashboardButton, 
     DashboardInput 
 } from "@/components/dashboard/Shared";
-import { cn } from "@/lib/utils";
+import { Loader } from "@/components/ui/Loader";
 
 export default function PortfoliosPage() {
   const { data: session } = useSession();
@@ -52,7 +52,7 @@ export default function PortfoliosPage() {
 
       {loading ? (
         <div className="flex justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+          <Loader size="lg" />
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

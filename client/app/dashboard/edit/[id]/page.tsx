@@ -3,7 +3,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { 
-  Loader2, 
   Save, 
   Eye, 
   EyeOff, 
@@ -23,6 +22,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { Loader } from "@/components/ui/Loader";
 
 // Types for our editor components
 interface EditorComponent {
@@ -130,7 +130,7 @@ export default function PortfolioEditorPage() {
   if (apiLoading && !portfolio) {
     return (
       <div className="flex items-center justify-center h-screen bg-neutral-950">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+        <Loader size="lg" />
       </div>
     );
   }
@@ -192,7 +192,7 @@ export default function PortfolioEditorPage() {
             <div className="mt-auto p-6 border-t border-neutral-200 dark:border-white/5">
                 <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                        <Loader2 className={cn("w-5 h-5 text-emerald-500", isSaving && "animate-spin")} />
+                        {isSaving ? <Loader size="sm" /> : <Save className="w-5 h-5 text-emerald-500" />}
                     </div>
                     <div>
                         <p className="text-xs font-bold">{portfolio?.title}</p>
@@ -245,7 +245,7 @@ export default function PortfolioEditorPage() {
                   disabled={isSaving}
                   className="px-6 h-11 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-black font-black text-sm transition-all active:scale-95 flex items-center gap-2"
                 >
-                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  {isSaving ? <Loader size="sm" /> : <Save className="w-4 h-4" />}
                   Save Design
                 </button>
               </>

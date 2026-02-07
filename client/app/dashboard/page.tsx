@@ -5,7 +5,6 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { 
-  Loader2, 
   Plus, 
   Globe, 
   ExternalLink, 
@@ -23,7 +22,7 @@ import {
   DashboardBadge,
   EmptyState
 } from "@/components/dashboard/Shared";
-import { cn } from "@/lib/utils";
+import { Loader } from "@/components/ui/Loader";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -75,7 +74,7 @@ export default function DashboardPage() {
   if (status === "loading" || loading && portfolios.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+        <Loader size="lg" />
         <p className="text-sm text-neutral-500 animate-pulse font-medium italic">Syncing your workspace...</p>
       </div>
     );

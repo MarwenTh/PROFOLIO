@@ -10,11 +10,12 @@ import {
     DashboardModal,
     EmptyState
 } from "@/components/dashboard/Shared";
-import { Globe, Plus, Link2, Trash2, CheckCircle, XCircle, Copy } from "lucide-react";
+import { Globe, Plus, Link2, Trash2, CheckCircle, XCircle, Copy, AlertCircle } from "lucide-react";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { useDomains } from "@/hooks/useDomains";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
+import { Loader, PageLoader } from "@/components/ui/Loader";
 
 export default function DomainsPage() {
   const { data: session } = useSession();
@@ -27,6 +28,9 @@ export default function DomainsPage() {
   const [isSlugModalOpen, setIsSlugModalOpen] = useState(false);
   const [isDomainModalOpen, setIsDomainModalOpen] = useState(false);
   const [newDomain, setNewDomain] = useState("");
+  const [isUpdatingSlug, setIsUpdatingSlug] = useState(false);
+  const [isAddingDomain, setIsAddingDomain] = useState(false);
+  const [deletingDomainId, setDeletingDomainId] = useState<number | null>(null);
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -46,6 +50,7 @@ export default function DomainsPage() {
   }, [selectedPortfolio]);
 
   const handleUpdateSlug = async () => {
+    setIsUpdatingSlug(true);
     try {
       await updateSlug(slug);
       setIsSlugModalOpen(false);
@@ -57,16 +62,32 @@ export default function DomainsPage() {
       }
     } catch (err) {
       console.error('Failed to update slug:', err);
+    } finally {
+      setIsUpdatingSlug(false);
     }
   };
 
   const handleAddDomain = async () => {
+    setIsAddingDomain(true);
     try {
       await addDomain(newDomain);
       setIsDomainModalOpen(false);
       setNewDomain("");
     } catch (err) {
       console.error('Failed to add domain:', err);
+    } finally {
+      setIsAddingDomain(false);
+    }
+  };
+
+  const handleDeleteDomain = async (domainId: number) => {
+    setDeletingDomainId(domainId);
+    try {
+      await deleteDomain(domainId);
+    } catch (err) {
+      console.error('Failed to delete domain:', err);
+    } finally {
+      setDeletingDomainId(null);
     }
   };
 
@@ -77,6 +98,10 @@ export default function DomainsPage() {
 
   if (!selectedPortfolio) {
     return <EmptyState title="No portfolios found" description="Create a portfolio first to manage domains." icon={Globe} />;
+  }
+
+  if (loading && !selectedPortfolio) {
+    return <PageLoader />;
   }
 
   return (
@@ -97,12 +122,13 @@ export default function DomainsPage() {
               <div className="p-4 rounded-xl bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10">
                 <p className="text-xs font-black uppercase tracking-widest text-neutral-400 mb-2">Current URL</p>
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-mono font-bold text-indigo-500">
+                  <p className="text-sm font-mono font-bold text-indigo-500 break-all">
                     profolio.pro/p/{selectedPortfolio.slug}
                   </p>
                   <button 
                     onClick={() => copyToClipboard(`profolio.pro/p/${selectedPortfolio.slug}`)}
-                    className="p-2 hover:bg-neutral-200 dark:hover:bg-white/10 rounded-lg transition-colors"
+                    className="p-2 hover:bg-neutral-200 dark:hover:bg-white/10 rounded-lg transition-colors shrink-0"
+                    title="Copy URL"
                   >
                     <Copy className="w-4 h-4" />
                   </button>
@@ -128,7 +154,11 @@ export default function DomainsPage() {
         >
           <DashboardCard>
             <div className="space-y-4">
-              {domains.length === 0 ? (
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader size="md" />
+                </div>
+              ) : domains.length === 0 ? (
                 <div className="text-center py-8">
                   <Globe className="w-12 h-12 text-neutral-300 dark:text-neutral-700 mx-auto mb-3" />
                   <p className="text-sm font-bold text-neutral-600 dark:text-neutral-400 mb-4">
@@ -139,24 +169,29 @@ export default function DomainsPage() {
                 <div className="space-y-3">
                   {domains.map((domain) => (
                     <div key={domain.id} className="flex items-center justify-between p-3 rounded-xl bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
                         {domain.is_verified ? (
-                          <CheckCircle className="w-5 h-5 text-green-500" />
+                          <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
                         ) : (
-                          <XCircle className="w-5 h-5 text-amber-500" />
+                          <XCircle className="w-5 h-5 text-amber-500 shrink-0" />
                         )}
-                        <div>
-                          <p className="text-sm font-bold">{domain.domain}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-bold truncate">{domain.domain}</p>
                           <p className="text-xs text-neutral-500">
                             {domain.is_verified ? 'Verified' : 'Pending verification'}
                           </p>
                         </div>
                       </div>
                       <button
-                        onClick={() => deleteDomain(domain.id)}
-                        className="p-2 hover:bg-red-500/10 text-red-500 rounded-lg transition-colors"
+                        onClick={() => handleDeleteDomain(domain.id)}
+                        disabled={deletingDomainId === domain.id}
+                        className="p-2 hover:bg-red-500/10 text-red-500 rounded-lg transition-colors disabled:opacity-50 shrink-0"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        {deletingDomainId === domain.id ? (
+                          <Loader size="sm" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
                       </button>
                     </div>
                   ))}
@@ -204,7 +239,7 @@ export default function DomainsPage() {
       {/* Update Slug Modal */}
       <DashboardModal
         isOpen={isSlugModalOpen}
-        onClose={() => setIsSlugModalOpen(false)}
+        onClose={() => !isUpdatingSlug && setIsSlugModalOpen(false)}
         title="Update Portfolio Slug"
         description="Change your portfolio URL"
         icon={Link2}
@@ -218,13 +253,39 @@ export default function DomainsPage() {
             prefixText="profolio.pro/p/"
             hint="Only lowercase letters, numbers, and hyphens"
             required
+            disabled={isUpdatingSlug}
           />
 
+          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+            <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+              Changing your slug will break existing links to your portfolio. Make sure to update any shared URLs.
+            </p>
+          </div>
+
           <div className="flex gap-3 pt-4">
-            <DashboardButton type="submit" variant="primary" className="flex-1 h-14">
-              Update Slug
+            <DashboardButton 
+              type="submit" 
+              variant="primary" 
+              className="flex-1 h-14"
+              disabled={isUpdatingSlug || slug === selectedPortfolio?.slug}
+            >
+              {isUpdatingSlug ? (
+                <span className="flex items-center gap-2">
+                  <Loader size="sm" />
+                  Updating...
+                </span>
+              ) : (
+                'Update Slug'
+              )}
             </DashboardButton>
-            <DashboardButton type="button" variant="secondary" onClick={() => setIsSlugModalOpen(false)} className="h-14 px-8">
+            <DashboardButton 
+              type="button" 
+              variant="secondary" 
+              onClick={() => setIsSlugModalOpen(false)} 
+              className="h-14 px-8"
+              disabled={isUpdatingSlug}
+            >
               Cancel
             </DashboardButton>
           </div>
@@ -234,7 +295,7 @@ export default function DomainsPage() {
       {/* Add Domain Modal */}
       <DashboardModal
         isOpen={isDomainModalOpen}
-        onClose={() => setIsDomainModalOpen(false)}
+        onClose={() => !isAddingDomain && setIsDomainModalOpen(false)}
         title="Add Custom Domain"
         description="Connect your own domain to this portfolio"
         icon={Globe}
@@ -247,13 +308,40 @@ export default function DomainsPage() {
             placeholder="example.com"
             hint="Enter your domain without http:// or www"
             required
+            disabled={isAddingDomain}
           />
 
+          <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+            <div className="text-xs font-medium text-blue-700 dark:text-blue-400">
+              <p className="font-bold mb-1">After adding your domain:</p>
+              <p>Add a CNAME record pointing to <code className="px-1 py-0.5 bg-blue-500/20 rounded">profolio.pro</code> in your DNS settings.</p>
+            </div>
+          </div>
+
           <div className="flex gap-3 pt-4">
-            <DashboardButton type="submit" variant="primary" className="flex-1 h-14">
-              Add Domain
+            <DashboardButton 
+              type="submit" 
+              variant="primary" 
+              className="flex-1 h-14"
+              disabled={isAddingDomain}
+            >
+              {isAddingDomain ? (
+                <span className="flex items-center gap-2">
+                  <Loader size="sm" />
+                  Adding...
+                </span>
+              ) : (
+                'Add Domain'
+              )}
             </DashboardButton>
-            <DashboardButton type="button" variant="secondary" onClick={() => setIsDomainModalOpen(false)} className="h-14 px-8">
+            <DashboardButton 
+              type="button" 
+              variant="secondary" 
+              onClick={() => setIsDomainModalOpen(false)} 
+              className="h-14 px-8"
+              disabled={isAddingDomain}
+            >
               Cancel
             </DashboardButton>
           </div>

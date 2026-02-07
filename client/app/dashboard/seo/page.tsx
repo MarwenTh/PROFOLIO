@@ -5,6 +5,7 @@ import { Search, Globe, Share2, Save } from "lucide-react";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { useSeo } from "@/hooks/useLibrary";
 import { useSession } from "next-auth/react";
+import { PageLoader } from "@/components/ui/Loader";
 
 export default function SEOPage() {
   const { data: session } = useSession();
@@ -55,6 +56,10 @@ export default function SEOPage() {
 
   if (!selectedPortfolio) {
     return <EmptyState title="No portfolios found" description="Create a portfolio first to manage SEO settings." icon={Globe} />;
+  }
+
+  if (loading && !seo) {
+    return <PageLoader />;
   }
 
   return (

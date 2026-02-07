@@ -26,6 +26,8 @@
   --animate-aurora-spin: aurora-spin 20s linear infinite;
   --animate-scroll-left: scroll-left 40s linear infinite;
   --animate-scroll-right: scroll-right 40s linear infinite;
+  --animate-loader-path: loader-path 1.5s ease-in-out infinite;
+  --animate-loader-pulse: loader-pulse 1.5s ease-in-out infinite;
   
   @keyframes aurora-spin {
       from { transform: rotate(0deg); }
@@ -40,6 +42,28 @@
    @keyframes scroll-right {
       from { transform: translateX(-50%); }
       to { transform: translateX(0); }
+  }
+  
+  @keyframes loader-path {
+      0%, 100% {
+          stroke-dasharray: 1, 200;
+          stroke-dashoffset: 0;
+      }
+      50% {
+          stroke-dasharray: 89, 200;
+          stroke-dashoffset: -35;
+      }
+  }
+  
+  @keyframes loader-pulse {
+      0%, 100% {
+          opacity: 1;
+          transform: scale(1);
+      }
+      50% {
+          opacity: 0.5;
+          transform: scale(1.2);
+      }
   }
 }
 
