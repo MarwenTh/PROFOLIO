@@ -285,6 +285,63 @@ const initDb = async () => {
     );
   `;
 
+  const createSubscribersTable = `
+    CREATE TABLE IF NOT EXISTS subscribers (
+      id SERIAL PRIMARY KEY,
+      portfolio_id INTEGER REFERENCES portfolios(id) ON DELETE CASCADE,
+      email VARCHAR(255) NOT NULL,
+      name VARCHAR(255),
+      status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'unsubscribed')),
+      subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      unsubscribed_at TIMESTAMP,
+      UNIQUE(portfolio_id, email)
+    );
+  `;
+
+  const createNewslettersTable = `
+    CREATE TABLE IF NOT EXISTS newsletters (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      portfolio_id INTEGER REFERENCES portfolios(id) ON DELETE CASCADE,
+      subject VARCHAR(255) NOT NULL,
+      content TEXT NOT NULL,
+      sent_to INTEGER DEFAULT 0,
+      opened INTEGER DEFAULT 0,
+      clicked INTEGER DEFAULT 0,
+      status VARCHAR(50) DEFAULT 'draft' CHECK (status IN ('draft', 'sent', 'scheduled')),
+      sent_at TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
+  const createReferralsTable = `
+    CREATE TABLE IF NOT EXISTS referrals (
+      id SERIAL PRIMARY KEY,
+      referrer_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      referred_email VARCHAR(255),
+      referred_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'rewarded')),
+      reward_amount DECIMAL(10,2) DEFAULT 0,
+      referral_code VARCHAR(100) UNIQUE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      completed_at TIMESTAMP
+    );
+  `;
+
+  const createCodeSnippetsTable = `
+    CREATE TABLE IF NOT EXISTS code_snippets (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      portfolio_id INTEGER REFERENCES portfolios(id) ON DELETE SET NULL,
+      title VARCHAR(255),
+      language VARCHAR(50) NOT NULL,
+      code TEXT NOT NULL,
+      is_public BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
   try {
     await pool.query(createUsersTable);
     console.log('✅ Users table initialized');
@@ -306,7 +363,11 @@ const initDb = async () => {
     await pool.query(createMarketplaceItemsTable);
     await pool.query(createMarketplacePurchasesTable);
     await pool.query(createMarketplaceSavesTable);
-    console.log('✅ All database tables initialized successfully');
+    await pool.query(createSubscribersTable);
+    await pool.query(createNewslettersTable);
+    await pool.query(createReferralsTable);
+    await pool.query(createCodeSnippetsTable);
+    console.log('✅ All database tables initialized successfully (including marketplace, subscribers, referrals & code editor)');
   } catch (err) {
     console.error('❌ Error initializing database:', err);
   }

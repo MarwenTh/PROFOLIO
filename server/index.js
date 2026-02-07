@@ -14,6 +14,9 @@ const libraryRoutes = require('./src/routes/libraryRoutes');
 const seoRoutes = require('./src/routes/seoRoutes');
 const domainRoutes = require('./src/routes/domainRoutes');
 const marketplaceRoutes = require('./src/routes/marketplaceRoutes');
+const subscriberRoutes = require('./src/routes/subscriberRoutes');
+const referralRoutes = require('./src/routes/referralRoutes');
+const codeRoutes = require('./src/routes/codeRoutes');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -40,6 +43,9 @@ app.use('/api/library', libraryRoutes);
 app.use('/api/seo', seoRoutes);
 app.use('/api/domains', domainRoutes);
 app.use('/api/marketplace', marketplaceRoutes);
+app.use('/api/subscribers', subscriberRoutes);
+app.use('/api/referrals', referralRoutes);
+app.use('/api/code', codeRoutes);
 
 // Health Check
 app.get('/', (req, res) => {
