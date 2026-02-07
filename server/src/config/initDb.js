@@ -126,6 +126,53 @@ const initDb = async () => {
     );
   `;
 
+  const createProjectsTable = `
+    CREATE TABLE IF NOT EXISTS projects (
+      id SERIAL PRIMARY KEY,
+      portfolio_id INTEGER REFERENCES portfolios(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title VARCHAR(255) NOT NULL,
+      description TEXT,
+      image_url TEXT,
+      project_url TEXT,
+      github_url TEXT,
+      tags JSONB DEFAULT '[]',
+      featured BOOLEAN DEFAULT FALSE,
+      order_index INTEGER DEFAULT 0,
+      status VARCHAR(50) DEFAULT 'published',
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
+  const createTemplatesTable = `
+    CREATE TABLE IF NOT EXISTS templates (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      description TEXT,
+      category VARCHAR(100),
+      preview_image TEXT,
+      thumbnail_image TEXT,
+      structure JSONB NOT NULL,
+      is_premium BOOLEAN DEFAULT FALSE,
+      price DECIMAL(10,2) DEFAULT 0,
+      downloads INTEGER DEFAULT 0,
+      rating DECIMAL(3,2) DEFAULT 0,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
+  const createUserTemplatesTable = `
+    CREATE TABLE IF NOT EXISTS user_templates (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      template_id INTEGER NOT NULL REFERENCES templates(id) ON DELETE CASCADE,
+      purchased_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, template_id)
+    );
+  `;
+
   try {
     await pool.query(createUsersTable);
     console.log('✅ Users table initialized');
@@ -136,7 +183,10 @@ const initDb = async () => {
     await pool.query(createPortfoliosTable);
     await pool.query(addDescriptionColumn);
     await pool.query(createIntegrationsTable);
-    console.log('✅ Portfolios, NextAuth, and Integrations tables initialized');
+    await pool.query(createProjectsTable);
+    await pool.query(createTemplatesTable);
+    await pool.query(createUserTemplatesTable);
+    console.log('✅ All database tables initialized successfully');
   } catch (err) {
     console.error('❌ Error initializing database:', err);
   }

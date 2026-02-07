@@ -7,6 +7,8 @@ const { initDb } = require('./src/config/initDb');
 const authRoutes = require('./src/routes/authRoutes');
 const portfolioRoutes = require('./src/routes/portfolioRoutes');
 const integrationRoutes = require('./src/routes/integrationRoutes');
+const projectRoutes = require('./src/routes/projectRoutes');
+const templateRoutes = require('./src/routes/templateRoutes');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -26,6 +28,8 @@ app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 app.use('/api/portfolios', portfolioRoutes);
 app.use('/api/integrations', integrationRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/templates', templateRoutes);
 
 // Health Check
 app.get('/', (req, res) => {
