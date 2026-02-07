@@ -244,6 +244,47 @@ const initDb = async () => {
     );
   `;
 
+  const createMarketplaceItemsTable = `
+    CREATE TABLE IF NOT EXISTS marketplace_items (
+      id SERIAL PRIMARY KEY,
+      seller_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      portfolio_id INTEGER REFERENCES portfolios(id) ON DELETE SET NULL,
+      type VARCHAR(50) NOT NULL CHECK (type IN ('template', 'component', 'theme')),
+      title VARCHAR(255) NOT NULL,
+      description TEXT,
+      price DECIMAL(10,2) NOT NULL DEFAULT 0,
+      preview_images JSONB DEFAULT '[]',
+      content JSONB,
+      status VARCHAR(50) DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'suspended')),
+      downloads INTEGER DEFAULT 0,
+      rating DECIMAL(3,2) DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
+  const createMarketplacePurchasesTable = `
+    CREATE TABLE IF NOT EXISTS marketplace_purchases (
+      id SERIAL PRIMARY KEY,
+      buyer_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      item_id INTEGER REFERENCES marketplace_items(id) ON DELETE CASCADE,
+      amount DECIMAL(10,2) NOT NULL,
+      payment_status VARCHAR(50) DEFAULT 'pending' CHECK (payment_status IN ('pending', 'completed', 'failed', 'refunded')),
+      purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(buyer_id, item_id)
+    );
+  `;
+
+  const createMarketplaceSavesTable = `
+    CREATE TABLE IF NOT EXISTS marketplace_saves (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      item_id INTEGER REFERENCES marketplace_items(id) ON DELETE CASCADE,
+      saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, item_id)
+    );
+  `;
+
   try {
     await pool.query(createUsersTable);
     console.log('✅ Users table initialized');
@@ -262,6 +303,9 @@ const initDb = async () => {
     await pool.query(createMediaLibraryTable);
     await pool.query(createPortfolioSeoTable);
     await pool.query(createPortfolioDomainsTable);
+    await pool.query(createMarketplaceItemsTable);
+    await pool.query(createMarketplacePurchasesTable);
+    await pool.query(createMarketplaceSavesTable);
     console.log('✅ All database tables initialized successfully');
   } catch (err) {
     console.error('❌ Error initializing database:', err);

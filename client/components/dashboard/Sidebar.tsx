@@ -63,6 +63,7 @@ const sidebarLinks = [
 
 export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   const pathname = usePathname();
+  const [hoveredItem, setHoveredItem] = React.useState<{ name: string; top: number } | null>(null);
 
   const [expandedCategories, setExpandedCategories] = React.useState<Record<string, boolean>>({
     "Main": true,
@@ -91,7 +92,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
       initial={false}
       animate={{ width: isCollapsed ? 100 : 300 }}
       transition={{ type: "spring", stiffness: 200, damping: 25, mass: 1 }}
-      className="fixed left-0 top-0 h-screen bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-white/5 z-50 flex flex-col shadow-2xl overflow-hidden"
+      className="fixed left-0 top-0 h-screen bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-white/5 z-50 flex flex-col shadow-2xl"
     >
       {/* Glossy Aura */}
       <div className="absolute top-0 left-0 w-full h-32 bg-indigo-500/5 dark:bg-indigo-500/10 blur-[60px] pointer-events-none" />
@@ -205,6 +206,13 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                       <Link
                         key={link.href}
                         href={link.href}
+                        onMouseEnter={(e) => {
+                          if (isCollapsed) {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setHoveredItem({ name: link.name, top: rect.top + (rect.height / 2) - 16 }); // Center tooltip (approx 32px height)
+                          }
+                        }}
+                        onMouseLeave={() => setHoveredItem(null)}
                         className={cn(
                           "group flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 relative overflow-hidden",
                           isActive 
@@ -278,6 +286,35 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
           </div>
         </div>
       </div>
+
+      {/* Hover Tooltip Portal */}
+      <AnimatePresence>
+        {isCollapsed && hoveredItem && (
+          <motion.div
+            initial={{ opacity: 0, x: -10, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -10, scale: 0.95 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            style={{ 
+              top: hoveredItem.top,
+              left: 110, // Sidebar collapsed width + margin
+              position: "fixed",
+              zIndex: 100
+            }}
+            className="pointer-events-none"
+          >
+            <div className="flex items-center">
+              {/* Tooltip Arrow */}
+              <div className="w-2 h-4 bg-neutral-900 dark:bg-white clip-arrow transform -translate-x-1" style={{ clipPath: "polygon(100% 0, 0 50%, 100% 100%)" }} />
+              
+              {/* Tooltip Body */}
+              <div className="bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-bold py-2 px-3 rounded-r-lg rounded-bl-lg shadow-xl whitespace-nowrap flex items-center gap-2">
+                <span>{hoveredItem.name}</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.aside>
   );
 }
