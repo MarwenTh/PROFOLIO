@@ -10,6 +10,8 @@ const integrationRoutes = require('./src/routes/integrationRoutes');
 const projectRoutes = require('./src/routes/projectRoutes');
 const templateRoutes = require('./src/routes/templateRoutes');
 const analyticsRoutes = require('./src/routes/analyticsRoutes');
+const libraryRoutes = require('./src/routes/libraryRoutes');
+const seoRoutes = require('./src/routes/seoRoutes');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -32,6 +34,8 @@ app.use('/api/integrations', integrationRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/templates', templateRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/library', libraryRoutes);
+app.use('/api/seo', seoRoutes);
 
 // Health Check
 app.get('/', (req, res) => {

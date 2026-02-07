@@ -199,6 +199,38 @@ const initDb = async () => {
     );
   `;
 
+  const createMediaLibraryTable = `
+    CREATE TABLE IF NOT EXISTS media_library (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      filename VARCHAR(255) NOT NULL,
+      original_name VARCHAR(255),
+      file_type VARCHAR(100),
+      file_size INTEGER,
+      url TEXT NOT NULL,
+      folder VARCHAR(255) DEFAULT 'root',
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
+  const createPortfolioSeoTable = `
+    CREATE TABLE IF NOT EXISTS portfolio_seo (
+      id SERIAL PRIMARY KEY,
+      portfolio_id INTEGER REFERENCES portfolios(id) ON DELETE CASCADE,
+      meta_title VARCHAR(255),
+      meta_description TEXT,
+      meta_keywords TEXT,
+      og_image TEXT,
+      og_title VARCHAR(255),
+      og_description TEXT,
+      twitter_card VARCHAR(50) DEFAULT 'summary_large_image',
+      canonical_url TEXT,
+      robots VARCHAR(100) DEFAULT 'index, follow',
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(portfolio_id)
+    );
+  `;
+
   try {
     await pool.query(createUsersTable);
     console.log('✅ Users table initialized');
@@ -214,6 +246,8 @@ const initDb = async () => {
     await pool.query(createUserTemplatesTable);
     await pool.query(createPortfolioViewsTable);
     await pool.query(createPortfolioStatsTable);
+    await pool.query(createMediaLibraryTable);
+    await pool.query(createPortfolioSeoTable);
     console.log('✅ All database tables initialized successfully');
   } catch (err) {
     console.error('❌ Error initializing database:', err);
