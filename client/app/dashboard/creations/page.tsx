@@ -1,24 +1,24 @@
 "use client";
 import React from "react";
-import { PageHeader, DashboardCard, DashboardSection, EmptyState } from "@/components/dashboard/Shared";
-import { Users, Mail, TrendingUp } from "lucide-react";
+import { PageHeader, DashboardCard, DashboardBadge, DashboardSection, EmptyState } from "@/components/dashboard/Shared";
+import { ShoppingBag, TrendingUp, DollarSign, Package } from "lucide-react";
 
-export default function SubscribersPage() {
+export default function CreationsPage() {
   const stats = [
-    { label: "Total Subscribers", value: "0", icon: Users, color: "indigo" },
-    { label: "This Month", value: "0", icon: TrendingUp, color: "emerald" },
-    { label: "Email Sent", value: "0", icon: Mail, color: "purple" },
+    { label: "Total Sales", value: "$0", icon: DollarSign, color: "emerald" },
+    { label: "Active Listings", value: "0", icon: Package, color: "indigo" },
+    { label: "Total Views", value: "0", icon: TrendingUp, color: "purple" },
   ];
 
   const colorMap: Record<string, string> = {
-    indigo: "bg-indigo-500/10 text-indigo-500",
     emerald: "bg-emerald-500/10 text-emerald-500",
+    indigo: "bg-indigo-500/10 text-indigo-500",
     purple: "bg-purple-500/10 text-purple-500",
   };
 
   return (
     <div className="space-y-10">
-      <PageHeader title="Subscribers" description="Manage your newsletter subscribers and email campaigns." />
+      <PageHeader title="My Creations" description="Manage your marketplace listings and track sales." />
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {stats.map((stat) => (
@@ -34,12 +34,12 @@ export default function SubscribersPage() {
         ))}
       </div>
 
-      <DashboardSection title="Subscriber List" description="People who subscribed to your newsletter">
+      <DashboardSection title="Your Listings" description="Products you're selling on the marketplace">
         <EmptyState 
-          title="No subscribers yet" 
-          description="Add a newsletter signup form to your portfolio to start building your audience."
-          icon={Users}
-          actionLabel="Setup Newsletter"
+          title="No listings yet" 
+          description="Start selling your templates, themes, or digital products on the marketplace."
+          icon={ShoppingBag}
+          actionLabel="Create Listing"
           onAction={() => {}}
         />
       </DashboardSection>
