@@ -231,6 +231,19 @@ const initDb = async () => {
     );
   `;
 
+  const createPortfolioDomainsTable = `
+    CREATE TABLE IF NOT EXISTS portfolio_domains (
+      id SERIAL PRIMARY KEY,
+      portfolio_id INTEGER REFERENCES portfolios(id) ON DELETE CASCADE,
+      domain VARCHAR(255) NOT NULL UNIQUE,
+      is_primary BOOLEAN DEFAULT FALSE,
+      is_verified BOOLEAN DEFAULT FALSE,
+      verification_code VARCHAR(100),
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      verified_at TIMESTAMP WITH TIME ZONE
+    );
+  `;
+
   try {
     await pool.query(createUsersTable);
     console.log('✅ Users table initialized');
@@ -248,6 +261,7 @@ const initDb = async () => {
     await pool.query(createPortfolioStatsTable);
     await pool.query(createMediaLibraryTable);
     await pool.query(createPortfolioSeoTable);
+    await pool.query(createPortfolioDomainsTable);
     console.log('✅ All database tables initialized successfully');
   } catch (err) {
     console.error('❌ Error initializing database:', err);

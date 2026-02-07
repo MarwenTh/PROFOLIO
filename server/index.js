@@ -12,6 +12,7 @@ const templateRoutes = require('./src/routes/templateRoutes');
 const analyticsRoutes = require('./src/routes/analyticsRoutes');
 const libraryRoutes = require('./src/routes/libraryRoutes');
 const seoRoutes = require('./src/routes/seoRoutes');
+const domainRoutes = require('./src/routes/domainRoutes');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -36,6 +37,7 @@ app.use('/api/templates', templateRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/library', libraryRoutes);
 app.use('/api/seo', seoRoutes);
+app.use('/api/domains', domainRoutes);
 
 // Health Check
 app.get('/', (req, res) => {

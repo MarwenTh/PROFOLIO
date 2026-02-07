@@ -1,93 +1,264 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
     PageHeader, 
     DashboardCard, 
     DashboardInput, 
     DashboardButton,
     DashboardSection,
-    DashboardBadge 
+    DashboardBadge,
+    DashboardModal,
+    EmptyState
 } from "@/components/dashboard/Shared";
-import { Globe, Plus, Link2, AlertCircle, Info } from "lucide-react";
+import { Globe, Plus, Link2, Trash2, CheckCircle, XCircle, Copy } from "lucide-react";
+import { usePortfolio } from "@/hooks/usePortfolio";
+import { useDomains } from "@/hooks/useDomains";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 
 export default function DomainsPage() {
-  const [slug, setSlug] = useState("marwen-portfolio");
+  const { data: session } = useSession();
+  const { getUserPortfolios } = usePortfolio();
+  const [portfolios, setPortfolios] = useState<any[]>([]);
+  const [selectedPortfolio, setSelectedPortfolio] = useState<any>(null);
+  const { domains, loading, addDomain, deleteDomain, updateSlug } = useDomains(selectedPortfolio?.id);
+  
+  const [slug, setSlug] = useState("");
+  const [isSlugModalOpen, setIsSlugModalOpen] = useState(false);
+  const [isDomainModalOpen, setIsDomainModalOpen] = useState(false);
+  const [newDomain, setNewDomain] = useState("");
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      getUserPortfolios(session.user.id).then(res => {
+        if (res.success && res.portfolios.length > 0) {
+          setPortfolios(res.portfolios);
+          setSelectedPortfolio(res.portfolios[0]);
+        }
+      });
+    }
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+    if (selectedPortfolio) {
+      setSlug(selectedPortfolio.slug || "");
+    }
+  }, [selectedPortfolio]);
+
+  const handleUpdateSlug = async () => {
+    try {
+      await updateSlug(slug);
+      setIsSlugModalOpen(false);
+      // Refresh portfolio data
+      const res = await getUserPortfolios(session?.user?.id);
+      if (res.success) {
+        const updated = res.portfolios.find((p: any) => p.id === selectedPortfolio.id);
+        if (updated) setSelectedPortfolio(updated);
+      }
+    } catch (err) {
+      console.error('Failed to update slug:', err);
+    }
+  };
+
+  const handleAddDomain = async () => {
+    try {
+      await addDomain(newDomain);
+      setIsDomainModalOpen(false);
+      setNewDomain("");
+    } catch (err) {
+      console.error('Failed to add domain:', err);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard!');
+  };
+
+  if (!selectedPortfolio) {
+    return <EmptyState title="No portfolios found" description="Create a portfolio first to manage domains." icon={Globe} />;
+  }
 
   return (
     <div className="space-y-10">
       <PageHeader 
         title="Domain & Slug" 
-        description="Connect and manage your professional vanity URLs for your portfolio brand."
+        description={`Manage URLs for ${selectedPortfolio.title}`}
       />
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Portfolio Slug Section */}
         <DashboardSection 
-            title="Portfolio Slug" 
-            description="Your direct path on Profolio. Changing this might break existing links."
+          title="Portfolio Slug" 
+          description="Your direct path on PROFOLIO"
         >
-            <DashboardCard>
-                <div className="space-y-6">
-                    <DashboardInput 
-                        label="Active URL Slug"
-                        prefixText="profolio.pro/p/"
-                        value={slug}
-                        onChange={(e) => setSlug(e.target.value)}
-                        hint="You have 1 free change remaining. Pro members get unlimited changes."
-                    />
-                    <div className="pt-2 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <DashboardBadge variant="warning">
-                             1 Change Remaining
-                        </DashboardBadge>
-                        <DashboardButton variant="primary" icon={Link2}>
-                            Update Slug
-                        </DashboardButton>
-                    </div>
+          <DashboardCard>
+            <div className="space-y-6">
+              <div className="p-4 rounded-xl bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10">
+                <p className="text-xs font-black uppercase tracking-widest text-neutral-400 mb-2">Current URL</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-mono font-bold text-indigo-500">
+                    profolio.pro/p/{selectedPortfolio.slug}
+                  </p>
+                  <button 
+                    onClick={() => copyToClipboard(`profolio.pro/p/${selectedPortfolio.slug}`)}
+                    className="p-2 hover:bg-neutral-200 dark:hover:bg-white/10 rounded-lg transition-colors"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
                 </div>
-            </DashboardCard>
+              </div>
+
+              <DashboardButton 
+                variant="primary" 
+                icon={Link2}
+                onClick={() => setIsSlugModalOpen(true)}
+                className="w-full"
+              >
+                Update Slug
+              </DashboardButton>
+            </div>
+          </DashboardCard>
         </DashboardSection>
 
+        {/* Custom Domain Section */}
         <DashboardSection 
-            title="Custom Domain" 
-            description="Connect your own domain name (e.g., yourname.com) to your portfolio."
+          title="Custom Domains" 
+          description="Connect your own domain name"
         >
-            <DashboardCard className="h-full bg-indigo-500 text-white border-transparent">
-                <div className="relative z-10 flex flex-col justify-center h-full">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
-                            <Globe className="w-6 h-6 text-white" />
+          <DashboardCard>
+            <div className="space-y-4">
+              {domains.length === 0 ? (
+                <div className="text-center py-8">
+                  <Globe className="w-12 h-12 text-neutral-300 dark:text-neutral-700 mx-auto mb-3" />
+                  <p className="text-sm font-bold text-neutral-600 dark:text-neutral-400 mb-4">
+                    No custom domains yet
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {domains.map((domain) => (
+                    <div key={domain.id} className="flex items-center justify-between p-3 rounded-xl bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10">
+                      <div className="flex items-center gap-3">
+                        {domain.is_verified ? (
+                          <CheckCircle className="w-5 h-5 text-green-500" />
+                        ) : (
+                          <XCircle className="w-5 h-5 text-amber-500" />
+                        )}
+                        <div>
+                          <p className="text-sm font-bold">{domain.domain}</p>
+                          <p className="text-xs text-neutral-500">
+                            {domain.is_verified ? 'Verified' : 'Pending verification'}
+                          </p>
                         </div>
-                        <h4 className="text-2xl font-black italic tracking-tighter">Premium Domain</h4>
+                      </div>
+                      <button
+                        onClick={() => deleteDomain(domain.id)}
+                        className="p-2 hover:bg-red-500/10 text-red-500 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
-                    <p className="text-indigo-100 font-medium mb-8 max-w-sm italic">
-                        Free users are limited to .profolio subdomains. Upgrade to Pro to connect your own high-conversion domain.
-                    </p>
-                    <div className="flex justify-start">
-                        <DashboardButton variant="secondary" icon={Plus} className="bg-white text-indigo-500 hover:bg-neutral-100">
-                            Upgrade & Connect
-                        </DashboardButton>
-                    </div>
+                  ))}
                 </div>
-                <div className="absolute top-0 right-0 p-8 opacity-10">
-                    <Globe className="w-48 h-48 rotate-12" />
-                </div>
-            </DashboardCard>
+              )}
+
+              <DashboardButton 
+                variant="outline" 
+                icon={Plus}
+                onClick={() => setIsDomainModalOpen(true)}
+                className="w-full"
+              >
+                Add Custom Domain
+              </DashboardButton>
+            </div>
+          </DashboardCard>
         </DashboardSection>
       </div>
 
-      <DashboardCard padding="small" className="bg-neutral-50 dark:bg-white/5 border-dashed">
-          <div className="flex flex-col md:flex-row items-center gap-6">
-              <div className="w-16 h-16 rounded-2xl bg-white dark:bg-neutral-900 shadow-lg flex items-center justify-center text-neutral-400">
-                  <Info className="w-8 h-8" />
-              </div>
-              <div className="flex-1 text-center md:text-left">
-                  <h4 className="text-lg font-black tracking-tight">Need help with DNS?</h4>
-                  <p className="text-sm text-neutral-500 font-medium italic">Our documentation guide covers everything from A records to CNAME setups for all major providers.</p>
-              </div>
-              <DashboardButton variant="outline" className="h-11 px-8">
-                  Read Docs
-              </DashboardButton>
-          </div>
+      {/* DNS Instructions */}
+      <DashboardCard>
+        <div className="space-y-4">
+          <h3 className="text-lg font-black italic">How to Connect a Custom Domain</h3>
+          <ol className="space-y-3 text-sm text-neutral-600 dark:text-neutral-400 font-medium">
+            <li className="flex gap-3">
+              <span className="font-black text-indigo-500 shrink-0">1.</span>
+              <span>Purchase a domain from a registrar (GoDaddy, Namecheap, Cloudflare, etc.)</span>
+            </li>
+            <li className="flex gap-3">
+              <span className="font-black text-indigo-500 shrink-0">2.</span>
+              <span>Add your domain using the "Add Custom Domain" button above</span>
+            </li>
+            <li className="flex gap-3">
+              <span className="font-black text-indigo-500 shrink-0">3.</span>
+              <span>Add a CNAME record pointing to <code className="px-2 py-1 bg-neutral-100 dark:bg-neutral-800 rounded font-mono text-xs">profolio.pro</code></span>
+            </li>
+            <li className="flex gap-3">
+              <span className="font-black text-indigo-500 shrink-0">4.</span>
+              <span>Wait for DNS propagation (usually 24-48 hours)</span>
+            </li>
+          </ol>
+        </div>
       </DashboardCard>
+
+      {/* Update Slug Modal */}
+      <DashboardModal
+        isOpen={isSlugModalOpen}
+        onClose={() => setIsSlugModalOpen(false)}
+        title="Update Portfolio Slug"
+        description="Change your portfolio URL"
+        icon={Link2}
+      >
+        <form onSubmit={(e) => { e.preventDefault(); handleUpdateSlug(); }} className="space-y-6">
+          <DashboardInput
+            label="New Slug"
+            value={slug}
+            onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+            placeholder="my-portfolio"
+            prefixText="profolio.pro/p/"
+            hint="Only lowercase letters, numbers, and hyphens"
+            required
+          />
+
+          <div className="flex gap-3 pt-4">
+            <DashboardButton type="submit" variant="primary" className="flex-1 h-14">
+              Update Slug
+            </DashboardButton>
+            <DashboardButton type="button" variant="secondary" onClick={() => setIsSlugModalOpen(false)} className="h-14 px-8">
+              Cancel
+            </DashboardButton>
+          </div>
+        </form>
+      </DashboardModal>
+
+      {/* Add Domain Modal */}
+      <DashboardModal
+        isOpen={isDomainModalOpen}
+        onClose={() => setIsDomainModalOpen(false)}
+        title="Add Custom Domain"
+        description="Connect your own domain to this portfolio"
+        icon={Globe}
+      >
+        <form onSubmit={(e) => { e.preventDefault(); handleAddDomain(); }} className="space-y-6">
+          <DashboardInput
+            label="Domain Name"
+            value={newDomain}
+            onChange={(e) => setNewDomain(e.target.value.toLowerCase())}
+            placeholder="example.com"
+            hint="Enter your domain without http:// or www"
+            required
+          />
+
+          <div className="flex gap-3 pt-4">
+            <DashboardButton type="submit" variant="primary" className="flex-1 h-14">
+              Add Domain
+            </DashboardButton>
+            <DashboardButton type="button" variant="secondary" onClick={() => setIsDomainModalOpen(false)} className="h-14 px-8">
+              Cancel
+            </DashboardButton>
+          </div>
+        </form>
+      </DashboardModal>
     </div>
   );
 }
