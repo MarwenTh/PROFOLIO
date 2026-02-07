@@ -19,6 +19,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: { label: "Email", type: "text", placeholder: "you@example.com" },
         password: { label: "Password", type: "password" },
+        rememberMe: { label: "Remember Me", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials.password) {
@@ -49,6 +50,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               email: data.user.email,
               isVerified: data.user.isVerified,
               accessToken: data.token, // Store the backend JWT
+              rememberMe: credentials.rememberMe === "true", // Store rememberMe preference
             };
           }
 
@@ -65,6 +67,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   session: {
     strategy: "jwt",
+    maxAge: 24 * 60 * 60, // Default: 1 day in seconds
   },
   pages: {
     signIn: "/login",
@@ -73,6 +76,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
+        token.rememberMe = (user as any).rememberMe || false;
+        
+        // Set token expiration based on rememberMe
+        const maxAge = (user as any).rememberMe 
+          ? 7 * 24 * 60 * 60 // 7 days in seconds
+          : 24 * 60 * 60; // 1 day in seconds
+        
+        token.exp = Math.floor(Date.now() / 1000) + maxAge;
       }
       
       if (trigger === "update" && session) {

@@ -13,6 +13,7 @@ export default function LoginPage() {
     email: "",
     password: "",
   });
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -43,6 +44,7 @@ export default function LoginPage() {
       const result = await signIn("credentials", {
         email: formData.email,
         password: formData.password,
+        rememberMe: rememberMe,
         redirect: false,
       });
 
@@ -175,6 +177,21 @@ export default function LoginPage() {
                       required
                       className="flex h-11 w-full rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 px-3 py-2 text-sm text-neutral-900 dark:text-white placeholder:text-neutral-500 dark:placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all duration-300 hover:border-neutral-300 dark:hover:border-neutral-700"
                   />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="rememberMe"
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 rounded border-neutral-300 dark:border-neutral-700 text-indigo-600 focus:ring-2 focus:ring-indigo-500/50 bg-neutral-50 dark:bg-neutral-900 transition-all cursor-pointer"
+                    />
+                    <label 
+                      htmlFor="rememberMe" 
+                      className="text-sm font-medium text-neutral-700 dark:text-neutral-400 cursor-pointer select-none"
+                    >
+                      Remember me for 7 days
+                    </label>
                   </div>
                   <button
                   type="submit"
