@@ -1,24 +1,43 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { PageHeader, DashboardCard, DashboardSection, EmptyState } from "@/components/dashboard/Shared";
-import { Users, Mail, TrendingUp, Trash2, Download } from "lucide-react";
+import { Users, Mail, TrendingUp, Trash2, Download, Send, Upload } from "lucide-react";
 import { useSubscribers, useNewsletters } from "@/hooks/useSubscribers";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { Loader } from "@/components/ui/Loader";
+import { useSession } from "next-auth/react";
+import { NewsletterEditor } from "@/components/subscribers/NewsletterEditor";
+import { CSVImportModal } from "@/components/subscribers/CSVImportModal";
 
 export default function SubscribersPage() {
-  const { portfolios, loading: portfoliosLoading } = usePortfolio();
+  const { data: session } = useSession();
+  const { getUserPortfolios } = usePortfolio();
+  const [portfolios, setPortfolios] = useState<any[]>([]);
+  const [portfoliosLoading, setPortfoliosLoading] = useState(true);
   const [selectedPortfolioId, setSelectedPortfolioId] = useState<number | undefined>();
+  const [showNewsletter, setShowNewsletter] = useState(false);
+  const [showCSVImport, setShowCSVImport] = useState(false);
   
-  const { subscribers, loading: subsLoading, removeSubscriber } = useSubscribers(selectedPortfolioId);
+  const { subscribers, loading: subsLoading, removeSubscriber, importSubscribers } = useSubscribers(selectedPortfolioId);
   const { newsletters, loading: newslettersLoading } = useNewsletters(selectedPortfolioId);
 
-  // Set first portfolio as default
+  // Fetch portfolios
   useEffect(() => {
-    if (portfolios.length > 0 && !selectedPortfolioId) {
-      setSelectedPortfolioId(portfolios[0].id);
+    if (session?.user?.id) {
+      setPortfoliosLoading(true);
+      getUserPortfolios(session.user.id).then(res => {
+        if (res.success && res.portfolios) {
+          setPortfolios(res.portfolios);
+          if (res.portfolios.length > 0 && !selectedPortfolioId) {
+            setSelectedPortfolioId(res.portfolios[0].id);
+          }
+        }
+        setPortfoliosLoading(false);
+      }).catch(() => {
+        setPortfoliosLoading(false);
+      });
     }
-  }, [portfolios, selectedPortfolioId]);
+  }, [session?.user?.id]);
 
   const loading = portfoliosLoading || subsLoading || newslettersLoading;
 
@@ -142,6 +161,43 @@ export default function SubscribersPage() {
           </div>
         )}
       </DashboardSection>
+
+      {/* Modals */}
+      <NewsletterEditor
+        isOpen={showNewsletter}
+        onClose={() => setShowNewsletter(false)}
+        portfolioId={selectedPortfolioId}
+        subscriberCount={totalSubscribers}
+      />
+
+      <CSVImportModal
+        isOpen={showCSVImport}
+        onClose={() => setShowCSVImport(false)}
+        portfolioId={selectedPortfolioId}
+        onImport={async (subs) => {
+          await importSubscribers(subs);
+        }}
+      />
+
+      {/* Action Buttons */}
+      <div className="fixed bottom-8 right-8 flex gap-3 z-40">
+        <button
+          onClick={() => setShowCSVImport(true)}
+          disabled={!selectedPortfolioId}
+          className="h-14 px-6 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 hover:scale-105"
+        >
+          <Upload className="w-5 h-5" />
+          Import CSV
+        </button>
+        <button
+          onClick={() => setShowNewsletter(true)}
+          disabled={!selectedPortfolioId || totalSubscribers === 0}
+          className="h-14 px-6 rounded-2xl bg-indigo-500 hover:bg-indigo-600 text-white font-bold shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 hover:scale-105"
+        >
+          <Send className="w-5 h-5" />
+          Send Newsletter
+        </button>
+      </div>
     </div>
   );
 }

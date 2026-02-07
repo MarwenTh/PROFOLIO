@@ -1,15 +1,12 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import { PageHeader, DashboardCard, DashboardBadge, DashboardSection, EmptyState } from "@/components/dashboard/Shared";
-import { ShoppingBag, TrendingUp, DollarSign, Package, Edit, Trash2, Eye, Plus } from "lucide-react";
+import { ShoppingBag, TrendingUp, DollarSign, Package, Edit, Trash2, Eye } from "lucide-react";
 import { useMyCreations } from "@/hooks/useMarketplace";
 import { Loader } from "@/components/ui/Loader";
-import { CreateListingModal } from "@/components/marketplace/CreateListingModal";
 
 export default function CreationsPage() {
   const { items, loading, deleteItem } = useMyCreations();
-  const [showModal, setShowModal] = useState(false);
-  const [editingItem, setEditingItem] = useState<any>(null);
 
   // Calculate stats from items
   const totalSales = items.reduce((acc, item) => acc + (item.total_revenue || 0), 0);
@@ -28,21 +25,6 @@ export default function CreationsPage() {
     purple: "bg-purple-500/10 text-purple-500",
   };
 
-  const handleCreate = () => {
-    setEditingItem(null);
-    setShowModal(true);
-  };
-
-  const handleEdit = (item: any) => {
-    setEditingItem(item);
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setEditingItem(null);
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -58,8 +40,9 @@ export default function CreationsPage() {
         description="Manage your marketplace listings and track sales." 
         action={{
           label: "Create Listing",
-          icon: Plus,
-          onClick: handleCreate
+          onClick: () => {
+            // TODO: Open create listing modal
+          }
         }}
       />
       
@@ -84,7 +67,9 @@ export default function CreationsPage() {
             description="Start selling your templates, themes, or digital products on the marketplace."
             icon={ShoppingBag}
             actionLabel="Create Listing"
-            onAction={handleCreate}
+            onAction={() => {
+              // TODO: Open create listing modal
+            }}
           />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -101,7 +86,7 @@ export default function CreationsPage() {
                 )}
                 <div className="flex items-center justify-between mb-2">
                   <DashboardBadge 
-                    variant={item.status === 'published' ? 'success' : item.status === 'draft' ? 'neutral' : 'warning'}
+                    variant={item.status === 'published' ? 'success' : item.status === 'draft' ? 'neutral' : 'danger'}
                   >
                     {item.status}
                   </DashboardBadge>
@@ -126,10 +111,7 @@ export default function CreationsPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button 
-                    onClick={() => handleEdit(item)}
-                    className="flex-1 h-10 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 font-bold transition-colors flex items-center justify-center gap-2"
-                  >
+                  <button className="flex-1 h-10 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 font-bold transition-colors flex items-center justify-center gap-2">
                     <Edit className="w-4 h-4" />
                     Edit
                   </button>
@@ -145,12 +127,6 @@ export default function CreationsPage() {
           </div>
         )}
       </DashboardSection>
-
-      <CreateListingModal 
-        isOpen={showModal}
-        onClose={handleCloseModal}
-        editingItem={editingItem}
-      />
     </div>
   );
 }

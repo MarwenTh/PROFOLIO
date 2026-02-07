@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import dynamic from "next/dynamic";
 import { 
     PageHeader, 
     DashboardCard, 
@@ -8,28 +9,37 @@ import {
     DashboardSection,
     EmptyState 
 } from "@/components/dashboard/Shared";
-import { Code, Terminal, Plus, Save, Trash2, Eye, EyeOff, Globe } from "lucide-react";
+import { Code, Terminal, Plus, Save, Trash2, Eye, EyeOff, Globe, Clipboard, Image as ImageIcon, Monitor, Loader2 } from "lucide-react";
 import { useCodeSnippets, usePublicSnippets } from "@/hooks/useCode";
+import { useLibrary } from "@/hooks/useLibrary";
 import { Loader } from "@/components/ui/Loader";
+import { toast } from "sonner";
+
+// Dynamically import Monaco to avoid SSR issues
+const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
 const LANGUAGES = [
-  { value: 'javascript', label: 'JavaScript', color: 'bg-yellow-500/10 text-yellow-500' },
-  { value: 'typescript', label: 'TypeScript', color: 'bg-blue-500/10 text-blue-500' },
-  { value: 'python', label: 'Python', color: 'bg-green-500/10 text-green-500' },
-  { value: 'html', label: 'HTML', color: 'bg-orange-500/10 text-orange-500' },
-  { value: 'css', label: 'CSS', color: 'bg-purple-500/10 text-purple-500' },
-  { value: 'json', label: 'JSON', color: 'bg-neutral-500/10 text-neutral-500' },
-  { value: 'sql', label: 'SQL', color: 'bg-indigo-500/10 text-indigo-500' },
+  { value: 'javascript', label: 'JavaScript', color: 'bg-yellow-500/10 text-yellow-500', monacoLang: 'javascript' },
+  { value: 'typescript', label: 'TypeScript', color: 'bg-blue-500/10 text-blue-500', monacoLang: 'typescript' },
+  { value: 'python', label: 'Python', color: 'bg-green-500/10 text-green-500', monacoLang: 'python' },
+  { value: 'html', label: 'HTML', color: 'bg-orange-500/10 text-orange-500', monacoLang: 'html' },
+  { value: 'css', label: 'CSS', color: 'bg-purple-500/10 text-purple-500', monacoLang: 'css' },
+  { value: 'json', label: 'JSON', color: 'bg-neutral-500/10 text-neutral-500', monacoLang: 'json' },
+  { value: 'sql', label: 'SQL', color: 'bg-indigo-500/10 text-indigo-500', monacoLang: 'sql' },
 ];
 
 export default function CustomCodePage() {
   const { snippets, loading, createSnippet, updateSnippet, deleteSnippet } = useCodeSnippets();
+  const { media } = useLibrary();
   const [selectedSnippet, setSelectedSnippet] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState('');
   const [language, setLanguage] = useState('javascript');
   const [code, setCode] = useState('');
   const [isPublic, setIsPublic] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const handleNew = () => {
     setSelectedSnippet(null);
@@ -38,6 +48,22 @@ export default function CustomCodePage() {
     setLanguage('javascript');
     setCode('');
     setIsPublic(false);
+    setShowPreview(false);
+  };
+
+  const handleLanguageChange = (newLang: string) => {
+    setLanguage(newLang);
+    
+    // Auto-populate with template for HTML
+    if (newLang === 'html' && !code) {
+      setCode(`<h1>Hello World!</h1>
+
+<button onclick="alert('Hello!')">Click Me!</button>
+
+<div style="margin-top: 20px;">
+  <input type="text" placeholder="Enter your name..." />
+</div>`);
+    }
   };
 
   const handleEdit = (snippet: any) => {
@@ -47,19 +73,25 @@ export default function CustomCodePage() {
     setLanguage(snippet.language);
     setCode(snippet.code);
     setIsPublic(snippet.is_public);
+    setShowPreview(false);
   };
 
   const handleSave = async () => {
+    setSaving(true);
     try {
       if (selectedSnippet) {
-        await updateSnippet(selectedSnippet.id, { title, language, code, isPublic });
+        await updateSnippet(selectedSnippet.id, { title, language, code, is_public: isPublic });
+        toast.success('Snippet updated!');
       } else {
-        await createSnippet({ title, language, code, isPublic });
+        await createSnippet({ title, language, code, is_public: isPublic });
+        toast.success('Snippet created!');
       }
       setIsEditing(false);
       setSelectedSnippet(null);
     } catch (error) {
-      console.error('Error saving snippet:', error);
+      toast.error('Failed to save snippet');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -71,6 +103,34 @@ export default function CustomCodePage() {
         setIsEditing(false);
       }
     }
+  };
+
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      setCode(text);
+      toast.success('Code pasted from clipboard!');
+    } catch (err) {
+      toast.error('Failed to read clipboard');
+    }
+  };
+
+  const insertFromLibrary = (imageUrl: string) => {
+    const insertText = language === 'html' 
+      ? `<img src="${imageUrl}" alt="Image" />`
+      : language === 'css'
+      ? `background-image: url('${imageUrl}');`
+      : language === 'markdown'
+      ? `![Image](${imageUrl})`
+      : `"${imageUrl}"`;
+    
+    setCode(code + '\n' + insertText);
+    setShowLibrary(false);
+    toast.success('Image URL inserted!');
+  };
+
+  const getMonacoLanguage = () => {
+    return LANGUAGES.find(l => l.value === language)?.monacoLang || 'javascript';
   };
 
   if (loading) {
@@ -152,7 +212,7 @@ export default function CustomCodePage() {
                 <div className="flex gap-2">
                   <select
                     value={language}
-                    onChange={(e) => setLanguage(e.target.value)}
+                    onChange={(e) => handleLanguageChange(e.target.value)}
                     className="px-3 py-1 rounded-lg bg-white/10 text-white border border-white/10 text-sm font-bold"
                   >
                     {LANGUAGES.map(lang => (
@@ -172,24 +232,157 @@ export default function CustomCodePage() {
                     {isPublic ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                     {isPublic ? 'Public' : 'Private'}
                   </button>
+                  <button
+                    onClick={() => setShowPreview(!showPreview)}
+                    className={`px-3 py-1 rounded-lg text-sm font-bold flex items-center gap-2 ${
+                      showPreview
+                        ? 'bg-indigo-500/20 text-indigo-500 border border-indigo-500/30'
+                        : 'bg-white/10 text-white border border-white/10'
+                    }`}
+                  >
+                    <Monitor className="w-4 h-4" />
+                    Preview
+                  </button>
                 </div>
               </div>
-              <div className="bg-black/40 p-6">
-                <textarea
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  placeholder="// Write your code here..."
-                  className="w-full h-[500px] bg-transparent text-neutral-300 font-mono text-sm leading-relaxed outline-none resize-none"
-                  spellCheck={false}
-                />
+              
+              {/* Toolbar */}
+              <div className="px-6 py-3 bg-white/5 border-b border-white/5 flex gap-2">
+                <button
+                  onClick={handlePaste}
+                  className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center gap-2 transition-colors"
+                >
+                  <Clipboard className="w-3.5 h-3.5" />
+                  Paste
+                </button>
+                <button
+                  onClick={() => setShowLibrary(!showLibrary)}
+                  className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center gap-2 transition-colors"
+                >
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  Library
+                </button>
               </div>
+
+              {/* Library Modal */}
+              {showLibrary && (
+                <div className="px-6 py-4 bg-black/40 border-b border-white/5">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-bold text-white">Insert from Library</h4>
+                    <button onClick={() => setShowLibrary(false)} className="text-white/50 hover:text-white">✕</button>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto">
+                    {media.slice(0, 8).map((item: any) => (
+                      <button
+                        key={item.id}
+                        onClick={() => insertFromLibrary(item.url)}
+                        className="aspect-square rounded-lg overflow-hidden border border-white/10 hover:border-indigo-500/50 transition-colors"
+                      >
+                        <img src={item.url} alt={item.filename} className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 lg:grid-cols-2">
+                {/* Monaco Editor */}
+                <div className={`bg-black/40 ${showPreview ? '' : 'lg:col-span-2'}`}>
+                  <MonacoEditor
+                    height="500px"
+                    language={getMonacoLanguage()}
+                    theme="vs-dark"
+                    value={code}
+                    onChange={(value: string | undefined) => setCode(value || '')}
+                    options={{
+                      minimap: { enabled: false },
+                      fontSize: 14,
+                      lineNumbers: 'on',
+                      scrollBeyondLastLine: false,
+                      automaticLayout: true,
+                      tabSize: 2,
+                      wordWrap: 'on',
+                    }}
+                  />
+                </div>
+
+                {/* Preview */}
+                {showPreview && (
+                  <div className="bg-white dark:bg-neutral-800 p-6 border-l border-white/5 overflow-auto">
+                    <div className="mb-2 text-xs font-bold text-neutral-500 uppercase tracking-widest">Preview</div>
+                    {language === 'html' ? (
+                      <div className="w-full h-[450px] border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white overflow-auto">
+                        <style>{`
+                          .html-preview * {
+                            margin: 0;
+                            padding: 0;
+                            box-sizing: border-box;
+                          }
+                          .html-preview {
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                            padding: 20px;
+                            background: white;
+                            min-height: 100%;
+                          }
+                          .html-preview button {
+                            padding: 10px 20px;
+                            font-size: 14px;
+                            border-radius: 8px;
+                            border: none;
+                            background: #6366f1;
+                            color: white;
+                            cursor: pointer;
+                            font-weight: 600;
+                            margin: 5px;
+                          }
+                          .html-preview button:hover {
+                            background: #4f46e5;
+                          }
+                          .html-preview input,
+                          .html-preview textarea {
+                            padding: 8px 12px;
+                            border: 1px solid #e5e7eb;
+                            border-radius: 6px;
+                            font-size: 14px;
+                            margin: 5px;
+                          }
+                          .html-preview input:focus,
+                          .html-preview textarea:focus {
+                            outline: none;
+                            border-color: #6366f1;
+                          }
+                          .html-preview h1, .html-preview h2, .html-preview h3 {
+                            margin: 10px 0;
+                          }
+                          .html-preview p {
+                            margin: 8px 0;
+                          }
+                          .html-preview div {
+                            margin: 5px 0;
+                          }
+                        `}</style>
+                        <div 
+                          className="html-preview"
+                          dangerouslySetInnerHTML={{ __html: code }}
+                        />
+                      </div>
+                    ) : (
+                      <pre className="w-full h-[450px] overflow-auto bg-neutral-900 text-neutral-300 p-4 rounded-lg font-mono text-sm">
+                        <code>{code}</code>
+                      </pre>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <div className="p-6 flex justify-between gap-3 bg-white/5">
                 <button
                   onClick={() => {
                     setIsEditing(false);
                     setSelectedSnippet(null);
                   }}
-                  className="px-6 h-12 rounded-xl bg-white/10 text-white hover:bg-white/20 font-bold transition-colors"
+                  disabled={saving}
+                  className="px-6 h-12 rounded-xl bg-white/10 text-white hover:bg-white/20 font-bold transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -197,7 +390,8 @@ export default function CustomCodePage() {
                   {selectedSnippet && (
                     <button
                       onClick={() => handleDelete(selectedSnippet.id)}
-                      className="px-6 h-12 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold transition-colors flex items-center gap-2"
+                      disabled={saving}
+                      className="px-6 h-12 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold transition-colors flex items-center gap-2 disabled:opacity-50"
                     >
                       <Trash2 className="w-4 h-4" />
                       Delete
@@ -205,10 +399,20 @@ export default function CustomCodePage() {
                   )}
                   <button
                     onClick={handleSave}
-                    className="px-6 h-12 rounded-xl bg-white text-black hover:bg-neutral-200 font-bold transition-colors flex items-center gap-2"
+                    disabled={saving}
+                    className="px-6 h-12 rounded-xl bg-white text-black hover:bg-neutral-200 font-bold transition-colors flex items-center gap-2 disabled:opacity-50"
                   >
-                    <Save className="w-4 h-4" />
-                    Save Snippet
+                    {saving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        Save Snippet
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

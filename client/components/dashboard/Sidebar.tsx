@@ -42,9 +42,9 @@ const sidebarLinks = [
   { name: "AI Assistant", href: "/dashboard/ai", icon: Wand2, category: "Main" },
   
   { name: "Store Templates", href: "/dashboard/templates", icon: ShoppingBag, category: "Marketplace" },
-  { name: "My Creations", href: "/dashboard/marketplace/creations", icon: Palette, category: "Marketplace" },
-  { name: "Purchases", href: "/dashboard/marketplace/purchases", icon: Layers, category: "Marketplace" },
-  { name: "Saved", href: "/dashboard/marketplace/saved", icon: Heart, category: "Marketplace" },
+  { name: "My Creations", href: "/dashboard/creations", icon: Palette, category: "Marketplace" },
+  { name: "Purchases", href: "/dashboard/purchases", icon: Layers, category: "Marketplace" },
+  { name: "Saved", href: "/dashboard/saved", icon: Heart, category: "Marketplace" },
   { name: "Store Stats", href: "/dashboard/marketplace/analytics", icon: LineChart, category: "Marketplace" },
 
   { name: "Portfolios", href: "/dashboard/projects", icon: FolderOpen, category: "Manage" },

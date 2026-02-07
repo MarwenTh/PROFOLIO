@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@auth/pg-adapter": "^1.11.1",
+    "@monaco-editor/react": "^4.7.0",
     "axios": "^1.13.4",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",

@@ -10,17 +10,15 @@ export default function ReferralsPage() {
   const { referrals, stats, referralCode, loading } = useReferrals();
   const [copied, setCopied] = useState(false);
 
-  const referralLink = `https://profolio.com/ref/${referralCode}`;
+  const referralLink = `https://profolio.com/ref/${referralCode || 'loading'}`;
   
-  const conversionRate = stats 
-    ? stats.total_referrals > 0 
-      ? ((stats.completed_referrals / stats.total_referrals) * 100).toFixed(1) 
-      : "0"
+  const conversionRate = stats && stats.total_referrals > 0
+    ? ((stats.completed_referrals / stats.total_referrals) * 100).toFixed(1)
     : "0";
 
   const statsData = [
-    { label: "Total Referrals", value: stats?.total_referrals.toString() || "0", icon: Users, color: "indigo" },
-    { label: "Earnings", value: `$${stats?.total_rewards.toFixed(2) || "0.00"}`, icon: DollarSign, color: "emerald" },
+    { label: "Total Referrals", value: stats?.total_referrals?.toString() || "0", icon: Users, color: "indigo" },
+    { label: "Earnings", value: `$${(Number(stats?.total_rewards) || 0).toFixed(2)}`, icon: DollarSign, color: "emerald" },
     { label: "Conversion Rate", value: `${conversionRate}%`, icon: TrendingUp, color: "purple" },
   ];
 
@@ -132,7 +130,7 @@ export default function ReferralsPage() {
                       </span>
                     </td>
                     <td className="py-4 px-4 font-bold text-emerald-500">
-                      ${referral.reward_amount.toFixed(2)}
+                      ${(Number(referral.reward_amount) || 0).toFixed(2)}
                     </td>
                     <td className="py-4 px-4 text-sm text-neutral-600 dark:text-neutral-400">
                       {new Date(referral.created_at).toLocaleDateString()}
