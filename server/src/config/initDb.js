@@ -173,6 +173,32 @@ const initDb = async () => {
     );
   `;
 
+  const createPortfolioViewsTable = `
+    CREATE TABLE IF NOT EXISTS portfolio_views (
+      id SERIAL PRIMARY KEY,
+      portfolio_id INTEGER REFERENCES portfolios(id) ON DELETE CASCADE,
+      visitor_ip VARCHAR(45),
+      user_agent TEXT,
+      referrer TEXT,
+      country VARCHAR(100),
+      city VARCHAR(100),
+      viewed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
+  const createPortfolioStatsTable = `
+    CREATE TABLE IF NOT EXISTS portfolio_stats (
+      id SERIAL PRIMARY KEY,
+      portfolio_id INTEGER REFERENCES portfolios(id) ON DELETE CASCADE,
+      date DATE NOT NULL,
+      total_views INTEGER DEFAULT 0,
+      unique_visitors INTEGER DEFAULT 0,
+      avg_time_on_page INTEGER DEFAULT 0,
+      bounce_rate DECIMAL(5,2) DEFAULT 0,
+      UNIQUE(portfolio_id, date)
+    );
+  `;
+
   try {
     await pool.query(createUsersTable);
     console.log('✅ Users table initialized');
@@ -186,6 +212,8 @@ const initDb = async () => {
     await pool.query(createProjectsTable);
     await pool.query(createTemplatesTable);
     await pool.query(createUserTemplatesTable);
+    await pool.query(createPortfolioViewsTable);
+    await pool.query(createPortfolioStatsTable);
     console.log('✅ All database tables initialized successfully');
   } catch (err) {
     console.error('❌ Error initializing database:', err);
