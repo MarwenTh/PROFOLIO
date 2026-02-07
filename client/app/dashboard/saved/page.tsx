@@ -54,14 +54,14 @@ export default function SavedPage() {
                   <span className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-500">
                     {item.type}
                   </span>
-                  <span className="text-lg font-bold">${item.price.toFixed(2)}</span>
+                  <span className="text-lg font-bold">${Number(item.price).toFixed(2)}</span>
                 </div>
                 <h3 className="text-lg font-black italic mb-2">{item.title}</h3>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4 line-clamp-2">
                   {item.description || 'No description'}
                 </p>
                 <div className="flex items-center gap-2 text-xs text-neutral-500 mb-4">
-                  <span>⭐ {item.rating.toFixed(1)}</span>
+                  <span>⭐ {Number(item.rating).toFixed(1)}</span>
                   <span>•</span>
                   <span>{item.downloads} downloads</span>
                 </div>

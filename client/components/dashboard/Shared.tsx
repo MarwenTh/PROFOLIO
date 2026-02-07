@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, HTMLMotionProps } from "framer-motion";
 import { X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -55,14 +55,14 @@ export function PageHeader({ title, description, action, children }: PageHeaderP
  * DashboardCard Component
  * Reusable card wrapper with consistent styling
  */
-interface DashboardCardProps {
+interface DashboardCardProps extends HTMLMotionProps<"div"> {
   children: React.ReactNode;
   className?: string;
   hoverable?: boolean;
   padding?: "none" | "small" | "medium" | "large";
 }
 
-export function DashboardCard({ children, className, hoverable = true, padding = "medium" }: DashboardCardProps) {
+export function DashboardCard({ children, className, hoverable = true, padding = "medium", ...props }: DashboardCardProps) {
   const paddingStyles = {
     none: "p-0",
     small: "p-4 md:p-6",
@@ -78,6 +78,7 @@ export function DashboardCard({ children, className, hoverable = true, padding =
         paddingStyles[padding],
         className
       )}
+      {...props}
     >
       {hoverable && (
         <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent dark:from-white/5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />

@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { PageHeader, DashboardCard, DashboardBadge, DashboardSection, EmptyState } from "@/components/dashboard/Shared";
 import { ShoppingBag, TrendingUp, DollarSign, Package, Edit, Trash2, Eye, Plus } from "lucide-react";
 import { useMyCreations } from "@/hooks/useMarketplace";
@@ -7,12 +8,13 @@ import { Loader } from "@/components/ui/Loader";
 import { CreateListingModal } from "@/components/marketplace/CreateListingModal";
 
 export default function CreationsPage() {
+  const router = useRouter();
   const { items, loading, deleteItem } = useMyCreations();
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
 
   // Calculate stats from items
-  const totalSales = items.reduce((acc, item) => acc + (item.total_revenue || 0), 0);
+  const totalSales = items.reduce((acc, item) => acc + Number(item.total_revenue || 0), 0);
   const activeListings = items.filter(item => item.status === 'published').length;
   const totalViews = items.reduce((acc, item) => acc + (item.downloads || 0), 0);
 
@@ -89,13 +91,17 @@ export default function CreationsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {items.map((item) => (
-              <DashboardCard key={item.id}>
+              <DashboardCard 
+                key={item.id}
+                className="cursor-pointer hover:border-indigo-500 transition-all group"
+                onClick={() => router.push(`/marketplace/${item.id}`)}
+              >
                 {item.preview_images && item.preview_images.length > 0 && (
                   <div className="w-full h-48 bg-neutral-100 dark:bg-neutral-800 rounded-xl mb-4 overflow-hidden">
                     <img 
                       src={item.preview_images[0]} 
                       alt={item.title} 
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>
                 )}
@@ -105,7 +111,7 @@ export default function CreationsPage() {
                   >
                     {item.status}
                   </DashboardBadge>
-                  <span className="text-lg font-bold">${item.price.toFixed(2)}</span>
+                  <span className="text-lg font-bold">${Number(item.price).toFixed(2)}</span>
                 </div>
                 <h3 className="text-lg font-black italic mb-2">{item.title}</h3>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4 line-clamp-2">
@@ -117,24 +123,30 @@ export default function CreationsPage() {
                     <div>Downloads</div>
                   </div>
                   <div>
-                    <div className="font-bold text-neutral-900 dark:text-white">⭐ {item.rating.toFixed(1)}</div>
+                    <div className="font-bold text-neutral-900 dark:text-white">⭐ {Number(item.rating).toFixed(1)}</div>
                     <div>Rating</div>
                   </div>
                   <div>
-                    <div className="font-bold text-emerald-500">${(item.total_revenue || 0).toFixed(0)}</div>
+                    <div className="font-bold text-emerald-500">${Number(item.total_revenue || 0).toFixed(0)}</div>
                     <div>Revenue</div>
                   </div>
                 </div>
                 <div className="flex gap-2">
                   <button 
-                    onClick={() => handleEdit(item)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(item);
+                    }}
                     className="flex-1 h-10 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 font-bold transition-colors flex items-center justify-center gap-2"
                   >
                     <Edit className="w-4 h-4" />
                     Edit
                   </button>
                   <button 
-                    onClick={() => deleteItem(item.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteItem(item.id);
+                    }}
                     className="h-10 px-4 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold transition-colors flex items-center justify-center"
                   >
                     <Trash2 className="w-4 h-4" />

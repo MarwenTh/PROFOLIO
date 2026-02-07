@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { 
@@ -11,13 +11,61 @@ import {
     Zap,
     Search,
     ChevronRight,
-    Globe
+    Globe,
+    Filter,
+    Star,
+    Download,
+    Heart,
+    DollarSign,
+    TrendingUp
 } from "lucide-react";
 import Link from "next/link";
 import { DashboardButton, DashboardCard, DashboardBadge } from "@/components/dashboard/Shared";
-import Image from "next/image";
+import { useMarketplace, useSavedItems } from "@/hooks/useMarketplace";
+import { Loader } from "@/components/ui/Loader";
+import { toast } from "sonner";
 
 export default function MarketplacePage() {
+  const { items, loading } = useMarketplace();
+  const { items: savedItems, toggleSave } = useSavedItems();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [priceRange, setPriceRange] = useState<'all' | 'free' | 'paid'>('all');
+  const [sortBy, setSortBy] = useState<'newest' | 'popular' | 'price'>('newest');
+
+  // Filter items
+  const filteredItems = items.filter(item => {
+    const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (item.description || '').toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = !selectedType || item.type === selectedType;
+    const matchesPrice = priceRange === 'all' || 
+                        (priceRange === 'free' && item.price === 0) ||
+                        (priceRange === 'paid' && item.price > 0);
+    return matchesSearch && matchesType && matchesPrice && item.status === 'published';
+  });
+
+  // Sort items
+  const sortedItems = [...filteredItems].sort((a, b) => {
+    if (sortBy === 'newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    if (sortBy === 'popular') return (b.downloads || 0) - (a.downloads || 0);
+    if (sortBy === 'price') return b.price - a.price;
+    return 0;
+  });
+
+  const handleSaveToggle = async (itemId: number) => {
+    try {
+      await toggleSave(itemId);
+    } catch (error) {
+      // Error handled in hook
+    }
+  };
+
+  const categories = [
+    { value: 'template', label: 'Templates', icon: Layout, color: 'indigo', count: items.filter(i => i.type === 'template').length },
+    { value: 'component', label: 'Components', icon: Zap, color: 'emerald', count: items.filter(i => i.type === 'component').length },
+    { value: 'theme', label: 'Themes', icon: Palette, color: 'amber', count: items.filter(i => i.type === 'theme').length },
+  ];
+
   return (
     <div className="min-h-screen bg-[#fbfbfc] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50 transition-colors duration-500">
       {/* Background Decorative Elements */}
@@ -35,8 +83,10 @@ export default function MarketplacePage() {
             <span className="text-2xl font-black tracking-tighter italic">PROFOLIO <span className="text-indigo-500">MARKET</span></span>
         </Link>
         <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="text-sm font-bold text-neutral-500 hover:text-black dark:hover:text-white transition-colors">Back to Dashboard</Link>
-            <DashboardButton variant="primary" className="h-11 px-8 rounded-xl shadow-xl">List Item</DashboardButton>
+            <Link href="/dashboard" className="text-sm font-bold text-neutral-500 hover:text-black dark:hover:text-white transition-colors">Dashboard</Link>
+            <Link href="/dashboard/creations">
+              <DashboardButton variant="primary" className="h-11 px-8 rounded-xl shadow-xl">List Item</DashboardButton>
+            </Link>
         </div>
       </nav>
 
@@ -49,9 +99,9 @@ export default function MarketplacePage() {
         >
             <DashboardBadge variant="info" className="mb-6 h-8 px-4 flex items-center gap-2 border-indigo-500/20 bg-indigo-500/5 text-indigo-500">
                 <Sparkles className="w-3.5 h-3.5" />
-                The Future of Personal Branding
+                {items.length} Premium Items Available
             </DashboardBadge>
-            <h1 className="text-6xl md:text-8xl font-black tracking-[ -0.05em] italic mb-8 leading-[0.9]">
+            <h1 className="text-6xl md:text-8xl font-black tracking-[-0.05em] italic mb-8 leading-[0.9]">
                 CRAFT YOUR <br /> 
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-indigo-400 to-emerald-400">DIGITAL IDENTITY</span>
             </h1>
@@ -64,76 +114,178 @@ export default function MarketplacePage() {
                     <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
                     <input 
                         type="text" 
-                        placeholder="Search for templates, fonts, assets..."
+                        placeholder="Search for templates, components..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full h-16 pl-14 pr-6 rounded-[2rem] bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/10 shadow-2xl outline-none focus:border-indigo-500/50 transition-all font-bold italic"
                     />
                 </div>
-                <DashboardButton variant="secondary" className="h-16 px-10 rounded-[2rem] bg-indigo-500 hover:bg-indigo-600 text-white shadow-2xl shadow-indigo-500/20">
-                    Explore All <ArrowRight className="w-5 h-5 ml-2" />
-                </DashboardButton>
             </div>
         </motion.div>
       </section>
 
-      {/* Featured Categories */}
-      <section className="relative z-10 py-20 px-8 md:px-16 container mx-auto">
-        <div className="flex items-center justify-between mb-12">
-            <h2 className="text-4xl font-black italic tracking-tighter">Bento Categories</h2>
-            <button className="flex items-center gap-2 text-sm font-black uppercase text-indigo-500 hover:underline">View All &rarr;</button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {[
-                { title: "Premium Templates", desc: "Elite-grade website designs", icon: Layout, color: "bg-indigo-500/10 text-indigo-500", count: "128 Items" },
-                { title: "Custom Components", desc: "Interactive UI modules", icon: Zap, color: "bg-emerald-500/10 text-emerald-500", count: "450 Items" },
-                { title: "Brand Assets", desc: "Logos, fonts, and colors", icon: Palette, color: "bg-amber-500/10 text-amber-500", count: "89 Items" },
-                { title: "Magic Add-ons", desc: "AI-powered web extensions", icon: Sparkles, color: "bg-purple-500/10 text-purple-500", count: "32 Items" }
-            ].map((cat, i) => (
-                <motion.div
-                    key={cat.title}
-                    whileHover={{ y: -8 }}
-                    className="p-8 rounded-[3rem] bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/5 shadow-xl group cursor-pointer"
-                >
-                    <div className={cn("w-16 h-16 rounded-[1.5rem] flex items-center justify-center mb-6 transition-transform group-hover:scale-110 group-hover:rotate-3", cat.color)}>
-                        <cat.icon className="w-8 h-8" />
-                    </div>
-                    <h3 className="text-2xl font-black italic tracking-tighter mb-2 leading-none">{cat.title}</h3>
-                    <p className="text-sm text-neutral-500 font-medium mb-6 italic">{cat.desc}</p>
-                    <div className="flex items-center justify-between mt-auto">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400">{cat.count}</span>
-                        <ChevronRight className="w-4 h-4 text-neutral-300 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                </motion.div>
+      {/* Filters & Categories */}
+      <section className="relative z-10 py-12 px-8 md:px-16 container mx-auto">
+        <div className="flex flex-col lg:flex-row gap-6 mb-12">
+          {/* Category Filters */}
+          <div className="flex gap-3 flex-wrap">
+            <button
+              onClick={() => setSelectedType(null)}
+              className={`px-6 py-3 rounded-2xl font-bold text-sm transition-all ${
+                selectedType === null
+                  ? 'bg-indigo-500 text-white shadow-lg'
+                  : 'bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:border-indigo-500/50'
+              }`}
+            >
+              All Items ({items.length})
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.value}
+                onClick={() => setSelectedType(cat.value)}
+                className={`px-6 py-3 rounded-2xl font-bold text-sm transition-all flex items-center gap-2 ${
+                  selectedType === cat.value
+                    ? 'bg-indigo-500 text-white shadow-lg'
+                    : 'bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:border-indigo-500/50'
+                }`}
+              >
+                <cat.icon className="w-4 h-4" />
+                {cat.label} ({cat.count})
+              </button>
             ))}
+          </div>
+
+          {/* Price & Sort Filters */}
+          <div className="flex gap-3 ml-auto">
+            <select
+              value={priceRange}
+              onChange={(e) => setPriceRange(e.target.value as any)}
+              className="px-4 py-3 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 font-bold text-sm"
+            >
+              <option value="all">All Prices</option>
+              <option value="free">Free</option>
+              <option value="paid">Paid</option>
+            </select>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="px-4 py-3 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 font-bold text-sm"
+            >
+              <option value="newest">Newest</option>
+              <option value="popular">Most Popular</option>
+              <option value="price">Highest Price</option>
+            </select>
+          </div>
         </div>
       </section>
 
-      {/* Promoted Section */}
-      <section className="relative z-10 py-20 px-8 md:px-16 container mx-auto mb-40">
-        <DashboardCard className="bg-neutral-900 dark:bg-white text-white dark:text-black border-none overflow-hidden" padding="none">
-            <div className="grid grid-cols-1 lg:grid-cols-2">
-                <div className="p-16 md:p-24 flex flex-col justify-center">
-                    <DashboardBadge variant="success" className="mb-8 w-fit border-emerald-500/20 bg-emerald-500/10 text-emerald-500">Weekly Top Feature</DashboardBadge>
-                    <h2 className="text-5xl md:text-7xl font-black italic tracking-[ -0.05em] mb-8 leading-[0.9]">
-                        LUXURY PORTFOLIO <br /> <span className="opacity-40">EDITION 2024</span>
-                    </h2>
-                    <p className="text-lg md:text-xl text-neutral-400 dark:text-neutral-500 font-medium mb-12 italic max-w-sm">
-                        Experience the most advanced personal branding template ever built. Fully optimized for dark mode & SEO.
-                    </p>
-                    <div className="flex gap-4">
-                        <DashboardButton variant="secondary" className="bg-indigo-500 text-white h-14 px-10 rounded-2xl">Own Now</DashboardButton>
-                        <DashboardButton variant="ghost" className="h-14 px-10 text-white dark:text-black hover:bg-white/10 dark:hover:bg-black/5">Demo Live</DashboardButton>
+      {/* Marketplace Items Grid */}
+      <section className="relative z-10 pb-20 px-8 md:px-16 container mx-auto">
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader size="lg" />
+          </div>
+        ) : sortedItems.length === 0 ? (
+          <div className="text-center py-20">
+            <ShoppingBag className="w-16 h-16 mx-auto mb-4 text-neutral-400" />
+            <h3 className="text-2xl font-black italic mb-2">No items found</h3>
+            <p className="text-neutral-500">Try adjusting your filters or search query</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {sortedItems.map((item, i) => {
+              const isSaved = savedItems.some(saved => saved.id === item.id);
+              
+              return (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="group"
+                >
+                  <DashboardCard className="overflow-hidden h-full flex flex-col" padding="none">
+                    {/* Item Preview */}
+                    <div className="relative aspect-[4/3] bg-gradient-to-br from-neutral-100 to-neutral-200 dark:from-neutral-800 dark:to-neutral-900 overflow-hidden">
+                      {item.preview_images && item.preview_images[0] ? (
+                        <img 
+                          src={item.preview_images[0]} 
+                          alt={item.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Layout className="w-16 h-16 text-neutral-400" />
+                        </div>
+                      )}
+                      
+                      {/* Overlay Actions */}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
+                        <button
+                          onClick={() => handleSaveToggle(item.id)}
+                          className={`w-12 h-12 rounded-full ${
+                            isSaved ? 'bg-red-500' : 'bg-white'
+                          } flex items-center justify-center shadow-xl hover:scale-110 transition-transform`}
+                        >
+                          <Heart className={`w-5 h-5 ${isSaved ? 'text-white fill-white' : 'text-neutral-900'}`} />
+                        </button>
+                        <Link href={`/marketplace/${item.id}`}>
+                          <button className="w-12 h-12 rounded-full bg-indigo-500 text-white flex items-center justify-center shadow-xl hover:scale-110 transition-transform">
+                            <ArrowRight className="w-5 h-5" />
+                          </button>
+                        </Link>
+                      </div>
+
+                      {/* Price Badge */}
+                      <div className="absolute top-4 right-4">
+                        <div className="px-4 py-2 rounded-xl bg-white dark:bg-neutral-900 shadow-xl font-black text-sm">
+                          {Number(item.price) === 0 ? 'FREE' : `$${Number(item.price).toFixed(2)}`}
+                        </div>
+                      </div>
+
+                      {/* Type Badge */}
+                      <div className="absolute top-4 left-4">
+                        <div className="px-3 py-1 rounded-lg bg-indigo-500/90 text-white text-xs font-bold uppercase">
+                          {item.type}
+                        </div>
+                      </div>
                     </div>
-                </div>
-                <div className="relative min-h-[400px] bg-neutral-800 dark:bg-neutral-100 p-8 flex items-center justify-center">
-                    {/* Placeholder for a cool asset preview */}
-                    <div className="w-[80%] aspect-[4/3] rounded-3xl bg-neutral-700 dark:bg-neutral-200 shadow-3xl animate-pulse flex items-center justify-center overflow-hidden relative">
-                         <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-transparent" />
-                         <Globe className="w-32 h-32 opacity-10" />
+
+                    {/* Item Info */}
+                    <div className="p-6 flex-1 flex flex-col">
+                      <h3 className="text-xl font-black italic tracking-tight mb-2 line-clamp-1">
+                        {item.title}
+                      </h3>
+                      <p className="text-sm text-neutral-500 mb-4 line-clamp-2 flex-1">
+                        {item.description || ''}
+                      </p>
+
+                      {/* Stats */}
+                      <div className="flex items-center gap-4 text-xs text-neutral-500 mb-4">
+                        <div className="flex items-center gap-1">
+                          <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                          <span className="font-bold">{Number(item.rating).toFixed(1)}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Download className="w-3.5 h-3.5" />
+                          <span className="font-bold">{item.downloads || 0}</span>
+                        </div>
+                      </div>
+
+                      {/* CTA */}
+                      <Link href={`/marketplace/${item.id}`} className="w-full">
+                        <button className="w-full h-12 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-bold transition-colors flex items-center justify-center gap-2">
+                          View Details
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+                      </Link>
                     </div>
-                </div>
-            </div>
-        </DashboardCard>
+                  </DashboardCard>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* Simple Footer */}

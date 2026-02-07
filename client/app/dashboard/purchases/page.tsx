@@ -56,7 +56,7 @@ export default function PurchasesPage() {
                   }`}>
                     {purchase.payment_status}
                   </span>
-                  <span className="text-lg font-bold">${purchase.amount.toFixed(2)}</span>
+                  <span className="text-lg font-bold">${Number(purchase.amount).toFixed(2)}</span>
                 </div>
                 <div className="text-xs text-neutral-500 mb-4">
                   Purchased {new Date(purchase.purchased_at).toLocaleDateString()}
