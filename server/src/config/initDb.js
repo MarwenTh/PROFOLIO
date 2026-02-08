@@ -401,6 +401,17 @@ const initDb = async () => {
     
     await pool.query(createCollectionsTable);
     await pool.query(createCollectionItemsTable);
+
+    const createSearchHistoryTable = `
+      CREATE TABLE IF NOT EXISTS search_history (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        query VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+    await pool.query(createSearchHistoryTable);
+    
     await pool.query(createPortfolioSeoTable);
     await pool.query(createPortfolioDomainsTable);
     await pool.query(createMarketplaceItemsTable);

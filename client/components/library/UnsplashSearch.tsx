@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Download, Plus, ZoomIn, Loader2, Check } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, Download, Plus, ZoomIn, Loader2, Check, Clock, Sparkles } from 'lucide-react';
 import Image from 'next/image';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 import { DashboardButton, DashboardCard } from '@/components/dashboard/Shared';
 import { Loader } from '@/components/ui/Loader';
 import { ImagePreviewModal } from './ImagePreviewModal';
@@ -14,14 +15,35 @@ interface UnsplashSearchProps {
   results: any[];
   loading: boolean;
   media: MediaItem[];
+  history: string[];
+  onFetchHistory: () => void;
 }
 
-export const UnsplashSearch: React.FC<UnsplashSearchProps> = ({ onSearch, onSave, results, loading, media }) => {
+const SUGGESTIONS = [
+  "Minimalist Architecture",
+  "Product Design",
+  "Abstract Texture",
+  "Technology",
+  "Nature Landscapes",
+  "Street Photography"
+];
+
+export const UnsplashSearch: React.FC<UnsplashSearchProps> = ({ 
+  onSearch, 
+  onSave, 
+  results, 
+  loading, 
+  media,
+  history,
+  onFetchHistory
+}) => {
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [page, setPage] = useState(1);
   const [previewPhoto, setPreviewPhoto] = useState<any | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const placeholders = [
     "Search minimalist...",
@@ -31,16 +53,37 @@ export const UnsplashSearch: React.FC<UnsplashSearchProps> = ({ onSearch, onSave
     "Tech startup..."
   ];
 
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
+  useEffect(() => {
+    onFetchHistory();
+    
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [onFetchHistory]);
+
+  const handleSearch = (e?: React.FormEvent) => {
+      if (e) e.preventDefault();
       if (query.trim()) {
           setPage(1);
           onSearch(query, 1);
+          setShowDropdown(false);
       }
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+      setQuery(suggestion);
+      setPage(1);
+      onSearch(suggestion, 1);
+      setShowDropdown(false);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setQuery(e.target.value);
+      if (!showDropdown) setShowDropdown(true);
   };
 
   // Debounce search query
@@ -49,7 +92,7 @@ export const UnsplashSearch: React.FC<UnsplashSearchProps> = ({ onSearch, onSave
       if(query.trim()) {
           setDebouncedQuery(query);
       }
-    }, 800);
+    }, 1200); // Slightly longer for the history/suggestions flow
 
     return () => clearTimeout(timer);
   }, [query]);
@@ -65,7 +108,7 @@ export const UnsplashSearch: React.FC<UnsplashSearchProps> = ({ onSearch, onSave
   const handleLoadMore = () => {
     const nextPage = page + 1;
     setPage(nextPage);
-    onSearch(debouncedQuery || "random", nextPage);
+    onSearch(debouncedQuery || query || "random", nextPage);
   };
 
   const isSaved = (unsplashId: string) => {
@@ -83,16 +126,80 @@ export const UnsplashSearch: React.FC<UnsplashSearchProps> = ({ onSearch, onSave
       }
   };
 
+  const filteredHistory = query.trim() 
+    ? history.filter(h => h.toLowerCase().includes(query.toLowerCase())).slice(0, 5)
+    : history.slice(0, 5);
+
+  const filteredSuggestions = query.trim()
+    ? SUGGESTIONS.filter(s => s.toLowerCase().includes(query.toLowerCase())).slice(0, 5)
+    : SUGGESTIONS;
+
+  const hasMatches = filteredHistory.length > 0 || filteredSuggestions.length > 0;
+
   return (
     <div className="space-y-12 pb-10">
-      <div className="flex justify-end pt-4">
-        <div className="w-full max-w-md">
+      <div className="flex justify-start pt-4 relative z-[60]" ref={dropdownRef}>
+        <div className="w-full max-w-md relative">
             <VanishInput 
                 placeholders={placeholders}
                 onChange={handleInputChange}
                 onSubmit={handleSearch}
                 value={query}
+                onFocus={() => setShowDropdown(true)}
             />
+
+            <AnimatePresence>
+                {showDropdown && hasMatches && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute top-full mt-2 left-0 right-0 bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-white/5 shadow-2xl overflow-hidden p-2 backdrop-blur-xl"
+                    >
+                        {filteredHistory.length > 0 && (
+                            <div className="pb-2">
+                                <div className="px-4 py-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-neutral-400">
+                                    <Clock className="w-3 h-3" />
+                                    {query.trim() ? "Matching Searches" : "Recent Searches"}
+                                </div>
+                                <div className="space-y-1">
+                                    {filteredHistory.map((h, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => handleSuggestionClick(h)}
+                                            className="w-full text-left px-4 py-3 rounded-2xl hover:bg-neutral-100 dark:hover:bg-white/5 text-sm font-bold transition-colors flex items-center justify-between group"
+                                        >
+                                            {h}
+                                            <Search className="w-3 h-3 opacity-0 group-hover:opacity-40" />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {filteredSuggestions.length > 0 && (
+                            <div className={cn("pt-2", filteredHistory.length > 0 && "border-t border-neutral-100 dark:border-white/5")}>
+                                <div className="px-4 py-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-neutral-400">
+                                    <Sparkles className="w-3 h-3" />
+                                    Suggestions
+                                </div>
+                                <div className="grid grid-cols-1 gap-1">
+                                    {filteredSuggestions.map((s, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => handleSuggestionClick(s)}
+                                            className="w-full text-left px-4 py-3 rounded-2xl hover:bg-neutral-100 dark:hover:bg-white/5 text-sm font-bold transition-colors flex items-center justify-between group"
+                                        >
+                                            {s}
+                                            <Plus className="w-3 h-3 opacity-0 group-hover:opacity-40" />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
       </div>
 

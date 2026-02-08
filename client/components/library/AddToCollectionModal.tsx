@@ -10,9 +10,10 @@ interface AddToCollectionModalProps {
   onClose: () => void;
   mediaId: number | null;
   collections: Collection[];
+  onSuccess?: () => void;
 }
 
-export const AddToCollectionModal: React.FC<AddToCollectionModalProps> = ({ isOpen, onClose, mediaId, collections }) => {
+export const AddToCollectionModal: React.FC<AddToCollectionModalProps> = ({ isOpen, onClose, mediaId, collections, onSuccess }) => {
   const [loadingId, setLoadingId] = useState<number | null>(null);
 
   const handleAddToCollection = async (collectionId: number) => {
@@ -23,6 +24,7 @@ export const AddToCollectionModal: React.FC<AddToCollectionModalProps> = ({ isOp
         mediaId
       });
       toast.success('Added to collection');
+      if (onSuccess) onSuccess();
       onClose();
     } catch (error) {
       console.error('Error adding to collection:', error);

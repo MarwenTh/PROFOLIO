@@ -9,7 +9,11 @@ const {
   getCollections,
   addToCollection,
   removeFromCollection,
-  getCollectionItems
+  getCollectionItems,
+  getSearchHistory,
+  saveSearchHistory,
+  updateCollection,
+  deleteCollection
 } = require('../controllers/libraryController');
 const authMiddleware = require('../middleware/authMiddleware');
 
@@ -28,7 +32,13 @@ router.get('/unsplash/search', searchUnsplash);
 router.get('/collections', getCollections);
 router.post('/collections', createCollection);
 router.get('/collections/:id', getCollectionItems);
+router.patch('/collections/:id', updateCollection);
+router.delete('/collections/:id', deleteCollection);
 router.post('/collections/:id/items', addToCollection);
 router.delete('/collections/:id/items/:mediaId', removeFromCollection);
+
+// Search History
+router.get('/search-history', getSearchHistory);
+router.post('/search-history', saveSearchHistory);
 
 module.exports = router;

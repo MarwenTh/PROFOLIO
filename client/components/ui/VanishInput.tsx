@@ -8,12 +8,16 @@ export function VanishInput({
   placeholders,
   onChange,
   onSubmit, 
-  value
+  value,
+  onFocus,
+  onBlur
 }: {
   placeholders: string[];
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   value: string;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }) {
   const [currentPlaceholder, setCurrentPlaceholder] = useState(0);
   const [focused, setFocused] = useState(false);
@@ -185,8 +189,14 @@ export function VanishInput({
             onChange(e);
           }
         }}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
+        onFocus={() => {
+          setFocused(true);
+          if (onFocus) onFocus();
+        }}
+        onBlur={() => {
+          setFocused(false);
+          if (onBlur) onBlur();
+        }}
         ref={inputRef}
         value={value}
         type="text"

@@ -252,6 +252,93 @@ const getCollectionItems = async (req, res) => {
     }
   };
 
+/**
+ * Get Search History
+ */
+const getSearchHistory = async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const result = await pool.query(
+      'SELECT query FROM search_history WHERE user_id = $1 GROUP BY query ORDER BY MAX(created_at) DESC LIMIT 10',
+      [userId]
+    );
+    res.json({ success: true, history: result.rows.map(r => r.query) });
+  } catch (err) {
+    console.error('Error getting search history:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * Save Search History
+ */
+const saveSearchHistory = async (req, res) => {
+  const { query } = req.body;
+  const userId = req.user.id;
+
+  if (!query) return res.status(400).json({ success: false, message: 'Query is required' });
+
+  try {
+    await pool.query(
+      'INSERT INTO search_history (user_id, query) VALUES ($1, $2)',
+      [userId, query]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error saving search history:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * Update Collection
+ */
+const updateCollection = async (req, res) => {
+  const { id } = req.params;
+  const { name, description } = req.body;
+  const userId = req.user.id;
+
+  try {
+    const result = await pool.query(
+      'UPDATE collections SET name = COALESCE($1, name), description = COALESCE($2, description), updated_at = CURRENT_TIMESTAMP WHERE id = $3 AND user_id = $4 RETURNING *',
+      [name, description, id, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Collection not found' });
+    }
+
+    res.json({ success: true, collection: result.rows[0] });
+  } catch (err) {
+    console.error('Error updating collection:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * Delete Collection
+ */
+const deleteCollection = async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  try {
+    const result = await pool.query(
+      'DELETE FROM collections WHERE id = $1 AND user_id = $2 RETURNING id',
+      [id, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Collection not found' });
+    }
+
+    res.json({ success: true, message: 'Collection deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting collection:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 module.exports = {
   getMedia,
   addMedia,
@@ -261,5 +348,9 @@ module.exports = {
   getCollections,
   addToCollection,
   removeFromCollection,
-  getCollectionItems
+  getCollectionItems,
+  getSearchHistory,
+  saveSearchHistory,
+  updateCollection,
+  deleteCollection
 };

@@ -10,7 +10,8 @@ import {
   Plus, 
   Grid, 
   List,
-  Filter
+  Filter,
+  ChevronLeft
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { 
@@ -37,11 +38,15 @@ export default function LibraryPage() {
     loading, 
     unsplashResults, 
     isSearching,
+    searchHistory,
     fetchMedia, 
     fetchCollections, 
+    fetchSearchHistory,
     searchUnsplash, 
     saveUnsplashPhoto,
-    createCollection
+    createCollection,
+    updateCollection,
+    deleteCollection
   } = useLibrary();
 
   const [activeTab, setActiveTab] = useState<"library" | "collections" | "unsplash">("library");
@@ -103,6 +108,7 @@ export default function LibraryPage() {
         await api.delete(`/library/${deleteModal.mediaId}`);
         toast.success("Media deleted");
         fetchMedia();
+        fetchCollections(); // Update counts
         if(selectedCollection) handleSelectCollection(selectedCollection);
         setDeleteModal({ isOpen: false, mediaId: null });
       } catch(err) {
@@ -117,7 +123,8 @@ export default function LibraryPage() {
       try {
         await api.delete(`/library/collections/${selectedCollection.id}/items/${mediaId}`);
         toast.success("Removed from collection");
-        handleSelectCollection(selectedCollection); // Refresh
+        handleSelectCollection(selectedCollection); // Refresh items
+        fetchCollections(); // Refresh counts
       } catch(err) {
         toast.error("Failed to remove item");
       }
@@ -193,20 +200,27 @@ export default function LibraryPage() {
                 <CollectionsList 
                     collections={collections}
                     onCreateCollection={createCollection}
+                    onUpdateCollection={updateCollection}
+                    onDeleteCollection={async (id) => {
+                        await deleteCollection(id);
+                    }}
                     onSelectCollection={handleSelectCollection}
                 />
             ) : (
                 <div className="space-y-6">
-                    <div className="flex items-center gap-4 mb-6">
-                        <button 
-                            onClick={() => setSelectedCollection(null)}
-                            className="p-2 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-xl transition-colors"
-                        >
-                            <FolderOpen className="w-5 h-5 text-neutral-500" />
-                        </button>
-                        <div>
-                            <h2 className="text-2xl font-black">{selectedCollection.name}</h2>
-                            <p className="text-neutral-500">{selectedCollection.description || "No description"}</p>
+                    <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center gap-6">
+                            <button 
+                                onClick={() => setSelectedCollection(null)}
+                                className="group flex items-center gap-2 px-4 py-2 bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 rounded-2xl transition-all font-bold text-sm"
+                            >
+                                <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                                Back to Collections
+                            </button>
+                            <div>
+                                <h2 className="text-3xl font-black italic tracking-tight">{selectedCollection.name}</h2>
+                                <p className="text-sm text-neutral-500 font-medium italic">{selectedCollection.description || "No description"}</p>
+                            </div>
                         </div>
                     </div>
                     
@@ -244,6 +258,8 @@ export default function LibraryPage() {
                 results={unsplashResults}
                 loading={isSearching}
                 media={media}
+                history={searchHistory}
+                onFetchHistory={fetchSearchHistory}
             />
           </motion.div>
         )}
@@ -254,6 +270,7 @@ export default function LibraryPage() {
         onClose={() => setAddToCollectionModal({ ...addToCollectionModal, isOpen: false })}
         mediaId={addToCollectionModal.mediaId}
         collections={collections}
+        onSuccess={fetchCollections}
       />
 
       <DeleteConfirmationModal

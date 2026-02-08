@@ -28,6 +28,7 @@ export const useLibrary = () => {
   const [loading, setLoading] = useState(false);
   const [unsplashResults, setUnsplashResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
 
   const fetchMedia = useCallback(async (folder?: string) => {
     try {
@@ -57,6 +58,27 @@ export const useLibrary = () => {
     }
   }, []);
 
+  const fetchSearchHistory = useCallback(async () => {
+    try {
+      const res = await api.get('/library/search-history');
+      if (res.data.success) {
+        setSearchHistory(res.data.history);
+      }
+    } catch (error) {
+      console.error('Error fetching search history:', error);
+    }
+  }, []);
+
+  const saveSearchQuery = useCallback(async (query: string) => {
+    if (!query.trim()) return;
+    try {
+      await api.post('/library/search-history', { query });
+      fetchSearchHistory(); // Refresh history
+    } catch (error) {
+      console.error('Error saving search history:', error);
+    }
+  }, [fetchSearchHistory]);
+
   const searchUnsplash = useCallback(async (query: string, page = 1) => {
     if (!query.trim()) return;
     try {
@@ -66,6 +88,7 @@ export const useLibrary = () => {
       });
       if (res.data.success) {
         setUnsplashResults(prev => page === 1 ? res.data.results : [...prev, ...res.data.results]);
+        if (page === 1) saveSearchQuery(query); // Save successful new search
         return res.data;
       }
     } catch (error) {
@@ -74,7 +97,7 @@ export const useLibrary = () => {
     } finally {
       setIsSearching(false);
     }
-  }, []);
+  }, [saveSearchQuery]);
 
   const saveUnsplashPhoto = useCallback(async (photo: any) => {
     try {
@@ -115,6 +138,34 @@ export const useLibrary = () => {
     }
   }, [fetchCollections]);
 
+  const updateCollection = useCallback(async (id: number, name: string, description?: string) => {
+    try {
+      const res = await api.patch(`/library/collections/${id}`, {
+        name, description
+      });
+      if (res.data.success) {
+        toast.success('Collection updated');
+        fetchCollections();
+      }
+    } catch (error) {
+      console.error('Error updating collection:', error);
+      toast.error('Failed to update collection');
+    }
+  }, [fetchCollections]);
+
+  const deleteCollection = useCallback(async (id: number) => {
+    try {
+      const res = await api.delete(`/library/collections/${id}`);
+      if (res.data.success) {
+        toast.success('Collection deleted');
+        fetchCollections();
+      }
+    } catch (error) {
+      console.error('Error deleting collection:', error);
+      toast.error('Failed to delete collection');
+    }
+  }, [fetchCollections]);
+
   return {
     media,
     collections,
@@ -122,10 +173,14 @@ export const useLibrary = () => {
     unsplashResults,
     setUnsplashResults,
     isSearching,
+    searchHistory,
     fetchMedia,
     fetchCollections,
+    fetchSearchHistory,
     searchUnsplash,
     saveUnsplashPhoto,
-    createCollection
+    createCollection,
+    updateCollection,
+    deleteCollection
   };
 };
