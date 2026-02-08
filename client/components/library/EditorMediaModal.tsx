@@ -69,6 +69,14 @@ export function EditorMediaModal({ isOpen, onClose, onSelectImage, onImportColle
     mediaId: null
   });
 
+  useEffect(() => {
+    // Restore Modal Tab
+    const savedTab = localStorage.getItem('editor_media_modal_tab');
+    if (savedTab && ['library', 'collections', 'unsplash'].includes(savedTab)) {
+      setActiveTab(savedTab as any);
+    }
+  }, []);
+
   const [deleteConfirmModal, setDeleteConfirmModal] = useState<{ isOpen: boolean; mediaId: number | null }>({
     isOpen: false,
     mediaId: null
@@ -99,6 +107,7 @@ export function EditorMediaModal({ isOpen, onClose, onSelectImage, onImportColle
 
   const handleTabChange = (tab: typeof activeTab) => {
       setActiveTab(tab);
+      localStorage.setItem('editor_media_modal_tab', tab);
       if (tab !== "collections") setSelectedCollection(null);
   };
 

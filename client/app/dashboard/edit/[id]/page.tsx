@@ -114,6 +114,7 @@ export default function PortfolioEditorPage() {
   const [hoveredItem, setHoveredItem] = useState<{ name: string; top: number } | null>(null);
   const [activeTab, setActiveTab] = useState<'templates' | 'elements' | 'assets'>('templates');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const sidebarTabs = [
     { id: 'templates', label: 'Templates', icon: Layout },
@@ -123,6 +124,18 @@ export default function PortfolioEditorPage() {
 
   useEffect(() => {
     if (id) {
+      // 1. Restore Active Tab
+      const savedTab = localStorage.getItem(`editor_tab_${id}`);
+      if (savedTab && ['templates', 'elements', 'assets'].includes(savedTab)) {
+        setActiveTab(savedTab as any);
+      }
+
+      // 2. Restore Library Modal State
+      const savedLibraryOpen = localStorage.getItem(`editor_library_open_${id}`);
+      if (savedLibraryOpen === 'true') {
+        setIsLibraryOpen(true);
+      }
+
       getPortfolioById(id as string).then(res => {
         if (res.success) {
           setPortfolio(res.portfolio);
@@ -238,6 +251,7 @@ export default function PortfolioEditorPage() {
                     onClick={() => {
                       setActiveTab(tab.id as any);
                       setIsSidebarOpen(true);
+                      localStorage.setItem(`editor_tab_${id}`, tab.id);
                     }}
                     className="group flex flex-col items-center justify-center w-full py-1.5 transition-all outline-none"
                   >
@@ -378,7 +392,10 @@ export default function PortfolioEditorPage() {
                   {activeTab === 'assets' && (
                     <div className="flex flex-col gap-6">
                       <button
-                        onClick={() => setIsLibraryOpen(true)}
+                        onClick={() => {
+                          setIsLibraryOpen(true);
+                          localStorage.setItem(`editor_library_open_${id}`, 'true');
+                        }}
                         className="w-full h-24 flex flex-col items-center justify-center rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-xl shadow-indigo-600/10 group active:scale-[0.98] border border-white/10"
                       >
                         <Library className="w-6 h-6 mb-2 group-hover:scale-110 transition-transform" />
@@ -601,6 +618,7 @@ export default function PortfolioEditorPage() {
                 previewMode === 'laptop' && "w-[1200px] rounded-2xl border-[4px] border-[#1A1A1E] min-h-[800px]",
                 previewMode === 'desktop' && "w-full min-h-full"
               )}
+              onClick={() => setSelectedId(null)}
             >
               {/* Device Notch for Mobile/Tablet */}
               {(previewMode === 'mobile' || previewMode === 'tablet') && (
@@ -612,8 +630,8 @@ export default function PortfolioEditorPage() {
               )}
 
               <div className={cn(
-                "transition-all duration-300 min-h-full",
-                previewMode !== 'desktop' && "p-0"
+                "transition-all duration-300 min-h-full pt-16",
+                previewMode !== 'desktop' && "p-0 pt-16"
               )}>
                 {Object.entries(sections)
                   .filter(([sk]) => sk !== 'assets')
@@ -636,124 +654,147 @@ export default function PortfolioEditorPage() {
                         onReorder={(newOrder) => setSections(prev => ({ ...prev, [sectionKey]: newOrder }))}
                         className="space-y-6 p-4"
                       >
-                        {itemsTyped.map((comp: EditorComponent) => (
-                          <Reorder.Item 
-                            key={comp.id} 
-                            value={comp}
-                            transition={{ type: "spring", stiffness: 500, damping: 50, mass: 1 }}
-                            className="relative group transition-all duration-300"
-                          >
-                            {!isPreview && (
-                              <div className="absolute -left-12 top-1/2 -translate-y-1/2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all z-50">
-                                <div className="p-2 cursor-grab active:cursor-grabbing text-neutral-400">
-                                  <GripVertical className="w-4 h-4" />
-                                </div>
-                                <button 
-                                    onClick={() => {
-                                      if (comp.type === 'text') {
-                                        const size = prompt("Font Size (px)", comp.styles?.fontSize);
-                                        const color = prompt("Color", comp.styles?.color);
-                                        if (size || color) updateComponent(sectionKey, comp.id, null, { fontSize: size, color });
-                                      } else if (comp.type === 'button') {
-                                        const radius = prompt("Border Radius", comp.styles?.borderRadius);
-                                        if (radius) updateComponent(sectionKey, comp.id, null, { borderRadius: radius });
-                                      } else if (comp.type === 'divider') {
-                                        const bg = prompt("Divider Color", comp.styles?.backgroundColor);
-                                        const h = prompt("Height (e.g. 1px)", comp.styles?.height);
-                                        if (bg || h) updateComponent(sectionKey, comp.id, null, { backgroundColor: bg, height: h });
-                                      }
-                                    }}
-                                    className="p-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/10 rounded-lg text-neutral-400 hover:text-emerald-500 transition-colors shadow-sm"
-                                >
-                                    <Settings className="w-4 h-4" />
-                                </button>
-                                <button 
-                                    onClick={() => removeComponent(sectionKey, comp.id)}
-                                    className="p-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/10 rounded-lg text-neutral-400 hover:text-red-500 transition-colors shadow-sm"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            )}
-                            
-                            <div className={cn(
-                              "rounded-3xl transition-all duration-500",
-                              !isPreview && "p-2 hover:bg-neutral-50 dark:hover:bg-white/[0.02]"
-                            )}>
-                              {comp.type === 'text' && (
-                                <h2 
-                                  style={comp.styles} 
-                                  className="outline-none tracking-tight leading-[1.1] p-4 text-neutral-900 dark:text-white"
-                                  contentEditable={!isPreview}
-                                  suppressContentEditableWarning
-                                  onBlur={(e) => updateComponent(sectionKey, comp.id, e.currentTarget.textContent)}
-                                >
-                                  {comp.content}
-                                </h2>
+                        {itemsTyped.map((comp: EditorComponent) => {
+                          const isSelected = selectedId === comp.id;
+                          return (
+                            <Reorder.Item 
+                              key={comp.id} 
+                              value={comp}
+                              transition={{ type: "spring", stiffness: 500, damping: 50, mass: 1 }}
+                              className={cn(
+                                "relative group transition-all duration-300 rounded-3xl",
+                                isSelected ? "ring-2 ring-indigo-500 ring-offset-4 ring-offset-white dark:ring-offset-[#121214] z-50" : "hover:bg-neutral-50 dark:hover:bg-white/[0.02]"
                               )}
-                              {comp.type === 'image' && (
-                                <div className="relative group/img p-4">
-                                  <motion.img 
-                                    src={comp.content} 
-                                    style={comp.styles}
-                                    className="w-full h-auto object-cover shadow-2xl rounded-3xl"
-                                    whileHover={isPreview ? { scale: 1.005 } : {}}
-                                  />
-                                  {!isPreview && (
-                                    <button 
-                                      onClick={() => {
-                                        const url = prompt("Enter Image URL", comp.content);
-                                        if (url) updateComponent(sectionKey, comp.id, url);
-                                      }}
-                                      className="absolute top-8 right-8 p-3 bg-black/60 backdrop-blur-xl text-white rounded-2xl opacity-0 group-hover/img:opacity-100 transition-all hover:scale-110 active:scale-95 border border-white/20"
-                                    >
-                                      <ImageIcon className="w-5 h-5" />
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-                              {comp.type === 'button' && (
-                                <div className="relative group/btn p-4">
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedId(comp.id);
+                              }}
+                            >
+                              {!isPreview && isSelected && (
+                                <div className="absolute -top-12 right-0 flex items-center gap-1 p-1 bg-[#0F0F10]/90 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl z-[60] animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                  <div className="p-2 cursor-grab active:cursor-grabbing text-neutral-500 hover:text-white transition-colors">
+                                    <GripVertical className="w-3.5 h-3.5" />
+                                  </div>
+                                  
+                                  <div className="w-px h-4 bg-white/10 mx-0.5" />
+
                                   <button 
-                                    style={comp.styles}
-                                    className="font-black text-xl px-10 py-5 transition-all active:scale-95 shadow-2xl shadow-emerald-500/20"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (comp.type === 'text') {
+                                          const size = prompt("Font Size (px)", comp.styles?.fontSize);
+                                          const color = prompt("Color", comp.styles?.color);
+                                          if (size || color) updateComponent(sectionKey, comp.id, null, { fontSize: size, color });
+                                        } else if (comp.type === 'button') {
+                                          const radius = prompt("Border Radius", comp.styles?.borderRadius);
+                                          if (radius) updateComponent(sectionKey, comp.id, null, { borderRadius: radius });
+                                        } else if (comp.type === 'divider') {
+                                          const bg = prompt("Divider Color", comp.styles?.backgroundColor);
+                                          const h = prompt("Height (e.g. 1px)", comp.styles?.height);
+                                          if (bg || h) updateComponent(sectionKey, comp.id, null, { backgroundColor: bg, height: h });
+                                        }
+                                      }}
+                                      className="p-2 text-neutral-500 hover:text-emerald-400 transition-colors"
+                                      title="Settings"
+                                  >
+                                      <Settings className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removeComponent(sectionKey, comp.id);
+                                      setSelectedId(null);
+                                    }}
+                                    className="p-2 text-neutral-500 hover:text-red-500 transition-colors"
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              )}
+                              
+                              <div className={cn(
+                                "rounded-3xl transition-all duration-500 relative",
+                                !isPreview && "p-2"
+                              )}>
+                                {comp.type === 'text' && (
+                                  <h2 
+                                    style={comp.styles} 
+                                    className="outline-none tracking-tight leading-[1.1] p-4 text-neutral-900 dark:text-white"
+                                    contentEditable={!isPreview}
+                                    suppressContentEditableWarning
+                                    onBlur={(e) => updateComponent(sectionKey, comp.id, e.currentTarget.textContent)}
                                   >
                                     {comp.content}
-                                  </button>
-                                  {!isPreview && (
+                                  </h2>
+                                )}
+                                {comp.type === 'image' && (
+                                  <div className="relative group/img p-4">
+                                    <motion.img 
+                                      src={comp.content} 
+                                      style={comp.styles}
+                                      className="w-full h-auto object-cover shadow-2xl rounded-3xl"
+                                      whileHover={isPreview ? { scale: 1.005 } : {}}
+                                    />
+                                    {!isPreview && isSelected && (
+                                      <button 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          const url = prompt("Enter Image URL", comp.content);
+                                          if (url) updateComponent(sectionKey, comp.id, url);
+                                        }}
+                                        className="absolute top-8 right-8 p-3 bg-black/60 backdrop-blur-xl text-white rounded-2xl transition-all hover:scale-110 active:scale-95 border border-white/20"
+                                      >
+                                        <ImageIcon className="w-5 h-5" />
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                                {comp.type === 'button' && (
+                                  <div className="relative group/btn p-4">
                                     <button 
-                                      onClick={() => {
-                                        const text = prompt("Enter Button Text", comp.content);
-                                        if (text) updateComponent(sectionKey, comp.id, text);
-                                      }}
-                                      className="absolute -top-2 -right-2 p-2 bg-neutral-900 border border-white/10 text-white rounded-full opacity-0 group-hover/btn:opacity-100 transition-all hover:scale-110"
+                                      style={comp.styles}
+                                      className="font-black text-xl px-10 py-5 transition-all active:scale-95 shadow-2xl shadow-emerald-500/20"
                                     >
-                                      <Plus className="w-4 h-4" />
+                                      {comp.content}
                                     </button>
-                                  )}
-                                </div>
-                              )}
-                              {comp.type === 'divider' && (
-                                <div className="p-4">
-                                  <div style={comp.styles} />
-                                </div>
-                              )}
-                              {comp.type === 'socials' && (
-                                <div className="p-4 flex flex-wrap" style={comp.styles}>
-                                  {comp.content.map((social: any, idx: number) => (
-                                    <div key={idx} className="relative group/social">
-                                      <div className="w-10 h-10 rounded-full bg-neutral-100 dark:bg-white/5 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all cursor-pointer">
-                                        {social.platform === 'github' && <Github className="w-5 h-5" />}
-                                        {social.platform === 'linkedin' && <Linkedin className="w-5 h-5" />}
-                                        {social.platform === 'twitter' && <Twitter className="w-5 h-5" />}
+                                    {!isPreview && isSelected && (
+                                      <button 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          const text = prompt("Enter Button Text", comp.content);
+                                          if (text) updateComponent(sectionKey, comp.id, text);
+                                        }}
+                                        className="absolute -top-2 -right-2 p-2 bg-neutral-900 border border-white/10 text-white rounded-full transition-all hover:scale-110"
+                                      >
+                                        <Plus className="w-4 h-4" />
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                                {comp.type === 'divider' && (
+                                  <div className="p-4">
+                                    <div style={comp.styles} />
+                                  </div>
+                                )}
+                                {comp.type === 'socials' && (
+                                  <div className="p-4 flex flex-wrap" style={comp.styles}>
+                                    {comp.content.map((social: any, idx: number) => (
+                                      <div key={idx} className="relative group/social">
+                                        <div className="w-10 h-10 rounded-full bg-neutral-100 dark:bg-white/5 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all cursor-pointer">
+                                          {social.platform === 'github' && <Github className="w-5 h-5" />}
+                                          {social.platform === 'linkedin' && <Linkedin className="w-5 h-5" />}
+                                          {social.platform === 'twitter' && <Twitter className="w-5 h-5" />}
+                                        </div>
                                       </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          </Reorder.Item>
-                        ))}
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </Reorder.Item>
+                          );
+                        })}
                       </Reorder.Group>
 
                       {items.length === 0 && !isPreview && (
@@ -774,7 +815,10 @@ export default function PortfolioEditorPage() {
 
       <EditorMediaModal 
         isOpen={isLibraryOpen}
-        onClose={() => setIsLibraryOpen(false)}
+        onClose={() => {
+          setIsLibraryOpen(false);
+          localStorage.setItem(`editor_library_open_${id}`, 'false');
+        }}
         currentAssets={sections.assets}
         onSelectImage={async (url) => {
           const getIdentifier = (u: string) => u.split('?')[0].trim();
