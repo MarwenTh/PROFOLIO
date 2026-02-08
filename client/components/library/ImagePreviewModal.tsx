@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download, FolderPlus } from 'lucide-react';
+import { X, Download, FolderPlus, Plus } from 'lucide-react';
 import Image from 'next/image';
 import { DashboardButton } from '@/components/dashboard/Shared';
 
@@ -11,6 +11,8 @@ interface ImagePreviewModalProps {
   altText?: string;
   onSave?: () => void;
   onAddToCollection?: () => void;
+  onSelect?: () => void;
+  photographer?: string;
   actions?: React.ReactNode;
 }
 
@@ -21,6 +23,8 @@ export const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({
   altText = "Preview", 
   onSave,
   onAddToCollection,
+  onSelect,
+  photographer,
   actions 
 }) => {
   if (!imageUrl) return null;
@@ -62,6 +66,13 @@ export const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({
               />
             </div>
 
+            {photographer && (
+                <div className="mt-6 text-center">
+                    <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Photographer</p>
+                    <p className="text-white font-black italic text-xl tracking-tight">{photographer}</p>
+                </div>
+            )}
+
             <div className="flex items-center gap-4 mt-8">
                 {actions}
                 {onSave && (
@@ -73,6 +84,14 @@ export const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({
                     <DashboardButton variant="secondary" onClick={onAddToCollection} icon={FolderPlus}>
                         Add to Collection
                     </DashboardButton>
+                )}
+                {onSelect && (
+                    <button
+                        onClick={onSelect}
+                        className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-xl shadow-emerald-500/20"
+                    >
+                        <Plus className="w-6 h-6" />
+                    </button>
                 )}
             </div>
           </motion.div>

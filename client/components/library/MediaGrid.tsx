@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { Trash2, FolderPlus, ImageIcon } from 'lucide-react';
+import { Trash2, FolderPlus, ImageIcon, Plus } from 'lucide-react';
 import { MediaItem } from '@/hooks/useLibrary';
 import { EmptyState, DashboardButton, DashboardCard } from '@/components/dashboard/Shared';
 import { ImagePreviewModal } from './ImagePreviewModal';
@@ -11,9 +11,10 @@ interface MediaGridProps {
   loading: boolean;
   onDelete?: (id: number) => void;
   onAddToCollection?: (mediaId: number) => void;
+  onSelect?: (url: string) => void;
 }
 
-export const MediaGrid: React.FC<MediaGridProps> = ({ media, loading, onDelete, onAddToCollection }) => {
+export const MediaGrid: React.FC<MediaGridProps> = ({ media, loading, onDelete, onAddToCollection, onSelect }) => {
   const [previewItem, setPreviewItem] = useState<MediaItem | null>(null);
 
   if (loading) {
@@ -38,7 +39,7 @@ export const MediaGrid: React.FC<MediaGridProps> = ({ media, loading, onDelete, 
 
   return (
     <>
-      <div className="columns-2 md:columns-3 lg:columns-4 xl:columns-5 2xl:columns-6 gap-6 space-y-6">
+      <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 2xl:columns-4 gap-6 space-y-6">
         {media.map((item, index) => (
           <DashboardCard
             key={item.id}
@@ -105,6 +106,10 @@ export const MediaGrid: React.FC<MediaGridProps> = ({ media, loading, onDelete, 
         onClose={() => setPreviewItem(null)}
         imageUrl={previewItem?.url || null}
         altText={previewItem?.filename}
+        onSelect={onSelect && previewItem ? () => {
+            onSelect(previewItem.url);
+            setPreviewItem(null);
+        } : undefined}
         actions={
             <>
                 {onAddToCollection && previewItem && (

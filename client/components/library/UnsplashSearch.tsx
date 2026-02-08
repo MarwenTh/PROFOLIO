@@ -17,6 +17,7 @@ interface UnsplashSearchProps {
   media: MediaItem[];
   history: string[];
   onFetchHistory: () => void;
+  onSelect?: (url: string) => void;
 }
 
 const SUGGESTIONS = [
@@ -35,7 +36,8 @@ export const UnsplashSearch: React.FC<UnsplashSearchProps> = ({
   loading, 
   media,
   history,
-  onFetchHistory
+  onFetchHistory,
+  onSelect
 }) => {
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -136,10 +138,21 @@ export const UnsplashSearch: React.FC<UnsplashSearchProps> = ({
 
   const hasMatches = filteredHistory.length > 0 || filteredSuggestions.length > 0;
 
+  const handleSaveAndSelect = async (photo: any) => {
+      // Start saving if not already saved
+      if (!isSaved(photo.id)) {
+          handleSave(photo); // Start save process
+      }
+      // Import immediately for better UX
+      if (onSelect) {
+          onSelect(photo.urls.regular);
+      }
+  };
+
   return (
     <div className="space-y-12 pb-10">
-      <div className="flex justify-start pt-4 relative z-[60]" ref={dropdownRef}>
-        <div className="w-full max-w-md relative">
+      <div className="flex justify-start pt-4 relative z-[60] w-full" ref={dropdownRef}>
+        <div className="w-full relative">
             <VanishInput 
                 placeholders={placeholders}
                 onChange={handleInputChange}
@@ -154,8 +167,9 @@ export const UnsplashSearch: React.FC<UnsplashSearchProps> = ({
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute top-full mt-2 left-0 right-0 bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-white/5 shadow-2xl overflow-hidden p-2 backdrop-blur-xl"
+                        className="absolute top-full mt-2 left-0 right-0 bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-white/5 shadow-2xl overflow-hidden backdrop-blur-xl"
                     >
+                        <div className="max-h-[350px] overflow-y-auto custom-scrollbar p-2">
                         {filteredHistory.length > 0 && (
                             <div className="pb-2">
                                 <div className="px-4 py-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-neutral-400">
@@ -183,7 +197,7 @@ export const UnsplashSearch: React.FC<UnsplashSearchProps> = ({
                                     <Sparkles className="w-3 h-3" />
                                     Suggestions
                                 </div>
-                                <div className="grid grid-cols-1 gap-1">
+                                <div className="grid grid-cols-1 gap-1 max-h-[300px] overflow-y-auto">
                                     {filteredSuggestions.map((s, i) => (
                                         <button
                                             key={i}
@@ -197,6 +211,7 @@ export const UnsplashSearch: React.FC<UnsplashSearchProps> = ({
                                 </div>
                             </div>
                         )}
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -211,7 +226,7 @@ export const UnsplashSearch: React.FC<UnsplashSearchProps> = ({
 
       {results.length > 0 ? (
         <>
-            <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 2xl:columns-5 gap-6 space-y-6">
+            <div className="columns-1 sm:columns-2 lg:columns-2 xl:columns-3 2xl:columns-4 gap-6 space-y-6">
                 {results.map((photo, index) => {
                     const saved = isSaved(photo.id);
                     const saving = savingId === photo.id;
@@ -238,36 +253,44 @@ export const UnsplashSearch: React.FC<UnsplashSearchProps> = ({
                             
                             {/* Overlay */}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/0 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-6">
-                                <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                                    <div className="flex items-center justify-between gap-3">
-                                        <p className="text-white font-bold text-sm truncate">
-                                            {photo.user.name}
-                                        </p>
-                                        
-                                        {saved ? (
-                                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 backdrop-blur-md">
-                                                <Check className="w-4 h-4 text-emerald-500" />
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">In Library</span>
-                                            </div>
-                                        ) : (
+                                    <div className="flex items-center justify-end">
+                                        {onSelect ? (
                                             <button
                                                 disabled={saving}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    handleSave(photo);
+                                                    handleSaveAndSelect(photo);
                                                 }}
-                                                className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg disabled:opacity-50 disabled:scale-100"
-                                                title="Save to Library"
+                                                className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg disabled:opacity-50 disabled:scale-100"
+                                                title="Save & Add to Design"
                                             >
-                                                {saving ? (
-                                                    <Loader2 className="w-5 h-5 animate-spin text-neutral-400" />
-                                                ) : (
-                                                    <Download className="w-5 h-5" />
-                                                )}
+                                                <Plus className="w-6 h-6" />
                                             </button>
+                                        ) : (
+                                            saved ? (
+                                                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 backdrop-blur-md">
+                                                    <Check className="w-4 h-4 text-emerald-500" />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">In Library</span>
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    disabled={saving}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleSave(photo);
+                                                    }}
+                                                    className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg disabled:opacity-50 disabled:scale-100"
+                                                    title="Save to Library"
+                                                >
+                                                    {saving ? (
+                                                        <Loader2 className="w-5 h-5 animate-spin text-neutral-400" />
+                                                    ) : (
+                                                        <Download className="w-5 h-5" />
+                                                    )}
+                                                </button>
+                                            )
                                         )}
                                     </div>
-                                </div>
                             </div>
                         </DashboardCard>
                     );
@@ -301,6 +324,8 @@ export const UnsplashSearch: React.FC<UnsplashSearchProps> = ({
         imageUrl={previewPhoto?.urls?.full || previewPhoto?.urls?.regular}
         altText={previewPhoto?.alt_description}
         onSave={!isSaved(previewPhoto?.id) ? () => handleSave(previewPhoto) : undefined}
+        onSelect={onSelect && previewPhoto ? () => handleSaveAndSelect(previewPhoto) : undefined}
+        photographer={previewPhoto?.user?.name}
       />
     </div>
   );
