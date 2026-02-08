@@ -37,9 +37,10 @@ interface EditorMediaModalProps {
   onClose: () => void;
   onSelectImage: (url: string) => void;
   onImportCollection: (images: string[]) => void;
+  currentAssets: string[];
 }
 
-export function EditorMediaModal({ isOpen, onClose, onSelectImage, onImportCollection }: EditorMediaModalProps) {
+export function EditorMediaModal({ isOpen, onClose, onSelectImage, onImportCollection, currentAssets }: EditorMediaModalProps) {
   const { 
     media, 
     collections, 
@@ -54,7 +55,8 @@ export function EditorMediaModal({ isOpen, onClose, onSelectImage, onImportColle
     saveUnsplashPhoto,
     createCollection,
     updateCollection,
-    deleteCollection
+    deleteCollection,
+    uploadMedia
   } = useLibrary();
 
   const [activeTab, setActiveTab] = useState<"library" | "collections" | "unsplash">("library");
@@ -157,13 +159,36 @@ export function EditorMediaModal({ isOpen, onClose, onSelectImage, onImportColle
                         {loading && media.length === 0 ? (
                             <PageLoader />
                         ) : (
-                            <MediaGrid 
-                                media={media} 
-                                loading={loading}
-                                onSelect={(url) => { onSelectImage(url); onClose(); }}
-                                onAddToCollection={(id) => setAddToCollectionModal({ isOpen: true, mediaId: id })}
-                                onDelete={(id) => setDeleteConfirmModal({ isOpen: true, mediaId: id })}
-                            />
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between bg-white/[0.02] border border-white/5 rounded-2xl p-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex -space-x-2 mr-2">
+                                            {media.slice(0, 3).map((item, i) => (
+                                                <div key={i} className="w-6 h-6 rounded-full border-2 border-white dark:border-neutral-900 bg-neutral-200 dark:bg-neutral-800 overflow-hidden">
+                                                    <img src={item.url} className="w-full h-full object-cover" alt="" />
+                                                </div>
+                                            ))}
+                                            {media.length > 3 && (
+                                                <div className="w-6 h-6 rounded-full border-2 border-white dark:border-neutral-900 bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-[8px] font-black">
+                                                    +{media.length - 3}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <span className="text-xs font-black uppercase tracking-widest text-white">Your Library</span>
+                                            <p className="text-[10px] text-neutral-500 font-medium">Click images to add to your sidebar assets</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <MediaGrid 
+                                    media={media} 
+                                    loading={loading}
+                                    onSelect={(url: string) => { onSelectImage(url); }}
+                                    currentAssets={currentAssets}
+                                    onAddToCollection={(id) => setAddToCollectionModal({ isOpen: true, mediaId: id })}
+                                    onDelete={(id) => setDeleteConfirmModal({ isOpen: true, mediaId: id })}
+                                />
+                            </div>
                         )}
                         {media.length === 0 && !loading && (
                             <EmptyState 
@@ -210,7 +235,6 @@ export function EditorMediaModal({ isOpen, onClose, onSelectImage, onImportColle
                                         className="h-10 px-4 rounded-xl text-xs"
                                         onClick={() => {
                                             onImportCollection(collectionItems.map(i => i.url));
-                                            onClose();
                                         }}
                                         disabled={collectionItems.length === 0}
                                     >
@@ -221,7 +245,8 @@ export function EditorMediaModal({ isOpen, onClose, onSelectImage, onImportColle
                                 <MediaGrid 
                                     media={collectionItems}
                                     loading={loadingItems}
-                                    onSelect={(url) => { onSelectImage(url); onClose(); }}
+                                    onSelect={(url: string) => { onSelectImage(url); }}
+                                    currentAssets={currentAssets}
                                     onDelete={async (id) => {
                                         try {
                                             await api.delete(`/library/collections/${selectedCollection.id}/items/${id}`);
@@ -248,10 +273,11 @@ export function EditorMediaModal({ isOpen, onClose, onSelectImage, onImportColle
                         <UnsplashSearch 
                             onSearch={searchUnsplash}
                             onSave={saveUnsplashPhoto}
-                            onSelect={(url) => { onSelectImage(url); onClose(); }}
+                            onSelect={(url: string) => { onSelectImage(url); }}
                             results={unsplashResults || []}
                             loading={isSearching}
                             media={media}
+                            currentAssets={currentAssets}
                             history={searchHistory}
                             onFetchHistory={fetchSearchHistory}
                         />

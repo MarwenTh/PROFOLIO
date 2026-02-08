@@ -3,11 +3,12 @@ import { Search, Download, Plus, ZoomIn, Loader2, Check, Clock, Sparkles } from 
 import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { DashboardButton, DashboardCard } from '@/components/dashboard/Shared';
+import { EmptyState, DashboardButton, DashboardCard } from '@/components/dashboard/Shared';
 import { Loader } from '@/components/ui/Loader';
 import { ImagePreviewModal } from './ImagePreviewModal';
 import { VanishInput } from '@/components/ui/VanishInput';
 import { MediaItem } from '@/hooks/useLibrary';
+import { toast } from 'sonner';
 
 interface UnsplashSearchProps {
   onSearch: (query: string, page?: number) => Promise<any>;
@@ -18,6 +19,7 @@ interface UnsplashSearchProps {
   history: string[];
   onFetchHistory: () => void;
   onSelect?: (url: string) => void;
+  currentAssets?: string[];
 }
 
 const SUGGESTIONS = [
@@ -37,7 +39,8 @@ export const UnsplashSearch: React.FC<UnsplashSearchProps> = ({
   media,
   history,
   onFetchHistory,
-  onSelect
+  onSelect,
+  currentAssets
 }) => {
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -99,6 +102,9 @@ export const UnsplashSearch: React.FC<UnsplashSearchProps> = ({
     return () => clearTimeout(timer);
   }, [query]);
 
+  const getIdentifier = (url: string) => url.split('?')[0].trim();
+  const assetIdentifiers = (currentAssets || []).map(getIdentifier);
+
   // Trigger search when debounced query changes
   useEffect(() => {
     if (debouncedQuery.trim()) {
@@ -115,6 +121,10 @@ export const UnsplashSearch: React.FC<UnsplashSearchProps> = ({
 
   const isSaved = (unsplashId: string) => {
       return media.some(item => item.unsplash_id === unsplashId);
+  };
+
+  const isAddedToAssets = (url: string) => {
+      return assetIdentifiers.includes(getIdentifier(url));
   };
 
   const handleSave = async (photo: any) => {
@@ -255,17 +265,27 @@ export const UnsplashSearch: React.FC<UnsplashSearchProps> = ({
                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/0 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-6">
                                     <div className="flex items-center justify-end">
                                         {onSelect ? (
-                                            <button
-                                                disabled={saving}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleSaveAndSelect(photo);
-                                                }}
-                                                className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg disabled:opacity-50 disabled:scale-100"
-                                                title="Save & Add to Design"
-                                            >
-                                                <Plus className="w-6 h-6" />
-                                            </button>
+                                            (() => {
+                                                const isAdded = isAddedToAssets(photo.urls.regular);
+                                                return (
+                                                    <DashboardButton
+                                                        variant={isAdded ? "success" : "indigo"}
+                                                        disabled={isAdded}
+                                                        className={cn(
+                                                          "w-10 h-10 p-0 rounded-full shadow-lg transition-all",
+                                                          isAdded && "scale-110 opacity-100 cursor-default"
+                                                        )}
+                                                        onClick={(e) => {
+                                                          if (isAdded) return;
+                                                          e.stopPropagation();
+                                                          onSelect(photo.urls.regular);
+                                                        }}
+                                                        title={isAdded ? "Already in Assets" : "Add to Assets"}
+                                                      >
+                                                        {isAdded ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                                                      </DashboardButton>
+                                                );
+                                            })()
                                         ) : (
                                             saved ? (
                                                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 backdrop-blur-md">

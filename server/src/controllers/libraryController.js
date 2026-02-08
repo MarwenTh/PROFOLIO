@@ -1,5 +1,33 @@
 const { pool } = require('../config/db');
 const axios = require('axios');
+const multer = require('multer');
+const path = require('path');
+
+// Configure Multer Storage
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const filetypes = /jpeg|jpg|png|webp|svg/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    }
+    cb(new Error("Only images are allowed!"));
+  }
+}).single('file');
 
 /**
  * Search Unsplash
@@ -339,10 +367,53 @@ const deleteCollection = async (req, res) => {
   }
 };
 
+/**
+ * Upload media file
+ */
+const uploadMedia = (req, res) => {
+  upload(req, res, async (err) => {
+    if (err instanceof multer.MulterError) {
+      return res.status(400).json({ success: false, message: `Upload error: ${err.message}` });
+    } else if (err) {
+      return res.status(400).json({ success: false, message: err.message });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Please select a file' });
+    }
+
+    const userId = req.user.id;
+    const { filename } = req.file;
+    const originalName = req.file.originalname;
+    const fileType = req.file.mimetype;
+    const fileSize = req.file.size;
+    const url = `${process.env.BACKEND_URL || 'http://localhost:3001'}/uploads/${filename}`;
+
+    try {
+      const result = await pool.query(
+        `INSERT INTO media_library (user_id, filename, original_name, file_type, file_size, url, folder)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         RETURNING *`,
+        [userId, filename, originalName, fileType, fileSize, url, 'root']
+      );
+
+      res.status(201).json({
+        success: true,
+        media: result.rows[0],
+        message: 'File uploaded successfully'
+      });
+    } catch (dbErr) {
+      console.error('Error saving uploaded file to DB:', dbErr);
+      res.status(500).json({ success: false, message: 'File uploaded but failed to save to database' });
+    }
+  });
+};
+
 module.exports = {
   getMedia,
   addMedia,
   deleteMedia,
+  uploadMedia,
   searchUnsplash,
   createCollection,
   getCollections,

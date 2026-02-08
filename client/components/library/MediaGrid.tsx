@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { Trash2, FolderPlus, ImageIcon, Plus } from 'lucide-react';
+import { Trash2, FolderPlus, ImageIcon, Plus, Check } from 'lucide-react';
 import { MediaItem } from '@/hooks/useLibrary';
 import { EmptyState, DashboardButton, DashboardCard } from '@/components/dashboard/Shared';
 import { ImagePreviewModal } from './ImagePreviewModal';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface MediaGridProps {
   media: MediaItem[];
@@ -12,10 +14,14 @@ interface MediaGridProps {
   onDelete?: (id: number) => void;
   onAddToCollection?: (mediaId: number) => void;
   onSelect?: (url: string) => void;
+  currentAssets?: string[];
 }
 
-export const MediaGrid: React.FC<MediaGridProps> = ({ media, loading, onDelete, onAddToCollection, onSelect }) => {
+export const MediaGrid: React.FC<MediaGridProps> = ({ media, loading, onDelete, onAddToCollection, onSelect, currentAssets }) => {
   const [previewItem, setPreviewItem] = useState<MediaItem | null>(null);
+
+  const getIdentifier = (url: string) => url.split('?')[0].trim();
+  const assetIdentifiers = (currentAssets || []).map(getIdentifier);
 
   if (loading) {
     return (
@@ -62,6 +68,29 @@ export const MediaGrid: React.FC<MediaGridProps> = ({ media, loading, onDelete, 
             
             {/* Action Overlay */}
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3 backdrop-blur-[2px]">
+              {onSelect && (
+                  (() => {
+                    const isAdded = assetIdentifiers.includes(getIdentifier(item.url));
+                    return (
+                      <DashboardButton
+                        variant={isAdded ? "success" : "indigo"}
+                        disabled={isAdded}
+                        className={cn(
+                          "w-10 h-10 p-0 rounded-full shadow-lg transition-all",
+                          isAdded && "scale-110 opacity-100 cursor-default"
+                        )}
+                        onClick={(e) => {
+                          if (isAdded) return;
+                          e.stopPropagation();
+                          onSelect(item.url);
+                        }}
+                        title={isAdded ? "Already in Assets" : "Add to Assets"}
+                      >
+                        {isAdded ? <Check className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                      </DashboardButton>
+                    );
+                  })()
+              )}
               {onAddToCollection && (
                   <DashboardButton
                     variant="secondary"

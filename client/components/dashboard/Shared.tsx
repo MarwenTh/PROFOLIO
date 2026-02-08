@@ -95,7 +95,7 @@ export function DashboardCard({ children, className, hoverable = true, padding =
  * Standardized buttons for the dashboard
  */
 interface DashboardButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger" | "emerald";
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger" | "emerald" | "indigo" | "success";
   loading?: boolean;
   icon?: React.ElementType;
   iconPosition?: "left" | "right";
@@ -116,7 +116,9 @@ export function DashboardButton({
     secondary: "bg-neutral-100 dark:bg-white/5 text-neutral-900 dark:text-white hover:bg-neutral-200 dark:hover:bg-white/10",
     outline: "bg-transparent border border-neutral-200 dark:border-white/10 text-neutral-900 dark:text-white hover:bg-white dark:hover:bg-white/5",
     ghost: "bg-transparent text-neutral-500 hover:text-neutral-900 dark:hover:text-white",
-    danger: "bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white border border-red-500/20"
+    danger: "bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white border border-red-500/20",
+    indigo: "bg-indigo-600 text-white hover:bg-indigo-500 shadow-xl shadow-indigo-600/20",
+    success: "bg-emerald-500/20 text-emerald-500 border-emerald-500/30 hover:bg-emerald-500/30 backdrop-blur-md"
   };
 
   // Extract non-button props if needed or cast

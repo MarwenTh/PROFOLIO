@@ -166,6 +166,33 @@ export const useLibrary = () => {
     }
   }, [fetchCollections]);
 
+  const uploadMedia = useCallback(async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      setLoading(true);
+      const res = await api.post('/library/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      if (res.data.success) {
+        toast.success(res.data.message || 'File uploaded successfully');
+        fetchMedia(); // Refresh library
+        return res.data.media;
+      }
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Failed to upload media';
+      toast.error(message);
+      console.error('Upload error:', error);
+    } finally {
+      setLoading(false);
+    }
+    return null;
+  }, [fetchMedia]);
+
   return {
     media,
     collections,
@@ -181,6 +208,7 @@ export const useLibrary = () => {
     saveUnsplashPhoto,
     createCollection,
     updateCollection,
-    deleteCollection
+    deleteCollection,
+    uploadMedia
   };
 };
