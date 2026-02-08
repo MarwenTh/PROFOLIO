@@ -1,79 +1,295 @@
+"use strict";
 "use client";
-import React, { useState } from "react";
-import { PageHeader, DashboardCard, DashboardButton, DashboardModal, DashboardInput, EmptyState } from "@/components/dashboard/Shared";
-import { Image as ImageIcon, Trash2, Plus, ExternalLink } from "lucide-react";
-import { useLibrary } from "@/hooks/useLibrary";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
+import { 
+  Image as ImageIcon, 
+  Search, 
+  FolderOpen, 
+  Upload, 
+  Plus, 
+  Grid, 
+  List,
+  Filter
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { 
+  PageHeader, 
+  DashboardSection, 
+  DashboardButton, 
+  DashboardInput, 
+  EmptyState, 
+  DeleteConfirmationModal 
+} from "@/components/dashboard/Shared";
+import { useLibrary, MediaItem, Collection } from "@/hooks/useLibrary";
+import { UnsplashSearch } from "@/components/library/UnsplashSearch";
+import { MediaGrid } from "@/components/library/MediaGrid";
+import { CollectionsList } from "@/components/library/CollectionsList";
+import { AddToCollectionModal } from "@/components/library/AddToCollectionModal";
+import { toast } from "sonner";
+import api from "@/lib/api";
 import { PageLoader } from "@/components/ui/Loader";
 
 export default function LibraryPage() {
-  const { media, loading, addMedia, deleteMedia } = useLibrary();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ filename: "", url: "", fileType: "image" });
+  const { 
+    media, 
+    collections, 
+    loading, 
+    unsplashResults, 
+    isSearching,
+    fetchMedia, 
+    fetchCollections, 
+    searchUnsplash, 
+    saveUnsplashPhoto,
+    createCollection
+  } = useLibrary();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const [activeTab, setActiveTab] = useState<"library" | "collections" | "unsplash">("library");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [addToCollectionModal, setAddToCollectionModal] = useState<{ isOpen: boolean; mediaId: number | null }>({
+    isOpen: false,
+    mediaId: null
+  });
+  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
+  const [collectionItems, setCollectionItems] = useState<MediaItem[]>([]);
+  const [loadingCollectionItems, setLoadingCollectionItems] = useState(false);
+  
+  // Delete confirmation state
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; mediaId: number | null }>({
+    isOpen: false,
+    mediaId: null
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    fetchMedia();
+    fetchCollections();
+  }, [fetchMedia, fetchCollections]);
+
+  const handleTabChange = (tab: "library" | "collections" | "unsplash") => {
+    setActiveTab(tab);
+    if (tab === "collections") setSelectedCollection(null);
+  };
+
+  const openAddToCollection = (mediaId: number) => {
+    setAddToCollectionModal({ isOpen: true, mediaId });
+  };
+
+  const handleSelectCollection = async (collection: Collection) => {
+    setSelectedCollection(collection);
+    setLoadingCollectionItems(true);
     try {
-      await addMedia(formData);
-      setIsModalOpen(false);
-      setFormData({ filename: "", url: "", fileType: "image" });
-    } catch (err) {
-      console.error('Failed to add media:', err);
+        const res = await api.get(`/library/collections/${collection.id}`);
+        if (res.data.success) {
+            setCollectionItems(res.data.items);
+        }
+    } catch (error) {
+        console.error("Error fetching collection items", error);
+        toast.error("Failed to load collection items");
+    } finally {
+        setLoadingCollectionItems(false);
     }
   };
 
-  if (loading) {
-    return <PageLoader />;
-  }
+  const handleDeleteMedia = (id: number) => {
+      setDeleteModal({ isOpen: true, mediaId: id });
+  };
+
+  const confirmDeleteMedia = async () => {
+      if (!deleteModal.mediaId) return;
+      
+      setIsDeleting(true);
+      try {
+        await api.delete(`/library/${deleteModal.mediaId}`);
+        toast.success("Media deleted");
+        fetchMedia();
+        if(selectedCollection) handleSelectCollection(selectedCollection);
+        setDeleteModal({ isOpen: false, mediaId: null });
+      } catch(err) {
+        toast.error("Failed to delete media");
+      } finally {
+        setIsDeleting(false);
+      }
+  };
+
+  const handleRemoveFromCollection = async (mediaId: number) => {
+      if(!selectedCollection) return;
+      try {
+        await api.delete(`/library/collections/${selectedCollection.id}/items/${mediaId}`);
+        toast.success("Removed from collection");
+        handleSelectCollection(selectedCollection); // Refresh
+      } catch(err) {
+        toast.error("Failed to remove item");
+      }
+  };
 
   return (
-    <div className="space-y-10">
-      <PageHeader title="Library" description="Manage your media files and assets." action={{ label: "Add Media", icon: Plus, onClick: () => setIsModalOpen(true) }} />
-      
-      {media.length === 0 ? (
-        <EmptyState title="No media files yet" description="Upload images and files to use in your portfolios." icon={ImageIcon} actionLabel="Add Media" onAction={() => setIsModalOpen(true)} />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          <AnimatePresence>
-            {media.map((file, index) => (
-              <motion.div key={file.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.3, delay: index * 0.05 }}>
-                <DashboardCard padding="none" className="group">
-                  <div className="aspect-square bg-neutral-100 dark:bg-neutral-800 relative overflow-hidden">
-                    {file.file_type?.startsWith('image') ? (
-                      <Image src={file.url} alt={file.filename} fill className="object-cover" />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center"><ImageIcon className="w-12 h-12 text-neutral-400" /></div>
-                    )}
-                  </div>
-                  <div className="p-4 space-y-3">
-                    <p className="text-sm font-bold truncate">{file.filename}</p>
-                    <div className="flex gap-2">
-                      <a href={file.url} target="_blank" rel="noopener noreferrer" className="flex-1 h-9 px-3 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 flex items-center justify-center gap-2 text-xs font-bold transition-colors">
-                        <ExternalLink className="w-3 h-3" /> View
-                      </a>
-                      <button onClick={() => deleteMedia(file.id)} className="h-9 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 flex items-center justify-center transition-colors">
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                </DashboardCard>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-      )}
+    <div className="w-full pb-20">
+      <PageHeader
+        title="Media Library"
+        description="Manage your images, assets, and collections."
+        action={activeTab === "library" ? {
+            label: "Upload",
+            icon: Upload,
+            onClick: () => toast.info("Drag and drop uploads coming soon!")
+        } : undefined}
+      />
 
-      <DashboardModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add Media" description="Add a new file to your library" icon={Plus}>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <DashboardInput label="Filename" value={formData.filename} onChange={(e) => setFormData(prev => ({ ...prev, filename: e.target.value }))} placeholder="my-image.jpg" required />
-          <DashboardInput label="File URL" value={formData.url} onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))} placeholder="https://example.com/image.jpg" required />
-          <div className="flex gap-3 pt-4">
-            <DashboardButton type="submit" variant="primary" className="flex-1 h-14">Add Media</DashboardButton>
-            <DashboardButton type="button" variant="secondary" onClick={() => setIsModalOpen(false)} className="h-14 px-8">Cancel</DashboardButton>
-          </div>
-        </form>
-      </DashboardModal>
+      {/* Tabs */}
+      <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-2">
+        <TabButton 
+          active={activeTab === "library"} 
+          onClick={() => handleTabChange("library")} 
+          icon={ImageIcon} 
+          label="My Library" 
+        />
+        <TabButton 
+          active={activeTab === "collections"} 
+          onClick={() => handleTabChange("collections")} 
+          icon={FolderOpen} 
+          label="Collections" 
+        />
+        <TabButton 
+          active={activeTab === "unsplash"} 
+          onClick={() => handleTabChange("unsplash")} 
+          icon={Search} 
+          label="Unsplash" 
+        />
+      </div>
+
+      <AnimatePresence mode="wait">
+        {activeTab === "library" && (
+          <motion.div
+            key="library"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            <DashboardSection title="All Media" description={`${media.length} items in your library`}>
+                {loading && media.length === 0 ? (
+                    <PageLoader />
+                ) : (
+                    <MediaGrid 
+                        media={media} 
+                        loading={loading} 
+                        onAddToCollection={openAddToCollection}
+                        onDelete={handleDeleteMedia}
+                    />
+                )}
+            </DashboardSection>
+          </motion.div>
+        )}
+
+        {activeTab === "collections" && (
+          <motion.div
+            key="collections"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            {!selectedCollection ? (
+                <CollectionsList 
+                    collections={collections}
+                    onCreateCollection={createCollection}
+                    onSelectCollection={handleSelectCollection}
+                />
+            ) : (
+                <div className="space-y-6">
+                    <div className="flex items-center gap-4 mb-6">
+                        <button 
+                            onClick={() => setSelectedCollection(null)}
+                            className="p-2 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-xl transition-colors"
+                        >
+                            <FolderOpen className="w-5 h-5 text-neutral-500" />
+                        </button>
+                        <div>
+                            <h2 className="text-2xl font-black">{selectedCollection.name}</h2>
+                            <p className="text-neutral-500">{selectedCollection.description || "No description"}</p>
+                        </div>
+                    </div>
+                    
+                    <MediaGrid 
+                        media={collectionItems} 
+                        loading={loadingCollectionItems}
+                        onDelete={(id) => handleRemoveFromCollection(id)} // Reuse delete btn for remove from collection
+                    />
+                     {collectionItems.length === 0 && !loadingCollectionItems && (
+                        <EmptyState 
+                            title="Empty Collection" 
+                            description="This collection has no items yet. Add items from your library." 
+                            icon={FolderOpen} 
+                            actionLabel="Go to Library"
+                            onAction={() => handleTabChange("library")}
+                        />
+                    )}
+                </div>
+            )}
+            
+          </motion.div>
+        )}
+
+        {activeTab === "unsplash" && (
+          <motion.div
+            key="unsplash"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            <UnsplashSearch 
+                onSearch={searchUnsplash} 
+                onSave={saveUnsplashPhoto} 
+                results={unsplashResults}
+                loading={isSearching}
+                media={media}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AddToCollectionModal 
+        isOpen={addToCollectionModal.isOpen}
+        onClose={() => setAddToCollectionModal({ ...addToCollectionModal, isOpen: false })}
+        mediaId={addToCollectionModal.mediaId}
+        collections={collections}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, mediaId: null })}
+        onConfirm={confirmDeleteMedia}
+        title="Delete Media"
+        description="Are you sure you want to delete this item? This action cannot be undone."
+        isLoading={isDeleting}
+      />
     </div>
+  );
+}
+
+function TabButton({ active, onClick, icon: Icon, label }: { active: boolean; onClick: () => void; icon: any; label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "relative px-6 py-3 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2.5 outline-none selection:bg-transparent",
+        active 
+          ? "text-white dark:text-black" 
+          : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100/50 dark:hover:bg-white/5"
+      )}
+    >
+      {active && (
+        <motion.div
+          layoutId="activeTab"
+          className="absolute inset-0 bg-neutral-900 dark:bg-white rounded-xl shadow-lg shadow-neutral-900/10 dark:shadow-white/5"
+          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+        />
+      )}
+      <span className="relative z-10 flex items-center gap-2">
+        <Icon className="w-4 h-4" />
+        {label}
+      </span>
+    </button>
   );
 }

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { PageHeader, DashboardCard, DashboardInput, DashboardButton, DashboardSection, EmptyState } from "@/components/dashboard/Shared";
 import { Search, Globe, Share2, Save } from "lucide-react";
 import { usePortfolio } from "@/hooks/usePortfolio";
-import { useSeo } from "@/hooks/useLibrary";
+import { useSeo } from "@/hooks/useSeo";
 import { useSession } from "next-auth/react";
 import { PageLoader } from "@/components/ui/Loader";
 

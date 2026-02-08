@@ -342,6 +342,27 @@ const initDb = async () => {
     );
   `;
 
+  const createCollectionsTable = `
+    CREATE TABLE IF NOT EXISTS collections (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      name VARCHAR(255) NOT NULL,
+      description TEXT,
+      preview_image TEXT,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
+  const createCollectionItemsTable = `
+    CREATE TABLE IF NOT EXISTS collection_items (
+      collection_id INTEGER REFERENCES collections(id) ON DELETE CASCADE,
+      media_id INTEGER REFERENCES media_library(id) ON DELETE CASCADE,
+      added_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (collection_id, media_id)
+    );
+  `;
+
   try {
     await pool.query(createUsersTable);
     console.log('✅ Users table initialized');
@@ -358,6 +379,28 @@ const initDb = async () => {
     await pool.query(createPortfolioViewsTable);
     await pool.query(createPortfolioStatsTable);
     await pool.query(createMediaLibraryTable);
+    // Add columns to media_library if they don't exist (for migration)
+    const addMediaColumns = `
+      DO $$ 
+      BEGIN 
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='media_library' AND column_name='width') THEN
+          ALTER TABLE media_library ADD COLUMN width INTEGER;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='media_library' AND column_name='height') THEN
+          ALTER TABLE media_library ADD COLUMN height INTEGER;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='media_library' AND column_name='blur_hash') THEN
+          ALTER TABLE media_library ADD COLUMN blur_hash TEXT;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='media_library' AND column_name='unsplash_id') THEN
+          ALTER TABLE media_library ADD COLUMN unsplash_id VARCHAR(255);
+        END IF;
+      END $$;
+    `;
+    await pool.query(addMediaColumns);
+    
+    await pool.query(createCollectionsTable);
+    await pool.query(createCollectionItemsTable);
     await pool.query(createPortfolioSeoTable);
     await pool.query(createPortfolioDomainsTable);
     await pool.query(createMarketplaceItemsTable);

@@ -345,3 +345,55 @@ export function DashboardSection({ title, description, children, className }: Da
     </div>
   );
 }
+
+/**
+ * DeleteConfirmationModal Component
+ * Styled confirmation modal for destructive actions
+ */
+interface DeleteConfirmationModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  description: string;
+  isLoading?: boolean;
+}
+
+export function DeleteConfirmationModal({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  title, 
+  description, 
+  isLoading = false 
+}: DeleteConfirmationModalProps) {
+  return (
+    <DashboardModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={title}
+      description={description}
+      icon={X}
+      maxWidth="max-w-md"
+    >
+      <div className="flex flex-col gap-4 mt-2">
+        <div className="grid grid-cols-2 gap-4">
+          <DashboardButton
+            variant="secondary"
+            onClick={onClose}
+            disabled={isLoading}
+          >
+            Cancel
+          </DashboardButton>
+          <DashboardButton
+            variant="danger"
+            onClick={onConfirm}
+            loading={isLoading}
+          >
+            Delete
+          </DashboardButton>
+        </div>
+      </div>
+    </DashboardModal>
+  );
+}

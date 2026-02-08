@@ -54,3 +54,5 @@ The editor uses a weight-driven, structured approach:
 1. **API Interaction**: Always use the custom hooks (`usePortfolio`, `useAuth`). Direct `axios` calls in components are prohibited.
 2. **Styling**: Stick to the curated HSL color palette and Glassmorphism principles defined in the design system.
 3.  **Animations**: Use `framer-motion` for all transitions. Keep durations between 0.2s and 0.4s for a professional feel.
+3. **Components**: Use components for best practices and code reusability. 
+4. **Hooks**: Use hooks for best practices and code reusability. 

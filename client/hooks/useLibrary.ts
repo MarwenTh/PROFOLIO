@@ -1,153 +1,131 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 
-export interface MediaFile {
+export interface MediaItem {
   id: number;
-  user_id: number;
-  filename: string;
-  original_name?: string;
-  file_type?: string;
-  file_size?: number;
   url: string;
-  folder: string;
-  created_at: string;
+  filename: string;
+  width?: number;
+  height?: number;
+  unsplash_id?: string;
+  folder?: string;
+  file_type?: string;
+  created_at?: string;
 }
 
-export interface SeoSettings {
-  id?: number;
-  portfolio_id: number;
-  meta_title?: string;
-  meta_description?: string;
-  meta_keywords?: string;
-  og_image?: string;
-  og_title?: string;
-  og_description?: string;
-  twitter_card?: string;
-  canonical_url?: string;
-  robots?: string;
-  updated_at?: string;
+export interface Collection {
+  id: number;
+  name: string;
+  description?: string;
+  item_count: number;
+  preview_image?: string;
 }
 
-export const useLibrary = (folder?: string) => {
-  const [media, setMedia] = useState<MediaFile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export const useLibrary = () => {
+  const [media, setMedia] = useState<MediaItem[]>([]);
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [unsplashResults, setUnsplashResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
-  const fetchMedia = async () => {
+  const fetchMedia = useCallback(async (folder?: string) => {
     try {
       setLoading(true);
-      setError(null);
-      const params = folder ? { folder } : {};
-      const { data } = await api.get('/library', { params });
-      
-      if (data.success) {
-        setMedia(data.media);
+      const res = await api.get('/library', {
+        params: { folder }
+      });
+      if (res.data.success) {
+        setMedia(res.data.media);
       }
-    } catch (err: any) {
-      const message = err.response?.data?.message || 'Failed to fetch media';
-      setError(message);
-      toast.error(message);
+    } catch (error) {
+      console.error('Error fetching media:', error);
+      toast.error('Failed to load media library');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const addMedia = async (mediaData: Partial<MediaFile>) => {
+  const fetchCollections = useCallback(async () => {
     try {
-      const { data } = await api.post('/library', mediaData);
-      
-      if (data.success) {
-        setMedia(prev => [data.media, ...prev]);
-        toast.success('Media added successfully!');
-        return data.media;
+      const res = await api.get('/library/collections');
+      if (res.data.success) {
+        setCollections(res.data.collections);
       }
-    } catch (err: any) {
-      const message = err.response?.data?.message || 'Failed to add media';
-      toast.error(message);
-      throw err;
+    } catch (error) {
+      console.error('Error fetching collections:', error);
     }
-  };
+  }, []);
 
-  const deleteMedia = async (id: number) => {
+  const searchUnsplash = useCallback(async (query: string, page = 1) => {
+    if (!query.trim()) return;
     try {
-      const { data } = await api.delete(`/library/${id}`);
-      
-      if (data.success) {
-        setMedia(prev => prev.filter(m => m.id !== id));
-        toast.success('Media deleted successfully!');
+      setIsSearching(true);
+      const res = await api.get('/library/unsplash/search', {
+        params: { query, page }
+      });
+      if (res.data.success) {
+        setUnsplashResults(prev => page === 1 ? res.data.results : [...prev, ...res.data.results]);
+        return res.data;
       }
-    } catch (err: any) {
-      const message = err.response?.data?.message || 'Failed to delete media';
-      toast.error(message);
-      throw err;
+    } catch (error) {
+      console.error('Error searching Unsplash:', error);
+      toast.error('Failed to search Unsplash');
+    } finally {
+      setIsSearching(false);
     }
-  };
+  }, []);
 
-  useEffect(() => {
-    fetchMedia();
-  }, [folder]);
+  const saveUnsplashPhoto = useCallback(async (photo: any) => {
+    try {
+      const res = await api.post('/library', {
+        filename: photo.alt_description || photo.id,
+        originalName: photo.slug || photo.id,
+        fileType: 'image/jpeg',
+        fileSize: 0, 
+        url: photo.urls.regular,
+        width: photo.width,
+        height: photo.height,
+        blur_hash: photo.blur_hash,
+        unsplash_id: photo.id
+      });
+
+      if (res.data.success) {
+        toast.success(res.data.message || 'Photo saved to library');
+        fetchMedia(); // Refresh library
+      }
+    } catch (error) {
+      console.error('Error saving photo:', error);
+      toast.error('Failed to save photo');
+    }
+  }, [fetchMedia]);
+
+  const createCollection = useCallback(async (name: string, description?: string) => {
+    try {
+      const res = await api.post('/library/collections', {
+        name, description
+      });
+      if (res.data.success) {
+        toast.success('Collection created');
+        fetchCollections();
+      }
+    } catch (error) {
+      console.error('Error creating collection:', error);
+      toast.error('Failed to create collection');
+    }
+  }, [fetchCollections]);
 
   return {
     media,
+    collections,
     loading,
-    error,
-    addMedia,
-    deleteMedia,
-    refetch: fetchMedia
-  };
-};
-
-export const useSeo = (portfolioId: number) => {
-  const [seo, setSeo] = useState<SeoSettings | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchSeo = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const { data } = await api.get(`/seo/${portfolioId}`);
-      
-      if (data.success) {
-        setSeo(data.seo);
-      }
-    } catch (err: any) {
-      const message = err.response?.data?.message || 'Failed to fetch SEO settings';
-      setError(message);
-      toast.error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateSeo = async (seoData: Partial<SeoSettings>) => {
-    try {
-      const { data } = await api.put(`/seo/${portfolioId}`, seoData);
-      
-      if (data.success) {
-        setSeo(data.seo);
-        toast.success('SEO settings updated successfully!');
-        return data.seo;
-      }
-    } catch (err: any) {
-      const message = err.response?.data?.message || 'Failed to update SEO settings';
-      toast.error(message);
-      throw err;
-    }
-  };
-
-  useEffect(() => {
-    if (portfolioId) {
-      fetchSeo();
-    }
-  }, [portfolioId]);
-
-  return {
-    seo,
-    loading,
-    error,
-    updateSeo,
-    refetch: fetchSeo
+    unsplashResults,
+    setUnsplashResults,
+    isSearching,
+    fetchMedia,
+    fetchCollections,
+    searchUnsplash,
+    saveUnsplashPhoto,
+    createCollection
   };
 };
