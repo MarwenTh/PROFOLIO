@@ -175,6 +175,21 @@ export const PropertiesPanel = ({ component, onUpdate, onDelete }: PropertiesPan
                      <SectionHeader icon={Box} label="Dimensions & Spacing" />
                      
                      <div className="grid grid-cols-2 gap-3">
+                         <NumberInput 
+                            label="X (Left)" 
+                            value={parseInt(component.styles.left || '0')} 
+                            onChange={(v: number) => updateStyle('left', `${v}px`)}
+                            suffix="px"
+                         />
+                         <NumberInput 
+                            label="Y (Top)" 
+                            value={parseInt(component.styles.top || '0')} 
+                            onChange={(v: number) => updateStyle('top', `${v}px`)}
+                            suffix="px"
+                         />
+                     </div>
+
+                     <div className="grid grid-cols-2 gap-3">
                          <div className="space-y-1">
                              <label className="text-[10px] uppercase text-neutral-500 font-bold tracking-wider">Width</label>
                              <input 

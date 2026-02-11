@@ -81,80 +81,110 @@ export default function PublicPortfolioPage() {
 }
 
 function RenderComponent({ comp }: { comp: any }) {
-  if (comp.type === 'text') {
-    return (
-      <motion.h2 
-        initial={{ opacity: 0, y: 10 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        style={comp.styles} 
-        className="tracking-tight leading-[1.1] selection:bg-emerald-500/20 break-words"
-      >
-        {comp.content}
-      </motion.h2>
-    );
-  }
+  // Extract layout styles for the wrapper
+  const { left, top, position, width, height, ...visualStyles } = comp.styles || {};
   
-  if (comp.type === 'image') {
-    return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        whileInView={{ opacity: 1, scale: 1 }}
-        viewport={{ once: true }}
-      >
-        <img 
-          src={comp.content} 
-          style={comp.styles}
-          className="w-full h-auto object-cover shadow-2xl rounded-3xl"
-        />
-      </motion.div>
-    );
-  }
+  // Default to absolute if x/y exist, else relative (backward compat)
+  const isAbsolute = left !== undefined && top !== undefined;
 
-  if (comp.type === 'button') {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
+  const wrapperStyles: any = {
+      position: isAbsolute ? 'absolute' : 'relative',
+      left,
+      top,
+      width,
+      height,
+      zIndex: 10
+  };
+
+  const Content = () => {
+      if (comp.type === 'text') {
+        return (
+          <h2 
+            style={visualStyles} 
+            className="tracking-tight leading-[1.1] selection:bg-emerald-500/20 break-words"
+          >
+            {comp.content}
+          </h2>
+        );
+      }
+      
+      if (comp.type === 'image') {
+        return (
+            <img 
+              src={comp.content} 
+              style={{...visualStyles, width: '100%', height: '100%'}}
+              className="object-cover shadow-2xl rounded-3xl"
+              alt="Portfolio element"
+            />
+        );
+      }
+    
+      if (comp.type === 'button') {
+        return (
+            <button 
+              style={visualStyles}
+              className="font-black text-xl px-10 py-5 transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-emerald-500/20"
+            >
+              {comp.content}
+            </button>
+        );
+      }
+    
+      if (comp.type === 'divider') {
+        return <div style={{...visualStyles, width: '100%', height: '1px', backgroundColor: visualStyles.backgroundColor || '#e5e5e5'}} />;
+      }
+    
+      if (comp.type === 'socials') {
+        return (
+          <div className="flex flex-wrap gap-3" style={visualStyles}>
+            {comp.content.map((social: any, idx: number) => (
+              <a 
+                key={idx} 
+                href={social.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full bg-neutral-100 dark:bg-white/5 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all"
+              >
+                {social.platform === 'github' && <Github className="w-5 h-5" />}
+                {social.platform === 'linkedin' && <Linkedin className="w-5 h-5" />}
+                {social.platform === 'twitter' && <Twitter className="w-5 h-5" />}
+              </a>
+            ))}
+          </div>
+        );
+      }
+
+      if (comp.type === 'video') {
+         return (
+             <div style={visualStyles} className="relative bg-black/10 overflow-hidden rounded-xl">
+                {comp.content && (
+                    <iframe 
+                        width="100%" 
+                        height="100%" 
+                        src={comp.content} 
+                        title="Video player" 
+                        frameBorder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowFullScreen
+                        className="w-full h-full"
+                    ></iframe>
+                )}
+             </div>
+         );
+      }
+
+      return null;
+  };
+
+  return (
+    <motion.div
+        initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-      >
-        <button 
-          style={comp.styles}
-          className="font-black text-xl px-10 py-5 transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-emerald-500/20"
-        >
-          {comp.content}
-        </button>
-      </motion.div>
-    );
-  }
-
-  if (comp.type === 'divider') {
-    return (
-      <div className="py-4">
-        <div style={comp.styles} />
-      </div>
-    );
-  }
-
-  if (comp.type === 'socials') {
-    return (
-      <div className="flex flex-wrap" style={comp.styles}>
-        {comp.content.map((social: any, idx: number) => (
-          <a 
-            key={idx} 
-            href={social.url} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-neutral-100 dark:bg-white/5 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all mr-3 mb-3"
-          >
-            {social.platform === 'github' && <Github className="w-5 h-5" />}
-            {social.platform === 'linkedin' && <Linkedin className="w-5 h-5" />}
-            {social.platform === 'twitter' && <Twitter className="w-5 h-5" />}
-          </a>
-        ))}
-      </div>
-    );
-  }
-
-  return null;
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        style={wrapperStyles}
+    >
+        <Content />
+    </motion.div>
+  );
 }

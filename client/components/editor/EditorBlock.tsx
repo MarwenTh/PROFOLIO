@@ -1,63 +1,90 @@
 "use client";
-import React from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { EditorComponent, ComponentType } from "@/lib/editor-types";
 import { cn } from "@/lib/utils";
-import { useDragControls, Reorder } from "framer-motion";
-import * as LucideIcons from "lucide-react"; // Import all icons
-import { GripVertical } from "lucide-react";
-import { COMPONENT_TEMPLATES } from "@/lib/editor-constants";
-import { generateId } from "@/lib/editor-utils";
-import { toast } from "sonner";
+import * as LucideIcons from "lucide-react";
+import { GripVertical, Move } from "lucide-react";
 
 interface EditorBlockProps {
   component: EditorComponent;
   selectedId: string | null;
   onSelect: (id: string) => void;
   onUpdate: (id: string, updates: Partial<EditorComponent>) => void;
-  onAddComponent?: (targetId: string, type: ComponentType, position: 'before' | 'after' | 'inside') => void;
   isDragging?: boolean;
   isPreview: boolean;
+  canvasRef?: React.RefObject<HTMLDivElement | null>;
 }
-
-// Fancy Drop Indicator
-const DropIndicator = ({ position }: { position: 'before' | 'after' | 'inside' }) => {
-    if (position === 'inside') return (
-        <div className="absolute inset-0 border-2 border-indigo-500 bg-indigo-500/10 rounded-lg pointer-events-none z-50 animate-pulse" />
-    );
-
-    return (
-        <div 
-            className={cn(
-                "absolute left-0 right-0 h-[4px] bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 rounded-full z-50 pointer-events-none shadow-[0_0_10px_rgba(99,102,241,0.8)]",
-                position === 'before' ? "-top-[6px]" : "-bottom-[6px]"
-            )}
-        >
-             <div className="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white shadow-md border border-indigo-500" />
-             <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/2 w-2 h-2 rounded-full bg-white shadow-md border border-indigo-500" />
-        </div>
-    );
-};
 
 export const EditorBlock = ({ 
   component, 
   selectedId, 
   onSelect, 
   onUpdate,
-  onAddComponent,
   isDragging,
-  isPreview 
+  isPreview,
+  canvasRef
 }: EditorBlockProps) => {
-  const controls = useDragControls();
   const isSelected = selectedId === component.id;
-  const [dropPosition, setDropPosition] = React.useState<'before' | 'after' | 'inside' | null>(null);
+  const elementRef = useRef<HTMLDivElement>(null);
+  const [isMoving, setIsMoving] = useState(false);
+  const moveStartRef = useRef<{ startX: number; startY: number; origLeft: number; origTop: number } | null>(null);
 
-  // Basic Renderers based on type
+  // ─── Drag-to-Move Logic ───
+  const handleMoveStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onSelect(component.id);
+
+    const left = parseFloat(component.styles.left) || 0;
+    const top = parseFloat(component.styles.top) || 0;
+
+    moveStartRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      origLeft: left,
+      origTop: top
+    };
+    setIsMoving(true);
+
+    const handleMouseMove = (ev: MouseEvent) => {
+      if (!moveStartRef.current) return;
+      const dx = ev.clientX - moveStartRef.current.startX;
+      const dy = ev.clientY - moveStartRef.current.startY;
+      
+      const newLeft = Math.max(0, moveStartRef.current.origLeft + dx);
+      const newTop = Math.max(0, moveStartRef.current.origTop + dy);
+
+      // Live update position
+      onUpdate(component.id, {
+        styles: {
+          ...component.styles,
+          left: `${newLeft}px`,
+          top: `${newTop}px`,
+        }
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsMoving(false);
+      moveStartRef.current = null;
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  }, [component, onSelect, onUpdate]);
+
+  // ─── Content Renderers ───
   const renderContent = () => {
+    // Extract position styles so they don't apply to the inner content
+    const { left, top, position, ...contentStyles } = component.styles;
+
     switch (component.type) {
       case 'text':
         return (
           <div 
-            style={component.styles}
+            style={contentStyles}
             className="outline-none empty:before:content-['Type_text...'] empty:before:text-gray-400"
           >
             {component.content}
@@ -69,31 +96,32 @@ export const EditorBlock = ({
           <img 
             src={component.content || "https://via.placeholder.com/400x300"} 
             alt="User uploaded"
-            className="w-full h-full object-cover"
-            style={component.styles}
+            className="object-cover"
+            style={contentStyles}
+            draggable={false}
           />
         );
       
       case 'button':
         return (
-          <button style={component.styles}>
+          <button style={contentStyles} className="pointer-events-none">
             {component.content}
           </button>
         );
 
       case 'divider':
-        return <div style={component.styles} />;
+        return <div style={contentStyles} />;
       
       case 'spacer':
-        return <div style={{...component.styles, minHeight: '20px'}} className={cn(!isPreview && "bg-gray-100/10 border border-dashed border-gray-500/20")} />;
+        return <div style={{...contentStyles, minHeight: '20px'}} className={cn(!isPreview && "bg-gray-100/10 border border-dashed border-gray-500/20")} />;
 
       case 'icon':
           const IconComp = (LucideIcons as any)[component.content] || LucideIcons.Star;
-          return <div style={component.styles}><IconComp className="w-full h-full" /></div>;
+          return <div style={contentStyles}><IconComp className="w-full h-full" /></div>;
 
       case 'video':
           return (
-             <div style={component.styles} className="relative bg-black/10 min-h-[50px]">
+             <div style={contentStyles} className="relative bg-black/10 min-h-[50px]">
                 {component.content ? (
                     <iframe 
                         width="100%" 
@@ -113,7 +141,7 @@ export const EditorBlock = ({
 
       case 'socials':
         return (
-            <div style={component.styles} className="flex">
+            <div style={contentStyles} className="flex">
                 {(component.content as any[]).map((s, i) => (
                     <a key={i} href={s.url} className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
                         <div className="w-4 h-4 bg-gray-500 rounded-full" />
@@ -125,15 +153,13 @@ export const EditorBlock = ({
       case 'container':
       case 'row':
       case 'column':
-        // Safe styling for flex containers
         const flexStyles: React.CSSProperties = {
-            ...component.styles,
+            ...contentStyles,
             display: 'flex',
-            flexDirection: (component.styles.flexDirection || (component.type === 'column' ? 'column' : 'row')) as any,
-            flexWrap: (component.styles.flexWrap || (component.type === 'row' ? 'wrap' : 'nowrap')) as any,
+            flexDirection: (contentStyles.flexDirection || (component.type === 'column' ? 'column' : 'row')) as any,
+            flexWrap: (contentStyles.flexWrap || (component.type === 'row' ? 'wrap' : 'nowrap')) as any,
         };
         
-        // Ensure minimum dimensions for editing
         if (!isPreview && (!flexStyles.minHeight || flexStyles.minHeight === 'auto')) {
             flexStyles.minHeight = component.children?.length === 0 ? '80px' : 'auto';
         }
@@ -145,63 +171,18 @@ export const EditorBlock = ({
                     "relative transition-all",
                     component.children && component.children.length === 0 && !isPreview && "bg-gray-50/50 dark:bg-white/5 border border-dashed border-gray-300 dark:border-white/10 flex items-center justify-center after:content-['Drop_Here'] after:text-gray-400 after:text-[10px] after:uppercase after:tracking-widest"
                 )}
-                onDragOver={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    e.dataTransfer.dropEffect = 'copy';
-                    
-                    if (isDragging) {
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        const y = e.clientY - rect.top;
-                        const height = rect.height;
-                        
-                        // If empty or explicitly targeting center (container logic), use inside
-                        // But if we want insertion, check edges.
-                        // For containers, let's say top 20% is before, bottom 20% is after, rest is inside.
-                        if (y < height * 0.2) setDropPosition('before');
-                        else if (y > height * 0.8) setDropPosition('after');
-                        else setDropPosition('inside');
-                    }
-                }}
-                onDragLeave={() => setDropPosition(null)}
-                onDrop={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const type = e.dataTransfer.getData('type') as ComponentType;
-                    if (type && onAddComponent && dropPosition) {
-                         onAddComponent(component.id, type, dropPosition);
-                    }
-                    setDropPosition(null);
-                }}
             >
-
-
-                {/* Visual Drop Indicator */}
-                {dropPosition && <DropIndicator position={dropPosition} />}
-
-                {/* Recursive Rendering with Reorder */}
-                <Reorder.Group
-                    axis={flexStyles.flexDirection === 'column' ? 'y' : 'x'}
-                    values={component.children || []}
-                    onReorder={(newChildren) => onUpdate(component.id, { children: newChildren })}
-                    className="flex flex-1 w-full h-full"
-                    style={{ flexDirection: flexStyles.flexDirection as any, flexWrap: flexStyles.flexWrap as any, gap: flexStyles.gap as any, alignItems: flexStyles.alignItems as any, justifyContent: flexStyles.justifyContent as any }}
-                >
-                    {component.children?.map(child => (
-                       <Reorder.Item key={child.id} value={child} dragListener={!isPreview && !isDragging}>
-                           <EditorBlock 
-                             key={child.id} 
-                             component={child} 
-                             selectedId={selectedId}
-                             onSelect={onSelect}
-                             onUpdate={onUpdate}
-                             onAddComponent={onAddComponent}
-                             isDragging={isDragging}
-                             isPreview={isPreview}
-                           /> 
-                       </Reorder.Item>
-                    ))}
-                </Reorder.Group>
+                {component.children?.map(child => (
+                    <EditorBlock 
+                      key={child.id} 
+                      component={child} 
+                      selectedId={selectedId}
+                      onSelect={onSelect}
+                      onUpdate={onUpdate}
+                      isDragging={isDragging}
+                      isPreview={isPreview}
+                    /> 
+                ))}
             </div>
         );
 
@@ -210,80 +191,77 @@ export const EditorBlock = ({
     }
   };
 
+  // ─── Preview Mode: No controls ───
   if (isPreview) {
       return (
-          <div style={{ position: 'relative' }}>
+          <div 
+            style={{ 
+              position: 'absolute',
+              left: component.styles.left || '0px',
+              top: component.styles.top || '0px',
+            }}
+          >
                {renderContent()}
           </div>
       );
   }
 
+  // ─── Editor Mode: With controls + drag-to-move ───
   return (
     <div
+      ref={elementRef}
       onClick={(e) => {
         e.stopPropagation();
         onSelect(component.id);
       }}
+      style={{
+        position: 'absolute',
+        left: component.styles.left || '0px',
+        top: component.styles.top || '0px',
+        cursor: isMoving ? 'grabbing' : 'default',
+      }}
       className={cn(
-        "relative group ring-2 ring-transparent transition-all",
-        isSelected ? "ring-indigo-500 z-10" : "hover:ring-indigo-500/50"
+        "group/block select-none",
+        isSelected && "z-20",
+        !isSelected && "z-10",
       )}
-      onDragOver={(e) => {
-          // If this is a container, let the container handle it (it has its own onDragOver)
-          // We only handle if default prevented is false? No, explicit check.
-          if (component.type === 'container' || component.type === 'row' || component.type === 'column') return;
-          
-          e.preventDefault();
-          e.stopPropagation();
-          e.dataTransfer.dropEffect = 'copy';
-          
-          if (isDragging) {
-              const rect = e.currentTarget.getBoundingClientRect();
-              const y = e.clientY - rect.top;
-              // Simple 50/50 split for non-containers
-              if (y < rect.height / 2) setDropPosition('before');
-              else setDropPosition('after');
-          }
-      }}
-      onDragLeave={() => {
-           if (component.type === 'container' || component.type === 'row' || component.type === 'column') return;
-           setDropPosition(null);
-      }}
-      onDrop={(e) => {
-          if (component.type === 'container' || component.type === 'row' || component.type === 'column') return;
-          
-          e.preventDefault();
-          e.stopPropagation();
-          const type = e.dataTransfer.getData('type') as ComponentType;
-          if (type && onAddComponent && dropPosition) {
-               onAddComponent(component.id, type, dropPosition);
-          }
-          setDropPosition(null);
-      }}
-
     >
-      {/* Visual Drop Indicator for Items */}
-      {dropPosition && <DropIndicator position={dropPosition} />}
-
-      {/* Editor Controls Overlay (Appears on Hover/Select) */}
-      {!isPreview && (
+      {/* Selection Ring */}
+      <div className={cn(
+        "relative ring-2 transition-all rounded-sm",
+        isSelected ? "ring-indigo-500" : "ring-transparent hover:ring-indigo-500/40",
+        isMoving && "ring-indigo-400 shadow-lg shadow-indigo-500/20"
+      )}>
+        
+        {/* ── Controls Overlay ── */}
+        {isSelected && (
           <>
-             {/* Drag Handle - Visual only for now */}
-             <div 
-                className="absolute top-0 left-0 p-1 opacity-0 group-hover/block:opacity-100 cursor-grab active:cursor-grabbing z-50 bg-indigo-500 text-white rounded-br-lg"
-                onPointerDown={(e) => controls.start(e)}
-             >
-                 <GripVertical size={12} />
-             </div>
-             
-             {/* Label Tag */}
-             <div className="absolute -top-5 left-0 text-[9px] bg-indigo-500 text-white px-1.5 py-0.5 rounded-t opacity-0 group-hover/block:opacity-100 transition-opacity whitespace-nowrap z-40 pointer-events-none uppercase tracking-wider font-bold">
-                 {component.type}
-             </div>
-          </>
-      )}
+            {/* Move Handle */}
+            <div 
+              className="absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-indigo-500 text-white text-[10px] px-2 py-1 rounded-md cursor-grab active:cursor-grabbing shadow-lg z-50 whitespace-nowrap select-none"
+              onMouseDown={handleMoveStart}
+            >
+              <Move size={10} />
+              <span className="uppercase tracking-wider font-bold">{component.type}</span>
+            </div>
 
-      {renderContent()}
+            {/* Resize Handles (visual only for now) */}
+            <div className="absolute -top-1 -left-1 w-2.5 h-2.5 bg-white border-2 border-indigo-500 rounded-sm cursor-nw-resize z-50" />
+            <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-white border-2 border-indigo-500 rounded-sm cursor-ne-resize z-50" />
+            <div className="absolute -bottom-1 -left-1 w-2.5 h-2.5 bg-white border-2 border-indigo-500 rounded-sm cursor-sw-resize z-50" />
+            <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 bg-white border-2 border-indigo-500 rounded-sm cursor-se-resize z-50" />
+          </>
+        )}
+
+        {/* Label on Hover (non-selected) */}
+        {!isSelected && (
+          <div className="absolute -top-5 left-0 text-[9px] bg-indigo-500/80 text-white px-1.5 py-0.5 rounded-t opacity-0 group-hover/block:opacity-100 transition-opacity whitespace-nowrap z-40 pointer-events-none uppercase tracking-wider font-bold">
+              {component.type}
+          </div>
+        )}
+
+        {renderContent()}
+      </div>
     </div>
   );
 };

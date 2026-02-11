@@ -464,8 +464,10 @@ export default function PortfolioEditorPage() {
             </header>
 
             {/* CANVAS */}
-            <div className="flex-1 overflow-y-auto p-12 custom-scrollbar bg-[radial-gradient(#1a1a1a_1px,transparent_1px)] [background-size:20px_20px]" onClick={() => setSelectedId(null)}>
-                
+            <div 
+                className="flex-1 overflow-y-auto p-12 custom-scrollbar bg-[radial-gradient(#1a1a1a_1px,transparent_1px)] [background-size:20px_20px]" 
+                onClick={() => setSelectedId(null)}
+            >
                 <EditorMediaModal 
                   isOpen={isLibraryOpen} 
                   onClose={() => setIsLibraryOpen(false)}
@@ -484,125 +486,96 @@ export default function PortfolioEditorPage() {
                 />
                 
                 <div 
+                    id="canvas-area"
                     className={cn(
-                    "mx-auto bg-black transition-all shadow-2xl relative min-h-[800px]",
-                    previewMode === 'desktop' && "w-full",
-                    previewMode === 'laptop' && "w-[1280px]",
-                    previewMode === 'tablet' && "w-[768px]",
-                    previewMode === 'mobile' && "w-[375px]"
-                )}
+                        "mx-auto bg-black transition-all shadow-2xl relative min-h-[800px] h-full",
+                        previewMode === 'desktop' && "w-full",
+                        previewMode === 'laptop' && "w-[1280px]",
+                        previewMode === 'tablet' && "w-[768px]",
+                        previewMode === 'mobile' && "w-[375px]"
+                    )}
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.dataTransfer.dropEffect = 'copy';
+                    }}
+                    onDrop={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsDragging(false);
 
-                onDragOver={(e) => {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'copy';
-                }}
-                onDrop={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setIsDragging(false);
-                    const type = e.dataTransfer.getData('type') as ComponentType;
-                    const templateKey = e.dataTransfer.getData('templateKey');
-                    
-                    if (templateKey && type === 'section' as any) {
-                         // Handle Section Drop (e.g. Hero, About)
-                         const template = SECTION_TEMPLATES[templateKey as keyof typeof SECTION_TEMPLATES];
-                         if (template) {
-                             const components = (template as any).components.map((c: any) => ({
-                                ...c,
+                        const type = e.dataTransfer.getData('type') as ComponentType;
+                        const templateKey = e.dataTransfer.getData('templateKey');
+                        
+                        if (templateKey && type === 'section' as any) {
+                             // Handle Section Drop (e.g. Hero, About)
+                             const template = SECTION_TEMPLATES[templateKey as keyof typeof SECTION_TEMPLATES];
+                             if (template) {
+                                 // For now, section templates might act as "groups" or just piles of elements
+                                 // Since we are free-form, we might want to drop them at 0,0 or relative to drop
+                                 // Let's just append them for now (preserving their relative offsets if we had them, but we don't really)
+                                 // Simple fallback: just add them.
+                                 const components = (template as any).components.map((c: any) => ({
+                                    ...c,
+                                    id: generateId(),
+                                    children: c.children ? c.children.map((child: any) => ({...child, id: generateId()})) : undefined
+                                 }));
+                                 setSections(prev => ({ ...prev, body: [...prev.body, ...components] }));
+                                 toast.success(`Added ${template.label}`);
+                             }
+                        } else if (type) {
+                            // Elements drop
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const x = e.clientX - rect.left;
+                            const y = e.clientY - rect.top;
+
+                            const template = COMPONENT_TEMPLATES[type];
+                            if (!template) return;
+
+                            const newComponent = {
                                 id: generateId(),
-                                children: c.children ? c.children.map((child: any) => ({...child, id: generateId()})) : undefined
-                             }));
-                             setSections(prev => ({ ...prev, body: [...prev.body, ...components] }));
-                             toast.success(`Added ${template.label}`);
-                         }
-                    } else if (type) {
-                        handleAddComponent('body', type);
-                    }
-                }}
+                                type: type,
+                                content: template.content,
+                                styles: { 
+                                    ...template.styles,
+                                    position: 'absolute',
+                                    left: `${x}px`,
+                                    top: `${y}px`
+                                },
+                                children: template.children ? [] : undefined
+                            };
+
+                            setSections(prev => ({
+                                ...prev,
+                                body: [...prev.body, newComponent]
+                            }));
+                            toast.success(`Added ${type}`);
+                        }
+                    }}
                 >
-                    {['header', 'body', 'footer'].map((sectionKey) => {
-                        const items = sections[sectionKey as SectionKey];
-                        return (
-                            <div key={sectionKey} className={cn(
-                                "min-h-[100px] border-b border-dashed border-white/10 transition-colors",
-                                !isPreview && "hover:bg-white/5"
-                            )}>
-                                {!isPreview && <div className="absolute left-2 text-[10px] text-gray-300 uppercase tracking-widest pointer-events-none p-2">{sectionKey}</div>}
-                                
-                                 <div className="p-4">
-                                      {items.length === 0 && !isPreview && (
-                                          <div className="h-20 flex items-center justify-center text-gray-300 text-sm border-2 border-dashed border-gray-100 rounded-lg">
-                                              Empty {sectionKey} - Drop items here
-                                          </div>
-                                      )}
-                                      
-                                      <Reorder.Group 
-                                        axis="y" 
-                                        values={items} 
-                                        onReorder={(newOrder) => setSections(prev => ({ ...prev, [sectionKey]: newOrder }))}
-                                        className="space-y-4 min-h-[50px]"
-                                      >
-                                          {items.map(comp => (
-                                              <Reorder.Item key={comp.id} value={comp} dragListener={!isPreview}>
-                                                 <EditorBlock 
-                                                    key={comp.id}
-                                                    component={comp}
-                                                    selectedId={selectedId}
-                                                    onSelect={(id) => setSelectedId(id)}
-                                                    onUpdate={handleUpdateComponent}
-                                                    isDragging={isDragging}
-                                                    onAddComponent={(targetId, type, position: 'inside' | 'before' | 'after' = 'inside') => {
-                                                         const template = COMPONENT_TEMPLATES[type as keyof typeof COMPONENT_TEMPLATES];
-                                                         if (!template) return;
-                                                         const newComponent = {
-                                                              id: generateId(),
-                                                              type: type,
-                                                              content: template.content,
-                                                              styles: { ...template.styles },
-                                                              children: template.children ? [] : undefined
-                                                         };
-                                                         
-                                                         setSections(prev => {
-                                                             // Try generic relative addition first (recursion handles inside/before/after)
-                                                             // We try header, body, footer
-                                                             
-                                                             // Header
-                                                             let result = addComponentRelative(prev.header, targetId, newComponent, position);
-                                                             if (result.success) return { ...prev, header: result.updated };
-
-                                                             // Body
-                                                             result = addComponentRelative(prev.body, targetId, newComponent, position);
-                                                             if (result.success) return { ...prev, body: result.updated };
-                                                             
-                                                             // Footer
-                                                             result = addComponentRelative(prev.footer, targetId, newComponent, position);
-                                                             if (result.success) return { ...prev, footer: result.updated };
-
-                                                             // Fallback if not successful (shoudn't happen if targetId exists)
-                                                             // But if targetId was a top-level section container? 
-                                                             // Actually sections don't have IDs in the list.
-                                                             // So handleAddComponent fallback logic:
-                                                             if (targetId === 'header' || targetId === 'body' || targetId === 'footer') {
-                                                                 // This is the fallback for dropping on the empty section area (handled by other handlers in page currently)
-                                                                 // But here we are inside EditorBlock so targetId is a component ID.
-                                                             }
-
-                                                             return prev;
-                                                         });
-                                                         toast.success(`Added ${type}`);
-                                                    }}
-                                                    isPreview={isPreview}
-                                                 />
-                                              </Reorder.Item>
-                                          ))}
-                                      </Reorder.Group>
-                                 </div>
+                    {!isPreview && sections.body.length === 0 && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="text-gray-500 border-2 border-dashed border-gray-700 rounded-xl p-8 text-center">
+                                <p className="text-lg font-medium mb-2">Free-Form Canvas</p>
+                                <p className="text-sm">Drag elements here and place them anywhere!</p>
                             </div>
-                        );
-                    })}
+                        </div>
+                    )}
+
+                    {sections.body.map((comp) => (
+                        <EditorBlock 
+                            key={comp.id}
+                            component={comp}
+                            selectedId={selectedId}
+                            onSelect={(id) => setSelectedId(id)}
+                            onUpdate={handleUpdateComponent}
+                            isDragging={isDragging}
+                            isPreview={isPreview}
+                        />
+                    ))}
                 </div>
             </div>
-            
+
             {/* PROPERTIES PANEL */}
             {!isPreview && selectedId && (() => {
                 const selectedComponent = 

@@ -10,7 +10,7 @@ export const COMPONENT_TEMPLATES: Record<ComponentType, Partial<EditorComponent>
   image: { 
     type: 'image', 
     content: 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1000&auto=format&fit=crop', 
-    styles: { borderRadius: '12px', width: '100%', height: 'auto' } 
+    styles: { borderRadius: '12px', width: '400px', height: 'auto' } 
   },
   button: { 
     type: 'button', 
@@ -30,7 +30,7 @@ export const COMPONENT_TEMPLATES: Record<ComponentType, Partial<EditorComponent>
   container: {
     type: 'container',
     content: '',
-    styles: { padding: '20px', border: '1px dashed #ccc', minHeight: '100px', display: 'flex', flexDirection: 'column', gap: '16px' },
+    styles: { padding: '20px', border: '1px dashed #ccc', width: '300px', minHeight: '200px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: 'rgba(255,255,255,0.05)' },
     children: []
   },
   row: {
@@ -58,7 +58,7 @@ export const COMPONENT_TEMPLATES: Record<ComponentType, Partial<EditorComponent>
   video: {
       type: 'video',
       content: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-      styles: { width: '100%', aspectRatio: '16/9' }
+      styles: { width: '480px', height: '270px' }
   }
 };
 
