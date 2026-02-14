@@ -90,9 +90,16 @@ const EditorLayout = () => {
                     <button 
                         onClick={() => setDevice('desktop')}
                         className={`p-1.5 rounded-md transition-all ${device === 'desktop' ? 'bg-indigo-500 text-white' : 'text-neutral-500 hover:text-white'}`}
-                        title="Desktop (1920x1080)"
+                        title="Desktop (1280px)"
                     >
                         <Monitor className="w-4 h-4" />
+                    </button>
+                    <button 
+                        onClick={() => setDevice('wide')}
+                        className={`p-1.5 rounded-md transition-all ${device === 'wide' ? 'bg-indigo-500 text-white' : 'text-neutral-500 hover:text-white'}`}
+                        title="Wide PC (1920x1080)"
+                    >
+                        <Tv className="w-4 h-4" />
                     </button>
                 </div>
 
@@ -125,9 +132,9 @@ const EditorLayout = () => {
                     <Canvas />
                 </div>
 
-                {/* Properties Panel (Right Sidebar) */}
+                {/* Properties Panel (Right Sidebar) - Now Absolute Overlay */}
                 {(selectedComponent || selectedSection) && (
-                    <div className="w-[320px] shrink-0 border-l border-white/5 z-40 bg-[#0F0F10] overflow-y-auto custom-scrollbar">
+                    <div className="absolute top-0 right-0 w-[320px] h-full border-l border-white/5 z-40 bg-[#0F0F10] overflow-y-auto custom-scrollbar shadow-2xl">
                         <PropertiesPanel 
                             component={(selectedComponent || selectedSection) as any} 
                             onUpdate={(selectedComponent ? updateComponent : updateSection) as any}

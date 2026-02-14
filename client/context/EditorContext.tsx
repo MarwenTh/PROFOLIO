@@ -10,7 +10,7 @@ interface EditorState {
   selectedSectionId: string | null;
   scale: number;
   pan: { x: number, y: number };
-  device: 'mobile' | 'tablet' | 'desktop';
+  device: 'mobile' | 'tablet' | 'desktop' | 'wide';
   isMediaModalOpen: boolean;
   activeTool: string;
   contextMenu: {
@@ -38,9 +38,9 @@ interface EditorContextType extends EditorState {
   reorderSections: (newSections: EditorSection[]) => void;
 
   // Viewport Actions
-  setScale: (scale: number) => void;
+  setScale: (scale: number | ((s: number) => number)) => void;
   setPan: (pan: { x: number, y: number }) => void;
-  setDevice: (device: 'mobile' | 'tablet' | 'desktop') => void;
+  setDevice: (device: 'mobile' | 'tablet' | 'desktop' | 'wide') => void;
   setMediaModalOpen: (open: boolean) => void;
   setActiveTool: (tool: string) => void;
   
@@ -62,7 +62,7 @@ export const EditorProvider = ({ children, initialSections = [] }: { children: R
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [device, setDevice] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
+  const [device, setDevice] = useState<'mobile' | 'tablet' | 'desktop' | 'wide'>('desktop');
   const [activeTool, setActiveTool] = useState('select');
   const [isMediaModalOpen, setMediaModalOpen] = useState(false);
   const [contextMenu, setContextMenu] = useState({
@@ -131,7 +131,7 @@ export const EditorProvider = ({ children, initialSections = [] }: { children: R
         ...targetComp,
         x: 0,
         y: 0,
-        width: 1280,
+        width: 1280, // Baseline Desktop
         height: updatedSection.height,
         zIndex: 0,
         responsive: {
@@ -144,6 +144,11 @@ export const EditorProvider = ({ children, initialSections = [] }: { children: R
           tablet: {
             ...targetComp.responsive?.tablet,
             x: 0, y: 0, width: 768, height: updatedSection.height, zIndex: 0,
+            styles: { ...targetComp.styles, isBackground: true }
+          },
+          wide: {
+            ...targetComp.responsive?.wide,
+            x: 0, y: 0, width: 1920, height: updatedSection.height, zIndex: 0,
             styles: { ...targetComp.styles, isBackground: true }
           }
         },

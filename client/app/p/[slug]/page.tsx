@@ -111,11 +111,11 @@ function RenderComponent({ comp }: { comp: any }) {
     ? { ...comp, ...comp.responsive[device] }
     : comp;
 
-  const { x, y, width, height, styles = {}, type, content } = displayData;
+  const { x, y, width, height, styles = {}, type, content, zIndex: rootZIndex } = displayData;
 
   const getLeftPostion = () => {
       if (styles.isBackground) return 0;
-      const baseWidth = device === 'mobile' ? 375 : device === 'tablet' ? 768 : 1280;
+      const baseWidth = device === 'mobile' ? 375 : device === 'tablet' ? 768 : 1920;
       return `calc(50% - ${baseWidth / 2}px + ${x}px)`;
   };
 
@@ -127,7 +127,8 @@ function RenderComponent({ comp }: { comp: any }) {
         top: 0,
         width: '100%',
         height: '100%',
-        zIndex: styles.zIndex || 0,
+        zIndex: rootZIndex ?? styles.zIndex ?? 0,
+        pointerEvents: type === 'image' || type === 'video' || type.includes('-bg') ? 'none' : 'auto'
       }
     : {
         position: 'absolute',
@@ -135,7 +136,7 @@ function RenderComponent({ comp }: { comp: any }) {
         top: y,
         width: width,
         height: height,
-        zIndex: styles.zIndex || 10,
+        zIndex: rootZIndex ?? styles.zIndex ?? 10,
     };
 
 const Content = () => {

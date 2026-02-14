@@ -5,33 +5,62 @@ import { motion } from 'framer-motion';
 import { useEditor } from '@/context/EditorContext';
 import { Section } from './Section';
 import { ContextMenu } from './ContextMenu';
+import { Maximize } from 'lucide-react';
 
 export const Canvas = () => {
     const { sections, scale, setScale, selectSection, selectComponent, device } = useEditor();
     const containerRef = useRef<HTMLDivElement>(null);
 
     // Device dimensions
-    const deviceWidths = {
+    const deviceWidths: Record<string, number> = {
         mobile: 375,
         tablet: 768,
-        desktop: 1280
+        desktop: 1280,
+        wide: 1920
     };
 
     const currentWidth = deviceWidths[device] || deviceWidths.desktop;
 
-    const handleWheel = (e: React.WheelEvent) => {
-        if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            const newScale = Math.min(Math.max(scale - e.deltaY * 0.001, 0.1), 5);
-            setScale(newScale);
-        }
-    };
+    React.useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const handleWheel = (e: WheelEvent) => {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                // Use a ref for scale to avoid closure issues if needed, 
+                // but since we are in a functional component with state, 
+                // we should use the functional update pattern or ensure scale is in deps.
+                // However, setScale is stable.
+                setScale((s: number) => {
+                    const newScale = Math.min(Math.max(s - e.deltaY * 0.01, 0.1), 5);
+                    return newScale;
+                });
+            }
+        };
+
+        container.addEventListener('wheel', handleWheel, { passive: false });
+        return () => container.removeEventListener('wheel', handleWheel);
+    }, [setScale]);
+
+    const fitToScreen = React.useCallback(() => {
+        if (!containerRef.current) return;
+        const containerWidth = containerRef.current.clientWidth - 100; // Padding
+        const targetWidth = deviceWidths[device] || 1920;
+        const newScale = Math.min(containerWidth / targetWidth, 1);
+        setScale(newScale);
+    }, [device, setScale]);
+
+    React.useEffect(() => {
+        fitToScreen();
+        window.addEventListener('resize', fitToScreen);
+        return () => window.removeEventListener('resize', fitToScreen);
+    }, [device, fitToScreen]);
 
     return (
         <div 
             ref={containerRef}
             className="flex-1 w-full h-full bg-[#1e1e1e] overflow-y-auto relative custom-scrollbar"
-            onWheel={handleWheel}
             onClick={() => {
                 selectSection(null);
                 selectComponent(null);
@@ -56,8 +85,20 @@ export const Canvas = () => {
             </div>
             
             {/* HUD */}
-            <div className="fixed bottom-4 right-[340px] bg-neutral-800 text-white px-3 py-1.5 rounded-full text-xs font-bold border border-white/10 z-50">
-                {Math.round(scale * 100)}% | {device === 'desktop' ? '1920x1080' : device.toUpperCase()}
+            <div className="fixed bottom-4 right-[340px] flex items-center gap-2 bg-neutral-800 text-white px-3 py-1.5 rounded-full text-xs font-bold border border-white/10 z-50 shadow-lg">
+                <span>{Math.round(scale * 100)}%</span>
+                <span className="text-neutral-500">|</span>
+                <span>{device === 'desktop' ? '1920x1080' : device.toUpperCase()}</span>
+                <button 
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        fitToScreen();
+                    }}
+                    className="ml-1 p-0.5 hover:bg-white/10 rounded transition-colors"
+                    title="Fit to screen"
+                >
+                    <Maximize className="w-3 h-3" />
+                </button>
             </div>
 
             <ContextMenu />

@@ -46,10 +46,11 @@ export interface EditorComponent {
   responsive?: {
     mobile?: { x: number; y: number; width: number; height: number; zIndex?: number; styles?: Record<string, any> };
     tablet?: { x: number; y: number; width: number; height: number; zIndex?: number; styles?: Record<string, any> };
+    wide?: { x: number; y: number; width: number; height: number; zIndex?: number; styles?: Record<string, any> };
   };
 }
 
-export type DeviceType = 'mobile' | 'tablet' | 'desktop';
+export type DeviceType = 'mobile' | 'tablet' | 'desktop' | 'wide';
 
 export interface EditorSection {
   id: string;

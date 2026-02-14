@@ -94,7 +94,7 @@ export const CanvasElement = ({ component }: CanvasElementProps) => {
           width: isResizing 
             ? size.width 
             : (component.styles?.isBackground 
-                ? (device === 'mobile' ? 375 : device === 'tablet' ? 768 : 1280) 
+                ? (device === 'mobile' ? 375 : device === 'tablet' ? 768 : device === 'wide' ? 1920 : 1280) 
                 : displayData.width), 
           height: isResizing ? size.height : displayData.height,
           opacity: 1, 
