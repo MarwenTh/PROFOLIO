@@ -5,6 +5,7 @@ import { usePortfolio } from "@/hooks/usePortfolio";
 import { Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useGSAPAnimation } from "@/hooks/useGSAPAnimation";
 import { Github, Linkedin, Twitter } from "lucide-react";
 import { ShinyText } from '@/components/reactbits/ShinyText';
 import { SplitText } from '@/components/reactbits/SplitText';
@@ -111,6 +112,8 @@ function RenderComponent({ comp }: { comp: any }) {
     ? { ...comp, ...comp.responsive[device] }
     : comp;
 
+  const gsapRef = useGSAPAnimation(comp.animation);
+
   const { x, y, width, height, styles = {}, type, content, zIndex: rootZIndex } = displayData;
 
   const getLeftPostion = () => {
@@ -138,6 +141,21 @@ function RenderComponent({ comp }: { comp: any }) {
         height: height,
         zIndex: rootZIndex ?? styles.zIndex ?? 10,
     };
+
+  const animationVariants: Record<string, any> = {
+    fade: { initial: { opacity: 0 }, animate: { opacity: 1 } },
+    'slide-up': { initial: { y: 50, opacity: 0 }, animate: { y: 0, opacity: 1 } },
+    'slide-down': { initial: { y: -50, opacity: 0 }, animate: { y: 0, opacity: 1 } },
+    'slide-left': { initial: { x: 50, opacity: 0 }, animate: { x: 0, opacity: 1 } },
+    'slide-right': { initial: { x: -50, opacity: 0 }, animate: { x: 0, opacity: 1 } },
+    'scale-up': { initial: { scale: 0.5, opacity: 0 }, animate: { scale: 1, opacity: 1 } },
+    bounce: { initial: { y: -20, opacity: 0 }, animate: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 400, damping: 10 } } },
+    rotate: { initial: { rotate: -180, opacity: 0 }, animate: { rotate: 0, opacity: 1 } }
+  };
+
+  const currentAnim = comp.animation && comp.animation.engine !== 'gsap' 
+    ? animationVariants[comp.animation.type] 
+    : null;
 
 const Content = () => {
       if (type === 'text') {
@@ -273,10 +291,17 @@ const Content = () => {
 
   return (
     <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.4 }}
+        ref={gsapRef}
+        initial={currentAnim ? currentAnim.initial : { opacity: 0, y: 10 }}
+        whileInView={currentAnim ? currentAnim.animate : { opacity: 1, y: 0 }}
+        viewport={{ once: comp.animation?.once !== false }}
+        transition={{ 
+            type: "spring", 
+            bounce: 0, 
+            duration: comp.animation?.duration || 0.4,
+            delay: comp.animation?.delay || 0,
+            ...(currentAnim?.animate?.transition || {})
+        }}
         style={wrapperStyles}
     >
         <Content />

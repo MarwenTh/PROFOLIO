@@ -28,6 +28,7 @@ export const Section = ({ section, index }: SectionProps) => {
                 selectSection(section.id);
             }}
             onContextMenu={(e) => {
+                if (!isSelected) return;
                 e.preventDefault();
                 e.stopPropagation();
                 openContextMenu(e.clientX, e.clientY, null, section.id);

@@ -6,7 +6,7 @@ import {
     Bold, Italic, Underline, Type,  
     Layout, Box, Palette, Monitor, Smartphone, Trash2,
     ArrowUp, ArrowDown, ArrowLeft, ArrowRight,
-    StretchHorizontal, StretchVertical, X
+    StretchHorizontal, StretchVertical, X, Play
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEditor } from "@/context/EditorContext";
@@ -31,6 +31,15 @@ export const PropertiesPanel = ({ component, onUpdate, onDelete }: PropertiesPan
 
     const updateContent = (value: any) => {
         onUpdate(component.id, { content: value } as any);
+    };
+
+    const updateAnimation = (key: string, value: any) => {
+        onUpdate(component.id, {
+            animation: {
+                ...(component.animation || { type: 'fade', duration: 0.8, delay: 0 }),
+                [key]: value
+            }
+        });
     };
 
     const isSection = ['header', 'body', 'footer', 'custom'].includes(component.type);
@@ -321,6 +330,78 @@ export const PropertiesPanel = ({ component, onUpdate, onDelete }: PropertiesPan
                      </div>
                 </div>
 
+                {/* Animation Section */}
+                {!isSection && (
+                    <div className="space-y-4 pt-4 border-t border-white/5">
+                        <div className="flex items-center justify-between">
+                            <SectionHeader icon={Play} label="Animation" />
+                            {component.animation?.engine && (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-neutral-500 font-bold uppercase tracking-tighter">
+                                    {component.animation.engine}
+                                </span>
+                            )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                           <label className="text-[10px] uppercase text-neutral-500 font-bold tracking-wider">Preset</label>
+                           <select 
+                                value={component.animation?.type || 'none'}
+                                onChange={(e) => {
+                                    if (e.target.value === 'none') {
+                                        onUpdate(component.id, { animation: undefined });
+                                    } else {
+                                        updateAnimation('type', e.target.value);
+                                    }
+                                }}
+                                className="w-full bg-[#1A1A1E] border border-white/5 rounded-lg p-2.5 text-xs text-white outline-none focus:border-indigo-500/50"
+                           >
+                                <option value="none">No Animation</option>
+                                <option value="fade">Fade In</option>
+                                <option value="slide-up">Slide Up</option>
+                                <option value="slide-down">Slide Down</option>
+                                <option value="slide-left">Slide Left</option>
+                                <option value="slide-right">Slide Right</option>
+                                <option value="scale-up">Scale Up</option>
+                                <option value="bounce">Bounce</option>
+                                <option value="rotate">Rotate</option>
+                           </select>
+                        </div>
+
+                        {component.animation && (
+                            <>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <NumberInput 
+                                        label="Duration" 
+                                        value={component.animation.duration || 0.8} 
+                                        step={0.1}
+                                        onChange={(v: number) => updateAnimation('duration', v)}
+                                        suffix="s"
+                                    />
+                                    <NumberInput 
+                                        label="Delay" 
+                                        value={component.animation.delay || 0} 
+                                        step={0.1}
+                                        onChange={(v: number) => updateAnimation('delay', v)}
+                                        suffix="s"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <input 
+                                        type="checkbox" 
+                                        id="anim-once"
+                                        checked={component.animation.once !== false}
+                                        onChange={(e) => updateAnimation('once', e.target.checked)}
+                                        className="w-3.5 h-3.5 rounded border-white/10 bg-[#1A1A1E] text-indigo-500 focus:ring-0"
+                                    />
+                                    <label htmlFor="anim-once" className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider cursor-pointer">
+                                        Animate Once
+                                    </label>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
+
             </div>
         </div>
     );
@@ -361,14 +442,15 @@ const IconButtonSmall = ({ icon: Icon, onClick, active }: any) => (
     </button>
 );
 
-const NumberInput = ({ label, value, onChange, suffix }: any) => (
+const NumberInput = ({ label, value, onChange, suffix, step }: any) => (
     <div className="space-y-1">
         <label className="text-[10px] uppercase text-neutral-500 font-bold tracking-wider">{label}</label>
         <div className="relative">
             <input 
                 type="number"
                 value={isNaN(value) ? 0 : value}
-                onChange={(e) => onChange(parseInt(e.target.value))}
+                step={step || 1}
+                onChange={(e) => onChange(parseFloat(e.target.value))}
                 className="w-full h-9 bg-[#1A1A1E] border border-white/5 rounded-lg pl-2 pr-6 text-xs text-white outline-none focus:border-indigo-500/50"
             />
             <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-neutral-600 font-bold">{suffix}</span>

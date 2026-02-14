@@ -5,7 +5,9 @@ import { motion, useDragControls } from 'framer-motion';
 import { EditorComponent } from '@/lib/editor-types';
 import { cn } from '@/lib/utils';
 import { useEditor } from '@/context/EditorContext';
+import { useGSAPAnimation } from '@/hooks/useGSAPAnimation';
 import { Trash2, Move } from 'lucide-react';
+import { toast } from 'sonner';
 import { ShinyText } from '../reactbits/ShinyText';
 import { SplitText } from '../reactbits/SplitText';
 import { Aurora } from '../reactbits/Aurora';
@@ -42,6 +44,8 @@ export const CanvasElement = ({ component }: CanvasElementProps) => {
     const [initialSize, setInitialSize] = useState({ width: 0, height: 0 });
     const [size, setSize] = useState({ width: component.width, height: component.height });
 
+    const gsapRef = useGSAPAnimation(component.animation);
+
     const displayData = (device !== 'desktop' && component.responsive?.[device]) 
       ? { ...component, ...component.responsive[device] }
       : component;
@@ -70,15 +74,58 @@ export const CanvasElement = ({ component }: CanvasElementProps) => {
         updateComponent(component.id, { x: newX, y: newY });
     };
 
+    const [isDragOver, setIsDragOver] = useState(false);
+
+    const animationVariants: Record<string, any> = {
+      fade: { initial: { opacity: 0 }, animate: { opacity: 1 } },
+      'slide-up': { initial: { y: 50, opacity: 0 }, animate: { y: displayData.y, opacity: 1 } },
+      'slide-down': { initial: { y: -50, opacity: 0 }, animate: { y: displayData.y, opacity: 1 } },
+      'slide-left': { initial: { x: 50, opacity: 0 }, animate: { x: displayData.x, opacity: 1 } },
+      'slide-right': { initial: { x: -50, opacity: 0 }, animate: { x: displayData.x, opacity: 1 } },
+      'scale-up': { initial: { scale: 0.5, opacity: 0 }, animate: { scale: 1, opacity: 1 } },
+      bounce: { initial: { y: -20, opacity: 0 }, animate: { y: displayData.y, opacity: 1, transition: { type: "spring", stiffness: 400, damping: 10 } } },
+      rotate: { initial: { rotate: -180, opacity: 0 }, animate: { rotate: 0, opacity: 1 } }
+    };
+
+    const currentAnim = component.animation && component.animation.engine !== 'gsap' 
+      ? animationVariants[component.animation.type] 
+      : null;
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(false);
+        try {
+            const data = JSON.parse(e.dataTransfer.getData('application/json'));
+            if (data.type === 'animation') {
+                updateComponent(component.id, { animation: data.animation });
+                toast.success(`Animation "${data.animation.type}" applied!`);
+            }
+        } catch (err) {
+            console.error('Failed to parse animation data', err);
+        }
+    };
+
     return (
       <motion.div
-        ref={elementRef}
+        ref={(el) => {
+            // @ts-ignore
+            elementRef.current = el;
+            gsapRef.current = el;
+        }}
         drag={isResizing ? false : (isSelected ? true : false)}
         dragMomentum={false} 
         dragElastic={0}
         onDragStart={() => selectComponent(component.id)}
         onDragEnd={handleDragEnd}
+        onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragOver(true);
+        }}
+        onDragLeave={() => setIsDragOver(false)}
+        onDrop={handleDrop}
         onContextMenu={(e) => {
+          if (!isSelected) return;
           e.preventDefault();
           e.stopPropagation();
           openContextMenu(e.clientX, e.clientY, component.id, null);
@@ -87,7 +134,7 @@ export const CanvasElement = ({ component }: CanvasElementProps) => {
           e.stopPropagation();
           selectComponent(component.id);
         }}
-        initial={{ x: displayData.x, y: displayData.y, opacity: 0, scale: 0.9 }}
+        initial={currentAnim ? currentAnim.initial : { x: displayData.x, y: displayData.y, opacity: 0, scale: 0.9 }}
         animate={{ 
           x: component.styles?.isBackground ? 0 : displayData.x, 
           y: component.styles?.isBackground ? 0 : displayData.y, 
@@ -99,19 +146,28 @@ export const CanvasElement = ({ component }: CanvasElementProps) => {
           height: isResizing ? size.height : displayData.height,
           opacity: 1, 
           scale: 1,
+          rotate: 0,
           zIndex: isSelected 
             ? (component.styles?.isBackground ? (component.zIndex ?? 0) : 1000) 
-            : (component.zIndex ?? 1)
+            : (component.zIndex ?? 1),
+          ...(currentAnim ? currentAnim.animate : {})
         }}
-        transition={isResizing ? { duration: 0 } : { type: "spring", bounce: 0, duration: 0.4 }}
+        transition={isResizing ? { duration: 0 } : { 
+          type: "spring", 
+          bounce: 0, 
+          duration: component.animation?.duration || 0.4,
+          delay: component.animation?.delay || 0,
+          ...(currentAnim?.animate?.transition || {})
+        }}
         style={{
           position: 'absolute',
           ...component.styles
         }}
-      className={cn(
-        "group cursor-pointer select-none",
-        isSelected ? "ring-2 ring-indigo-500 z-50" : "hover:ring-1 hover:ring-indigo-500/50"
-      )}
+        className={cn(
+            "group cursor-pointer select-none transition-shadow",
+            isSelected ? "ring-2 ring-indigo-500 z-50" : "hover:ring-1 hover:ring-indigo-500/50",
+            isDragOver && "ring-4 ring-orange-500 bg-orange-500/10"
+        )}
     >
         {/* Render Content Based on Type */}
         <div className="w-full h-full overflow-hidden relative pointer-events-none">

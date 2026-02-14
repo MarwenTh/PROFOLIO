@@ -41,8 +41,14 @@ export interface EditorComponent {
   height: number;
   rotation?: number; // In degrees
   zIndex?: number;
-  
   children?: EditorComponent[];
+  animation?: { 
+    type: string; 
+    duration?: number; 
+    delay?: number; 
+    once?: boolean;
+    engine?: 'framer' | 'gsap';
+  };
   responsive?: {
     mobile?: { x: number; y: number; width: number; height: number; zIndex?: number; styles?: Record<string, any> };
     tablet?: { x: number; y: number; width: number; height: number; zIndex?: number; styles?: Record<string, any> };

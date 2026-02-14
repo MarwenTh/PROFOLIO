@@ -14,12 +14,13 @@ import {
     Grid, 
     Shapes,
     Upload,
-    Plus
+    Plus,
+    Play
 } from 'lucide-react'
 import { useEditor } from '@/context/EditorContext'
 import { cn } from '@/lib/utils'
 
-type Category = 'elements' | 'magic' | 'templates' | 'uploads';
+type Category = 'elements' | 'magic' | 'animations' | 'templates' | 'uploads';
 
 export const ComponentsLibrary = () => {
     const { activeTool, setActiveTool, addComponent, addSectionWithTemplate, sections, selectedSectionId, setMediaModalOpen } = useEditor();
@@ -46,6 +47,7 @@ export const ComponentsLibrary = () => {
     const categories = [
         { id: 'elements', icon: Shapes, label: 'Elements' },
         { id: 'magic', icon: Sparkles, label: 'Magic' },
+        { id: 'animations', icon: Play, label: 'Animations' },
         { id: 'templates', icon: Layout, label: 'Templates' },
         { id: 'uploads', icon: Upload, label: 'Uploads' }
     ];
@@ -72,6 +74,18 @@ export const ComponentsLibrary = () => {
         { icon: Sparkles, name: 'Shiny Button', type: 'shiny-button', content: 'Click Me!', size: { w: 160, h: 50 } },
         { icon: Sparkles, name: 'Spotlight Card', type: 'spotlight-card', content: 'Spotlight Content', size: { w: 300, h: 200 } },
         { icon: Sparkles, name: 'Tilted Card', type: 'tilted-card', content: '3D Card Content', size: { w: 300, h: 200 } }
+    ];
+
+    const animations = [
+        { name: 'Fade In', type: 'fade', engine: 'framer', description: 'Framer: Smooth entrance' },
+        { name: 'Slide Up', type: 'slide-up', engine: 'framer', description: 'Framer: Moves from bottom' },
+        { name: 'Scale Up', type: 'scale-up', engine: 'framer', description: 'Framer: Grows into place' },
+        { name: 'Bounce', type: 'bounce', engine: 'framer', description: 'Framer: Playful jump' },
+        { name: 'Rotate', type: 'rotate', engine: 'framer', description: 'Framer: Full spin' },
+        { name: 'GSAP Pulse', type: 'pulse', engine: 'gsap', description: 'GSAP: Heartbeat loop' },
+        { name: 'GSAP Float', type: 'float', engine: 'gsap', description: 'GSAP: Floating air' },
+        { name: 'GSAP Wiggle', type: 'wiggle', engine: 'gsap', description: 'GSAP: Playful shake' },
+        { name: 'GSAP Spin', type: 'spin-loop', engine: 'gsap', description: 'GSAP: Continuous spin' }
     ];
 
     const templates = [
@@ -194,6 +208,41 @@ export const ComponentsLibrary = () => {
                                                     <span className="text-[9px] text-neutral-500 uppercase tracking-tight">Animated Effect</span>
                                                 </div>
                                             </button>
+                                        ))}
+                                    </motion.div>
+                                )}
+
+                                {category === 'animations' && (
+                                    <motion.div 
+                                        key="animations"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95 }}
+                                        className="grid grid-cols-2 gap-3"
+                                    >
+                                        {animations.map((anim) => (
+                                            <div
+                                                key={anim.name}
+                                                draggable
+                                                onDragStart={(e) => {
+                                                    e.dataTransfer.setData('application/json', JSON.stringify({
+                                                        type: 'animation',
+                                                        animation: { 
+                                                            type: anim.type, 
+                                                            engine: anim.engine,
+                                                            duration: anim.engine === 'gsap' ? 1.5 : 0.8, 
+                                                            delay: 0 
+                                                        }
+                                                    }));
+                                                }}
+                                                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-[#2a2a2b] border border-white/5 hover:border-indigo-500/50 hover:bg-indigo-500/[0.03] transition-all group cursor-grab active:cursor-grabbing"
+                                            >
+                                                <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center mb-3">
+                                                    <Play className="w-5 h-5 text-orange-400" />
+                                                </div>
+                                                <span className="text-[10px] text-neutral-400 group-hover:text-white font-semibold">{anim.name}</span>
+                                                <span className="text-[8px] text-neutral-600 mt-1 uppercase">{anim.description}</span>
+                                            </div>
                                         ))}
                                     </motion.div>
                                 )}

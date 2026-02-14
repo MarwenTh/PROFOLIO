@@ -54,7 +54,16 @@ export const ContextMenu = () => {
                     }
                 }
             },
-            show: !!contextMenu.componentId
+            show: !!contextMenu.componentId && targetComponent?.type === 'image'
+        },
+        { 
+            label: 'Remove Animation', 
+            icon: Sparkles, 
+            onClick: () => {
+                if (contextMenu.componentId) updateComponent(contextMenu.componentId, { animation: undefined });
+                closeContextMenu();
+            },
+            show: !!contextMenu.componentId && !!targetComponent?.animation
         },
         { 
             label: 'Bring to Front', 
