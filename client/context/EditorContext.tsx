@@ -12,6 +12,7 @@ interface EditorState {
   pan: { x: number, y: number };
   device: 'mobile' | 'tablet' | 'desktop';
   isMediaModalOpen: boolean;
+  activeTool: string;
 }
 
 interface EditorContextType extends EditorState {
@@ -23,6 +24,7 @@ interface EditorContextType extends EditorState {
   
   // Section Actions
   addSection: (index?: number) => void;
+  addSectionWithTemplate: (templateName: string) => void;
   updateSection: (id: string, updates: Partial<EditorSection>) => void;
   removeSection: (id: string) => void;
   selectSection: (id: string | null) => void;
@@ -33,6 +35,7 @@ interface EditorContextType extends EditorState {
   setPan: (pan: { x: number, y: number }) => void;
   setDevice: (device: 'mobile' | 'tablet' | 'desktop') => void;
   setMediaModalOpen: (open: boolean) => void;
+  setActiveTool: (tool: string) => void;
 }
 
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
@@ -48,6 +51,7 @@ export const EditorProvider = ({ children, initialSections = [] }: { children: R
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [device, setDevice] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
+  const [activeTool, setActiveTool] = useState('select');
   const [isMediaModalOpen, setMediaModalOpen] = useState(false);
 
   // --- Section Actions ---
@@ -65,6 +69,40 @@ export const EditorProvider = ({ children, initialSections = [] }: { children: R
       else next.push(newSection);
       return next;
     });
+  }, []);
+
+  const addSectionWithTemplate = useCallback((templateName: string) => {
+    const sectionId = generateId();
+    let components: any[] = [];
+    let height = 600;
+
+    if (templateName === 'Minimal Hero') {
+        height = 500;
+        components = [
+            { id: generateId(), type: 'text', content: 'Modern Design for Your Portfolio', x: 50, y: 150, width: 600, height: 80, styles: { fontSize: '48px', fontWeight: '800' } },
+            { id: generateId(), type: 'text', content: 'Build something beautiful with our drag and drop editor.', x: 50, y: 240, width: 450, height: 60, styles: { fontSize: '18px', color: '#666' } },
+            { id: generateId(), type: 'button', content: 'Get Started', x: 50, y: 320, width: 160, height: 50, styles: { backgroundColor: '#6366f1', color: '#fff', borderRadius: '8px' } }
+        ];
+    } else if (templateName === 'Feature Grid') {
+        height = 600;
+        components = [
+            { id: generateId(), type: 'text', content: 'Our Features', x: 400, y: 50, width: 400, height: 40, styles: { fontSize: '32px', fontWeight: '700', textAlign: 'center' } },
+            { id: generateId(), type: 'container', content: '', x: 50, y: 150, width: 330, height: 350, styles: { backgroundColor: '#ffffff', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' } },
+            { id: generateId(), type: 'container', content: '', x: 425, y: 150, width: 330, height: 350, styles: { backgroundColor: '#ffffff', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' } },
+            { id: generateId(), type: 'container', content: '', x: 800, y: 150, width: 330, height: 350, styles: { backgroundColor: '#ffffff', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' } }
+        ];
+    }
+
+    const newSection: EditorSection = {
+        id: sectionId,
+        type: 'custom',
+        height,
+        styles: { backgroundColor: '#f8fafc' },
+        components
+    };
+
+    setSections(prev => [...prev, newSection]);
+    setActiveTool('select');
   }, []);
 
   const updateSection = useCallback((id: string, updates: Partial<EditorSection>) => {
@@ -158,6 +196,7 @@ export const EditorProvider = ({ children, initialSections = [] }: { children: R
       removeComponent,
       selectComponent,
       addSection,
+      addSectionWithTemplate,
       updateSection,
       removeSection,
       selectSection,
@@ -167,6 +206,8 @@ export const EditorProvider = ({ children, initialSections = [] }: { children: R
       setPan,
       device,
       setDevice,
+      activeTool,
+      setActiveTool,
       isMediaModalOpen,
       setMediaModalOpen
     }}>

@@ -6,6 +6,20 @@ import { EditorComponent } from '@/lib/editor-types';
 import { cn } from '@/lib/utils';
 import { useEditor } from '@/context/EditorContext';
 import { Trash2, Move } from 'lucide-react';
+import { ShinyText } from '../reactbits/ShinyText';
+import { SplitText } from '../reactbits/SplitText';
+import { Aurora } from '../reactbits/Aurora';
+import { ShinyButton } from '../reactbits/ShinyButton';
+import { BlurText } from '../reactbits/BlurText';
+import { GradientText } from '../reactbits/GradientText';
+import { CountUp } from '../reactbits/CountUp';
+import { Squares } from '../reactbits/Squares';
+import { Hyperspeed } from '../reactbits/Hyperspeed';
+import { Waves } from '../reactbits/Waves';
+import { SpotlightCard } from '../reactbits/SpotlightCard';
+import { TiltedCard } from '../reactbits/TiltedCard';
+import { LiquidChrome } from '../reactbits/LiquidChrome';
+import { GlitchText } from '../reactbits/GlitchText';
 
 interface CanvasElementProps {
   component: EditorComponent;
@@ -129,10 +143,39 @@ export const CanvasElement = ({ component }: CanvasElementProps) => {
   );
 };
 
+
 const renderContent = (component: EditorComponent) => {
     switch (component.type) {
         case 'text':
             return <p style={{ fontSize: 'inherit', color: 'inherit' }}>{component.content || 'Double click to edit'}</p>;
+        case 'split-text':
+            return <SplitText text={component.content || 'Splitting Text'} />;
+        case 'shiny-text':
+            return <ShinyText text={component.content || 'Metallic Shine'} />;
+        case 'blur-text':
+            return <BlurText text={component.content || 'Blurry Reveal'} />;
+        case 'gradient-text':
+            return <GradientText text={component.content || 'Color Flow'} />;
+        case 'glitch-text':
+            return <GlitchText text={component.content || 'System Glitch'} />;
+        case 'count-up':
+            return <CountUp to={parseInt(component.content) || 100} />;
+        case 'aurora-bg':
+            return <Aurora />;
+        case 'squares-bg':
+            return <Squares />;
+        case 'hyperspeed-bg':
+            return <Hyperspeed />;
+        case 'waves-bg':
+            return <Waves />;
+        case 'liquid-chrome':
+            return <LiquidChrome />;
+        case 'shiny-button':
+            return <ShinyButton text={component.content || 'Shiny Button'} />;
+        case 'spotlight-card':
+            return <SpotlightCard>{component.content || 'Spotlight Card'}</SpotlightCard>;
+        case 'tilted-card':
+            return <TiltedCard>{component.content || '3D Tilted Card'}</TiltedCard>;
         case 'button':
             return (
                 <button className="w-full h-full px-4 py-2 bg-indigo-500 text-white rounded shadow-sm flex items-center justify-center">

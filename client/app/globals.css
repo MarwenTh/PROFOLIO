@@ -28,6 +28,12 @@
   --animate-scroll-right: scroll-right 40s linear infinite;
   --animate-loader-path: loader-path 1.5s ease-in-out infinite;
   --animate-loader-pulse: loader-pulse 1.5s ease-in-out infinite;
+  --animate-shine: shine 5s linear infinite;
+  
+  @keyframes shine {
+      from { background-position: 200% 0%; }
+      to { background-position: -200% 0%; }
+  }
   
   @keyframes aurora-spin {
       from { transform: rotate(0deg); }

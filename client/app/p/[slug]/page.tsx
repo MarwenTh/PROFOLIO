@@ -6,6 +6,20 @@ import { Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Github, Linkedin, Twitter } from "lucide-react";
+import { ShinyText } from '@/components/reactbits/ShinyText';
+import { SplitText } from '@/components/reactbits/SplitText';
+import { Aurora } from '@/components/reactbits/Aurora';
+import { ShinyButton } from '@/components/reactbits/ShinyButton';
+import { BlurText } from '@/components/reactbits/BlurText';
+import { GradientText } from '@/components/reactbits/GradientText';
+import { CountUp } from '@/components/reactbits/CountUp';
+import { Squares } from '@/components/reactbits/Squares';
+import { Hyperspeed } from '@/components/reactbits/Hyperspeed';
+import { Waves } from '@/components/reactbits/Waves';
+import { SpotlightCard } from '@/components/reactbits/SpotlightCard';
+import { TiltedCard } from '@/components/reactbits/TiltedCard';
+import { LiquidChrome } from '@/components/reactbits/LiquidChrome';
+import { GlitchText } from '@/components/reactbits/GlitchText';
 
 export default function PublicPortfolioPage() {
   const { slug } = useParams();
@@ -109,7 +123,7 @@ function RenderComponent({ comp }: { comp: any }) {
       zIndex: styles.zIndex || 10,
   };
 
-  const Content = () => {
+const Content = () => {
       if (type === 'text') {
         return (
           <div 
@@ -123,6 +137,62 @@ function RenderComponent({ comp }: { comp: any }) {
             {content || 'New Text'}
           </div>
         );
+      }
+
+      if (type === 'split-text') {
+        return <SplitText text={content || 'Splitting Text'} className="text-4xl font-black" />;
+      }
+
+      if (type === 'shiny-text') {
+        return <ShinyText text={content || 'Metallic Shine'} className="text-4xl font-bold" />;
+      }
+
+      if (type === 'blur-text') {
+        return <BlurText text={content || 'Blurry Reveal'} className="text-4xl font-bold" />;
+      }
+
+      if (type === 'gradient-text') {
+        return <GradientText text={content || 'Color Flow'} className="text-4xl font-bold" />;
+      }
+
+      if (type === 'glitch-text') {
+        return <GlitchText text={content || 'System Glitch'} className="text-4xl font-black" />;
+      }
+
+      if (type === 'count-up') {
+        return <CountUp to={parseInt(content) || 100} className="text-6xl font-black text-indigo-500" />;
+      }
+
+      if (type === 'aurora-bg') {
+        return <Aurora className="w-full h-full rounded-2xl" />;
+      }
+
+      if (type === 'squares-bg') {
+        return <Squares className="w-full h-full rounded-2xl" />;
+      }
+
+      if (type === 'hyperspeed-bg') {
+        return <Hyperspeed className="w-full h-full rounded-2xl" />;
+      }
+
+      if (type === 'waves-bg') {
+        return <Waves className="w-full h-full rounded-2xl" />;
+      }
+
+      if (type === 'liquid-chrome') {
+        return <LiquidChrome className="w-full h-full rounded-2xl" />;
+      }
+
+      if (type === 'shiny-button') {
+        return <ShinyButton text={content || 'Shiny Button'} className="w-full h-full" />;
+      }
+
+      if (type === 'spotlight-card') {
+        return <SpotlightCard className="w-full h-full">{content || 'Spotlight Content'}</SpotlightCard>;
+      }
+
+      if (type === 'tilted-card') {
+        return <TiltedCard className="w-full h-full">{content || '3D Card Content'}</TiltedCard>;
       }
       
       if (type === 'image') {

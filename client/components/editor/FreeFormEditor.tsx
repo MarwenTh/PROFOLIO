@@ -12,8 +12,11 @@ import { Smartphone, Tablet, Monitor, Save, Eye, ChevronLeft } from 'lucide-reac
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 
+import { toast } from 'sonner';
+
 // Inner component to consume context
 const EditorLayout = () => {
+    // ... rest of destructuring ...
     const { 
         selectedId, 
         selectedSectionId,
@@ -47,8 +50,14 @@ const EditorLayout = () => {
     }, [id, getPortfolioById]);
 
     const handleSave = async () => {
-        await updatePortfolio(id, { content: sections });
-        alert('Changes saved!');
+        const res = await updatePortfolio(id, { content: sections });
+        if (res.success) {
+            toast.success('Portfolio saved successfully!', {
+                description: 'Your changes are now live.'
+            });
+        } else {
+            toast.error('Failed to save portfolio');
+        }
     };
 
     return (
@@ -133,17 +142,22 @@ const EditorLayout = () => {
                 onClose={() => setMediaModalOpen(false)}
                 onSelectImage={(url) => {
                     const targetSectionId = selectedSectionId || sections[0]?.id;
-                    if (targetSectionId) {
-                        addComponent(targetSectionId, {
-                            type: 'image',
-                            content: url,
-                            styles: {},
-                            width: 400,
-                            height: 300,
-                            x: 50,
-                            y: 50
+                    if (!targetSectionId) {
+                        toast.error('Add a section first!', {
+                            description: 'You need at least one section to add images.'
                         });
+                        return;
                     }
+
+                    addComponent(targetSectionId, {
+                        type: 'image',
+                        content: url,
+                        styles: {},
+                        width: 400,
+                        height: 300,
+                        x: 50,
+                        y: 50
+                    });
                     setMediaModalOpen(false);
                 }}
                 onImportCollection={() => {}} 

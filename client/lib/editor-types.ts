@@ -9,7 +9,24 @@ export type ComponentType =
   | 'column' 
   | 'spacer' 
   | 'icon' 
-  | 'video';
+  | 'video'
+  | 'split-text' 
+  | 'shiny-text' 
+  | 'aurora-bg' 
+  | 'shiny-button'
+  | 'blur-text'
+  | 'gradient-text'
+  | 'count-up'
+  | 'text-pressure'
+  | 'squares-bg'
+  | 'hyperspeed-bg'
+  | 'particles-bg'
+  | 'waves-bg'
+  | 'tilted-card'
+  | 'spotlight-card'
+  | 'pixel-card'
+  | 'liquid-chrome'
+  | 'glitch-text';
 
 export interface EditorComponent {
   id: string;
