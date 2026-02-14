@@ -72,7 +72,7 @@ export default function PublicPortfolioPage() {
               ...section.styles
             }}
           >
-            <div className="absolute left-1/2 -translate-x-1/2 w-full max-w-[1280px] h-full">
+            <div className="absolute inset-0">
               {section.components.map((comp: any) => (
                 <RenderComponent key={comp.id} comp={comp} />
               ))}
@@ -113,15 +113,30 @@ function RenderComponent({ comp }: { comp: any }) {
 
   const { x, y, width, height, styles = {}, type, content } = displayData;
 
-  // Separate layout (position/size) from visual styling
-  const wrapperStyles: any = {
-      position: 'absolute',
-      left: x,
-      top: y,
-      width: width,
-      height: height,
-      zIndex: styles.zIndex || 10,
+  const getLeftPostion = () => {
+      if (styles.isBackground) return 0;
+      const baseWidth = device === 'mobile' ? 375 : device === 'tablet' ? 768 : 1280;
+      return `calc(50% - ${baseWidth / 2}px + ${x}px)`;
   };
+
+  // Separate layout (position/size) from visual styling
+  const wrapperStyles: any = styles.isBackground 
+    ? {
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        width: '100%',
+        height: '100%',
+        zIndex: styles.zIndex || 0,
+      }
+    : {
+        position: 'absolute',
+        left: getLeftPostion(),
+        top: y,
+        width: width,
+        height: height,
+        zIndex: styles.zIndex || 10,
+    };
 
 const Content = () => {
       if (type === 'text') {
@@ -164,23 +179,23 @@ const Content = () => {
       }
 
       if (type === 'aurora-bg') {
-        return <Aurora className="w-full h-full rounded-2xl" />;
+        return <Aurora className="w-full h-full" />;
       }
 
       if (type === 'squares-bg') {
-        return <Squares className="w-full h-full rounded-2xl" />;
+        return <Squares className="w-full h-full" />;
       }
 
       if (type === 'hyperspeed-bg') {
-        return <Hyperspeed className="w-full h-full rounded-2xl" />;
+        return <Hyperspeed className="w-full h-full" />;
       }
 
       if (type === 'waves-bg') {
-        return <Waves className="w-full h-full rounded-2xl" />;
+        return <Waves className="w-full h-full" />;
       }
 
       if (type === 'liquid-chrome') {
-        return <LiquidChrome className="w-full h-full rounded-2xl" />;
+        return <LiquidChrome className="w-full h-full" />;
       }
 
       if (type === 'shiny-button') {
@@ -197,17 +212,15 @@ const Content = () => {
       
       if (type === 'image') {
         return (
-            <div className="w-full h-full bg-neutral-100 dark:bg-neutral-800 rounded-md overflow-hidden ring-1 ring-black/5">
-                <img 
-                    src={content || 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7'} 
-                    style={styles}
-                    className="w-full h-full object-cover"
-                    alt=""
-                    onError={(e: any) => {
-                        e.target.src = 'https://via.placeholder.com/400x300?text=Image+Load+Error';
-                    }}
-                />
-            </div>
+          <img 
+            src={content || 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7'} 
+            style={styles}
+            className="w-full h-full object-cover"
+            alt=""
+            onError={(e: any) => {
+                e.target.src = 'https://via.placeholder.com/400x300?text=Image+Load+Error';
+            }}
+          />
         );
       }
     

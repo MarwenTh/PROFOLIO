@@ -44,10 +44,12 @@ export interface EditorComponent {
   
   children?: EditorComponent[];
   responsive?: {
-    mobile?: { x: number, y: number, width: number, height: number };
-    tablet?: { x: number, y: number, width: number, height: number };
+    mobile?: { x: number; y: number; width: number; height: number; zIndex?: number; styles?: Record<string, any> };
+    tablet?: { x: number; y: number; width: number; height: number; zIndex?: number; styles?: Record<string, any> };
   };
 }
+
+export type DeviceType = 'mobile' | 'tablet' | 'desktop';
 
 export interface EditorSection {
   id: string;

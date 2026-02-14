@@ -4,9 +4,10 @@ import React, { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useEditor } from '@/context/EditorContext';
 import { Section } from './Section';
+import { ContextMenu } from './ContextMenu';
 
 export const Canvas = () => {
-    const { sections, scale, setScale, selectSection, device } = useEditor();
+    const { sections, scale, setScale, selectSection, selectComponent, device } = useEditor();
     const containerRef = useRef<HTMLDivElement>(null);
 
     // Device dimensions
@@ -31,7 +32,10 @@ export const Canvas = () => {
             ref={containerRef}
             className="flex-1 w-full h-full bg-[#1e1e1e] overflow-y-auto relative custom-scrollbar"
             onWheel={handleWheel}
-            onClick={() => selectSection(null)}
+            onClick={() => {
+                selectSection(null);
+                selectComponent(null);
+            }}
         >
             <div className="min-h-full w-full py-20 flex flex-col items-center">
                 <motion.div
@@ -53,8 +57,10 @@ export const Canvas = () => {
             
             {/* HUD */}
             <div className="fixed bottom-4 right-[340px] bg-neutral-800 text-white px-3 py-1.5 rounded-full text-xs font-bold border border-white/10 z-50">
-                {Math.round(scale * 100)}% | {device.toUpperCase()}
+                {Math.round(scale * 100)}% | {device === 'desktop' ? '1920x1080' : device.toUpperCase()}
             </div>
+
+            <ContextMenu />
         </div>
     );
 };

@@ -8,7 +8,7 @@ import { PropertiesPanel } from './PropertiesPanel';
 import { usePortfolio } from '@/hooks/usePortfolio'; // Hook for saving?
 
 import { EditorMediaModal } from '../library/EditorMediaModal';
-import { Smartphone, Tablet, Monitor, Save, Eye, ChevronLeft } from 'lucide-react';
+import { Smartphone, Tablet, Monitor, Save, Eye, ChevronLeft, Tv } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 
@@ -90,7 +90,7 @@ const EditorLayout = () => {
                     <button 
                         onClick={() => setDevice('desktop')}
                         className={`p-1.5 rounded-md transition-all ${device === 'desktop' ? 'bg-indigo-500 text-white' : 'text-neutral-500 hover:text-white'}`}
-                        title="Desktop (100%)"
+                        title="Desktop (1920x1080)"
                     >
                         <Monitor className="w-4 h-4" />
                     </button>

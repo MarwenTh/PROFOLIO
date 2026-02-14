@@ -13,6 +13,13 @@ interface EditorState {
   device: 'mobile' | 'tablet' | 'desktop';
   isMediaModalOpen: boolean;
   activeTool: string;
+  contextMenu: {
+    isOpen: boolean;
+    x: number;
+    y: number;
+    componentId: string | null;
+    sectionId: string | null;
+  };
 }
 
 interface EditorContextType extends EditorState {
@@ -36,6 +43,11 @@ interface EditorContextType extends EditorState {
   setDevice: (device: 'mobile' | 'tablet' | 'desktop') => void;
   setMediaModalOpen: (open: boolean) => void;
   setActiveTool: (tool: string) => void;
+  
+  // Context Menu Actions
+  openContextMenu: (x: number, y: number, componentId: string | null, sectionId: string | null) => void;
+  closeContextMenu: () => void;
+  setElementAsBackground: (componentId: string) => void;
 }
 
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
@@ -53,6 +65,116 @@ export const EditorProvider = ({ children, initialSections = [] }: { children: R
   const [device, setDevice] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
   const [activeTool, setActiveTool] = useState('select');
   const [isMediaModalOpen, setMediaModalOpen] = useState(false);
+  const [contextMenu, setContextMenu] = useState({
+    isOpen: false,
+    x: 0,
+    y: 0,
+    componentId: null,
+    sectionId: null
+  } as EditorState['contextMenu']);
+
+  const openContextMenu = useCallback((x: number, y: number, componentId: string | null, sectionId: string | null) => {
+    setContextMenu({ isOpen: true, x, y, componentId, sectionId });
+  }, []);
+
+  const closeContextMenu = useCallback(() => {
+    setContextMenu(prev => ({ ...prev, isOpen: false }));
+  }, []);
+
+  const setElementAsBackground = useCallback((componentId: string) => {
+    setSections(prev => {
+      // 1. Find the component and its current section
+      let currentSectionIndex = -1;
+      let targetComp: EditorComponent | null = null;
+      
+      for (let i = 0; i < prev.length; i++) {
+        const comp = prev[i].components.find(c => c.id === componentId);
+        if (comp) {
+          currentSectionIndex = i;
+          targetComp = comp;
+          break;
+        }
+      }
+
+      if (!targetComp || currentSectionIndex === -1) return prev;
+
+      // 2. Calculate global Y to find which section it's visually in
+      const displayY = (device !== 'desktop' && targetComp.responsive?.[device]) 
+        ? targetComp.responsive[device].y 
+        : targetComp.y;
+
+      // Calculate where the current section starts
+      let sectionStart = 0;
+      for (let i = 0; i < currentSectionIndex; i++) {
+        sectionStart += prev[i].height;
+      }
+      
+      const globalY = sectionStart + displayY;
+
+      // 3. Find the target section index
+      let targetSectionIndex = 0;
+      let runningHeight = 0;
+      for (let i = 0; i < prev.length; i++) {
+        const h = prev[i].height;
+        if (globalY >= runningHeight && globalY < runningHeight + h) {
+          targetSectionIndex = i;
+          break;
+        }
+        runningHeight += h;
+        // If it's below the last section, stick to the last section
+        if (i === prev.length - 1) targetSectionIndex = i;
+      }
+
+      // 4. Update the component with background properties
+      const updatedSection = prev[targetSectionIndex];
+      const updatedComp: EditorComponent = {
+        ...targetComp,
+        x: 0,
+        y: 0,
+        width: 1280,
+        height: updatedSection.height,
+        zIndex: 0,
+        responsive: {
+          ...targetComp.responsive,
+          mobile: {
+            ...targetComp.responsive?.mobile,
+            x: 0, y: 0, width: 375, height: updatedSection.height, zIndex: 0,
+            styles: { ...targetComp.styles, isBackground: true }
+          },
+          tablet: {
+            ...targetComp.responsive?.tablet,
+            x: 0, y: 0, width: 768, height: updatedSection.height, zIndex: 0,
+            styles: { ...targetComp.styles, isBackground: true }
+          }
+        },
+        styles: {
+          ...targetComp.styles,
+          isBackground: true
+        }
+      };
+
+      // 5. Build new sections array
+      return prev.map((section, idx) => {
+        // Remove from old section
+        if (idx === currentSectionIndex && idx !== targetSectionIndex) {
+          return {
+            ...section,
+            components: section.components.filter(c => c.id !== componentId)
+          };
+        }
+        // Add (and update) in target section
+        if (idx === targetSectionIndex) {
+          const filteredComps = section.components.filter(c => c.id !== componentId);
+          return {
+            ...section,
+            components: [updatedComp, ...filteredComps]
+          };
+        }
+        return section;
+      });
+    });
+    closeContextMenu();
+  }, [closeContextMenu, device]);
 
   // --- Section Actions ---
   const addSection = useCallback((index?: number) => {
@@ -209,7 +331,11 @@ export const EditorProvider = ({ children, initialSections = [] }: { children: R
       activeTool,
       setActiveTool,
       isMediaModalOpen,
-      setMediaModalOpen
+      setMediaModalOpen,
+      contextMenu,
+      openContextMenu,
+      closeContextMenu,
+      setElementAsBackground
     }}>
       {children}
     </EditorContext.Provider>

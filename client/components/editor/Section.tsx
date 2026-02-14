@@ -14,7 +14,7 @@ interface SectionProps {
 }
 
 export const Section = ({ section, index }: SectionProps) => {
-    const { selectSection, selectedSectionId, addSection, addComponent } = useEditor();
+    const { selectSection, selectedSectionId, addSection, addComponent, openContextMenu } = useEditor();
     const isSelected = selectedSectionId === section.id;
 
     return (
@@ -26,6 +26,11 @@ export const Section = ({ section, index }: SectionProps) => {
             onClick={(e) => {
                 e.stopPropagation();
                 selectSection(section.id);
+            }}
+            onContextMenu={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openContextMenu(e.clientX, e.clientY, null, section.id);
             }}
             style={{
                 height: section.height,

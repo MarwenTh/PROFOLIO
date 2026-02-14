@@ -26,7 +26,15 @@ interface CanvasElementProps {
 }
 
 export const CanvasElement = ({ component }: CanvasElementProps) => {
-    const { selectedId, selectComponent, updateComponent, removeComponent, scale, device } = useEditor();
+    const { 
+      selectedId, 
+      selectComponent, 
+      updateComponent, 
+      removeComponent, 
+      scale, 
+      device,
+      openContextMenu 
+    } = useEditor();
     const isSelected = selectedId === component.id;
     const elementRef = useRef<HTMLDivElement>(null);
     
@@ -70,19 +78,30 @@ export const CanvasElement = ({ component }: CanvasElementProps) => {
         dragElastic={0}
         onDragStart={() => selectComponent(component.id)}
         onDragEnd={handleDragEnd}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openContextMenu(e.clientX, e.clientY, component.id, null);
+        }}
         onClick={(e) => {
           e.stopPropagation();
           selectComponent(component.id);
         }}
         initial={{ x: displayData.x, y: displayData.y, opacity: 0, scale: 0.9 }}
         animate={{ 
-          x: displayData.x, 
-          y: displayData.y, 
-          width: isResizing ? size.width : displayData.width, 
+          x: component.styles?.isBackground ? 0 : displayData.x, 
+          y: component.styles?.isBackground ? 0 : displayData.y, 
+          width: isResizing 
+            ? size.width 
+            : (component.styles?.isBackground 
+                ? (device === 'mobile' ? 375 : device === 'tablet' ? 768 : 1280) 
+                : displayData.width), 
           height: isResizing ? size.height : displayData.height,
           opacity: 1, 
           scale: 1,
-          zIndex: isSelected ? 1000 : (component.zIndex || 1)
+          zIndex: isSelected 
+            ? (component.styles?.isBackground ? (component.zIndex ?? 0) : 1000) 
+            : (component.zIndex ?? 1)
         }}
         transition={isResizing ? { duration: 0 } : { type: "spring", bounce: 0, duration: 0.4 }}
         style={{
