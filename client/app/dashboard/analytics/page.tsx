@@ -189,7 +189,7 @@ export default function AnalyticsPage() {
                           </p>
                         </div>
                       </div>
-                      <DashboardBadge variant="default">
+                      <DashboardBadge variant="neutral">
                         {percentage}%
                       </DashboardBadge>
                     </div>

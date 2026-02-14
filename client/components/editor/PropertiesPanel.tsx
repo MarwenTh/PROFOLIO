@@ -6,9 +6,10 @@ import {
     Bold, Italic, Underline, Type,  
     Layout, Box, Palette, Monitor, Smartphone, Trash2,
     ArrowUp, ArrowDown, ArrowLeft, ArrowRight,
-    StretchHorizontal, StretchVertical
+    StretchHorizontal, StretchVertical, X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useEditor } from "@/context/EditorContext";
 
 interface PropertiesPanelProps {
     component: EditorComponent;
@@ -17,7 +18,8 @@ interface PropertiesPanelProps {
 }
 
 export const PropertiesPanel = ({ component, onUpdate, onDelete }: PropertiesPanelProps) => {
-    
+    const { selectComponent, selectSection } = useEditor();
+
     const updateStyle = (key: string, value: any) => {
         onUpdate(component.id, {
             styles: {
@@ -28,8 +30,10 @@ export const PropertiesPanel = ({ component, onUpdate, onDelete }: PropertiesPan
     };
 
     const updateContent = (value: any) => {
-        onUpdate(component.id, { content: value });
+        onUpdate(component.id, { content: value } as any);
     };
+
+    const isSection = ['header', 'body', 'footer', 'custom'].includes(component.type);
 
     return (
         <div className="w-[320px] bg-[#0F0F10] border-l border-white/5 flex flex-col h-full overflow-hidden text-neutral-300 font-sans shadow-2xl">
@@ -37,16 +41,29 @@ export const PropertiesPanel = ({ component, onUpdate, onDelete }: PropertiesPan
             <div className="h-14 px-4 border-b border-white/5 flex items-center justify-between shrink-0 bg-[#141415]">
                 <div className="flex items-center gap-2">
                     <span className="text-[10px] bg-indigo-500/10 text-indigo-400 px-1.5 py-0.5 rounded uppercase tracking-wider font-bold">
-                        {component.type}
+                        {isSection ? 'Section' : component.type}
                     </span>
-                    <span className="text-xs text-neutral-500 font-mono hidden md:inline-block">#{component.id.substr(0,4)}</span>
+                    <span className="text-xs text-neutral-500 font-mono">#{component.id.substr(0,4)}</span>
                 </div>
-                <button 
-                    onClick={() => onDelete(component.id)}
-                    className="p-1.5 hover:bg-red-500/10 hover:text-red-500 rounded-md transition-colors"
-                >
-                    <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-1">
+                    <button 
+                        onClick={() => onDelete(component.id)}
+                        className="p-1.5 hover:bg-red-500/10 hover:text-red-500 rounded-md transition-colors"
+                        title="Delete"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </button>
+                    <button 
+                        onClick={() => {
+                            selectComponent(null);
+                            selectSection(null);
+                        }}
+                        className="p-1.5 hover:bg-white/10 hover:text-white rounded-md transition-colors"
+                        title="Close Panel"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
             </div>
 
             <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
@@ -174,41 +191,54 @@ export const PropertiesPanel = ({ component, onUpdate, onDelete }: PropertiesPan
                 <div className="space-y-4">
                      <SectionHeader icon={Box} label="Dimensions & Spacing" />
                      
-                     <div className="grid grid-cols-2 gap-3">
-                         <NumberInput 
-                            label="X (Left)" 
-                            value={parseInt(component.styles.left || '0')} 
-                            onChange={(v: number) => updateStyle('left', `${v}px`)}
-                            suffix="px"
-                         />
-                         <NumberInput 
-                            label="Y (Top)" 
-                            value={parseInt(component.styles.top || '0')} 
-                            onChange={(v: number) => updateStyle('top', `${v}px`)}
-                            suffix="px"
-                         />
-                     </div>
+                     {isSection ? (
+                        <div className="space-y-4">
+                             <NumberInput 
+                                label="Section Height" 
+                                value={(component as any).height || 0} 
+                                onChange={(v: number) => onUpdate(component.id, { height: v } as any)}
+                                suffix="px"
+                             />
+                        </div>
+                     ) : (
+                        <>
+                             <div className="grid grid-cols-2 gap-3">
+                                <NumberInput 
+                                   label="X (Left)" 
+                                   value={Math.round((component as any).x || 0)} 
+                                   onChange={(v: number) => onUpdate(component.id, { x: v } as any)}
+                                   suffix="px"
+                                />
+                                <NumberInput 
+                                   label="Y (Top)" 
+                                   value={Math.round((component as any).y || 0)} 
+                                   onChange={(v: number) => onUpdate(component.id, { y: v } as any)}
+                                   suffix="px"
+                                />
+                            </div>
 
-                     <div className="grid grid-cols-2 gap-3">
-                         <div className="space-y-1">
-                             <label className="text-[10px] uppercase text-neutral-500 font-bold tracking-wider">Width</label>
-                             <input 
-                                type="text" 
-                                value={component.styles.width || 'auto'}
-                                onChange={(e) => updateStyle('width', e.target.value)}
-                                className="w-full h-9 bg-[#1A1A1E] border border-white/5 rounded-lg px-2 text-xs text-white outline-none focus:border-indigo-500/50"
-                             />
-                         </div>
-                         <div className="space-y-1">
-                             <label className="text-[10px] uppercase text-neutral-500 font-bold tracking-wider">Height</label>
-                             <input 
-                                type="text" 
-                                value={component.styles.minHeight || component.styles.height || 'auto'}
-                                onChange={(e) => updateStyle('minHeight', e.target.value)} // Default to minHeight for flex containers
-                                className="w-full h-9 bg-[#1A1A1E] border border-white/5 rounded-lg px-2 text-xs text-white outline-none focus:border-indigo-500/50"
-                             />
-                         </div>
-                     </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] uppercase text-neutral-500 font-bold tracking-wider">Width</label>
+                                    <input 
+                                       type="number" 
+                                       value={(component as any).width || ''}
+                                       onChange={(e) => onUpdate(component.id, { width: parseInt(e.target.value) || 0 } as any)}
+                                       className="w-full h-9 bg-[#1A1A1E] border border-white/5 rounded-lg px-2 text-xs text-white outline-none focus:border-indigo-500/50"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] uppercase text-neutral-500 font-bold tracking-wider">Height</label>
+                                    <input 
+                                       type="number" 
+                                       value={(component as any).height || ''}
+                                       onChange={(e) => onUpdate(component.id, { height: parseInt(e.target.value) || 0 } as any)}
+                                       className="w-full h-9 bg-[#1A1A1E] border border-white/5 rounded-lg px-2 text-xs text-white outline-none focus:border-indigo-500/50"
+                                    />
+                                </div>
+                            </div>
+                        </>
+                     )}
 
                      <div className="grid grid-cols-2 gap-3">
                          <NumberInput 
