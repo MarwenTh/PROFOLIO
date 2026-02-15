@@ -8,20 +8,122 @@ import { useEditor } from '@/context/EditorContext';
 import { useGSAPAnimation } from '@/hooks/useGSAPAnimation';
 import { Trash2, Move } from 'lucide-react';
 import { toast } from 'sonner';
-import { ShinyText } from '../reactbits/ShinyText';
-import { SplitText } from '../reactbits/SplitText';
-import { Aurora } from '../reactbits/Aurora';
-import { ShinyButton } from '../reactbits/ShinyButton';
-import { BlurText } from '../reactbits/BlurText';
-import { GradientText } from '../reactbits/GradientText';
-import { CountUp } from '../reactbits/CountUp';
-import { Squares } from '../reactbits/Squares';
-import { Hyperspeed } from '../reactbits/Hyperspeed';
-import { Waves } from '../reactbits/Waves';
-import { SpotlightCard } from '../reactbits/SpotlightCard';
-import { TiltedCard } from '../reactbits/TiltedCard';
-import { LiquidChrome } from '../reactbits/LiquidChrome';
-import { GlitchText } from '../reactbits/GlitchText';
+import dynamic from 'next/dynamic';
+
+// ── Text Animations ─────────────────────────────────────────
+import {
+  BlurText,
+  CountUp,
+  DecryptedText,
+  FuzzyText,
+  GlitchText,
+  GradientText,
+  RotatingText,
+  ScrambledText,
+  ShinyText,
+  SplitText,
+  TextType,
+  TrueFocus,
+  CircularText,
+  ScrollFloat,
+  ScrollReveal,
+  ScrollVelocity,
+  Shuffle,
+} from '../reactbits';
+
+// ── Backgrounds (dynamic imports for heavy WebGL components) ─
+const Aurora = dynamic(() => import('../reactbits/src/Backgrounds/Aurora/Aurora'), { ssr: false });
+const Balatro = dynamic(() => import('../reactbits/src/Backgrounds/Balatro/Balatro'), { ssr: false });
+const Ballpit = dynamic(() => import('../reactbits/src/Backgrounds/Ballpit/Ballpit'), { ssr: false });
+const Beams = dynamic(() => import('../reactbits/src/Backgrounds/Beams/Beams'), { ssr: false });
+const ColorBends = dynamic(() => import('../reactbits/src/Backgrounds/ColorBends/ColorBends'), { ssr: false });
+const DarkVeil = dynamic(() => import('../reactbits/src/Backgrounds/DarkVeil/DarkVeil'), { ssr: false });
+const Dither = dynamic(() => import('../reactbits/src/Backgrounds/Dither/Dither'), { ssr: false });
+const DotGrid = dynamic(() => import('../reactbits/src/Backgrounds/DotGrid/DotGrid'), { ssr: false });
+const FaultyTerminal = dynamic(() => import('../reactbits/src/Backgrounds/FaultyTerminal/FaultyTerminal'), { ssr: false });
+const FloatingLines = dynamic(() => import('../reactbits/src/Backgrounds/FloatingLines/FloatingLines'), { ssr: false });
+const Galaxy = dynamic(() => import('../reactbits/src/Backgrounds/Galaxy/Galaxy'), { ssr: false });
+const GradientBlinds = dynamic(() => import('../reactbits/src/Backgrounds/GradientBlinds/GradientBlinds'), { ssr: false });
+const Grainient = dynamic(() => import('../reactbits/src/Backgrounds/Grainient/Grainient'), { ssr: false });
+const GridDistortion = dynamic(() => import('../reactbits/src/Backgrounds/GridDistortion/GridDistortion'), { ssr: false });
+const GridMotion = dynamic(() => import('../reactbits/src/Backgrounds/GridMotion/GridMotion'), { ssr: false });
+const GridScan = dynamic(() => import('../reactbits/src/Backgrounds/GridScan/GridScan'), { ssr: false });
+const Hyperspeed = dynamic(() => import('../reactbits/src/Backgrounds/Hyperspeed/Hyperspeed'), { ssr: false });
+const Iridescence = dynamic(() => import('../reactbits/src/Backgrounds/Iridescence/Iridescence'), { ssr: false });
+const LetterGlitch = dynamic(() => import('../reactbits/src/Backgrounds/LetterGlitch/LetterGlitch'), { ssr: false });
+const LightPillar = dynamic(() => import('../reactbits/src/Backgrounds/LightPillar/LightPillar'), { ssr: false });
+const LightRays = dynamic(() => import('../reactbits/src/Backgrounds/LightRays/LightRays'), { ssr: false });
+const Lightning = dynamic(() => import('../reactbits/src/Backgrounds/Lightning/Lightning'), { ssr: false });
+const LiquidChrome = dynamic(() => import('../reactbits/src/Backgrounds/LiquidChrome/LiquidChrome'), { ssr: false });
+const LiquidEther = dynamic(() => import('../reactbits/src/Backgrounds/LiquidEther/LiquidEther'), { ssr: false });
+const Orb = dynamic(() => import('../reactbits/src/Backgrounds/Orb/Orb'), { ssr: false });
+const Particles = dynamic(() => import('../reactbits/src/Backgrounds/Particles/Particles'), { ssr: false });
+const PixelBlast = dynamic(() => import('../reactbits/src/Backgrounds/PixelBlast/PixelBlast'), { ssr: false });
+const PixelSnow = dynamic(() => import('../reactbits/src/Backgrounds/PixelSnow/PixelSnow'), { ssr: false });
+const Plasma = dynamic(() => import('../reactbits/src/Backgrounds/Plasma/Plasma'), { ssr: false });
+const Prism = dynamic(() => import('../reactbits/src/Backgrounds/Prism/Prism'), { ssr: false });
+const PrismaticBurst = dynamic(() => import('../reactbits/src/Backgrounds/PrismaticBurst/PrismaticBurst'), { ssr: false });
+const RippleGrid = dynamic(() => import('../reactbits/src/Backgrounds/RippleGrid/RippleGrid'), { ssr: false });
+const Silk = dynamic(() => import('../reactbits/src/Backgrounds/Silk/Silk'), { ssr: false });
+const Squares = dynamic(() => import('../reactbits/src/Backgrounds/Squares/Squares'), { ssr: false });
+const Threads = dynamic(() => import('../reactbits/src/Backgrounds/Threads/Threads'), { ssr: false });
+const Waves = dynamic(() => import('../reactbits/src/Backgrounds/Waves/Waves'), { ssr: false });
+
+// ── Components (dynamic imports for heavy 3D/WebGL) ──────────
+const SpotlightCard = dynamic(() => import('../reactbits/src/Components/SpotlightCard/SpotlightCard'), { ssr: false });
+const TiltedCard = dynamic(() => import('../reactbits/src/Components/TiltedCard/TiltedCard'), { ssr: false });
+const AnimatedList = dynamic(() => import('../reactbits/src/Components/AnimatedList/AnimatedList'), { ssr: false });
+const BounceCards = dynamic(() => import('../reactbits/src/Components/BounceCards/BounceCards'), { ssr: false });
+const DecayCard = dynamic(() => import('../reactbits/src/Components/DecayCard/DecayCard'), { ssr: false });
+const PixelCard = dynamic(() => import('../reactbits/src/Components/PixelCard/PixelCard'), { ssr: false });
+const ProfileCard = dynamic(() => import('../reactbits/src/Components/ProfileCard/ProfileCard'), { ssr: false });
+const Stack = dynamic(() => import('../reactbits/src/Components/Stack/Stack'), { ssr: false });
+const Folder = dynamic(() => import('../reactbits/src/Components/Folder/Folder'), { ssr: false });
+const Dock = dynamic(() => import('../reactbits/src/Components/Dock/Dock'), { ssr: false });
+const ElasticSlider = dynamic(() => import('../reactbits/src/Components/ElasticSlider/ElasticSlider'), { ssr: false });
+const Carousel = dynamic(() => import('../reactbits/src/Components/Carousel/Carousel'), { ssr: false });
+const ChromaGrid = dynamic(() => import('../reactbits/src/Components/ChromaGrid/ChromaGrid'), { ssr: false });
+const CircularGallery = dynamic(() => import('../reactbits/src/Components/CircularGallery/CircularGallery'), { ssr: false });
+const Counter = dynamic(() => import('../reactbits/src/Components/Counter/Counter'), { ssr: false });
+const DomeGallery = dynamic(() => import('../reactbits/src/Components/DomeGallery/DomeGallery'), { ssr: false });
+const FlowingMenu = dynamic(() => import('../reactbits/src/Components/FlowingMenu/FlowingMenu'), { ssr: false });
+const FluidGlass = dynamic(() => import('../reactbits/src/Components/FluidGlass/FluidGlass'), { ssr: false });
+const FlyingPosters = dynamic(() => import('../reactbits/src/Components/FlyingPosters/FlyingPosters'), { ssr: false });
+const GlassIcons = dynamic(() => import('../reactbits/src/Components/GlassIcons/GlassIcons'), { ssr: false });
+const GlassSurface = dynamic(() => import('../reactbits/src/Components/GlassSurface/GlassSurface'), { ssr: false });
+const InfiniteMenu = dynamic(() => import('../reactbits/src/Components/InfiniteMenu/InfiniteMenu'), { ssr: false });
+const Lanyard = dynamic(() => import('../reactbits/src/Components/Lanyard/Lanyard'), { ssr: false });
+const MagicBento = dynamic(() => import('../reactbits/src/Components/MagicBento/MagicBento'), { ssr: false });
+const Masonry = dynamic(() => import('../reactbits/src/Components/Masonry/Masonry'), { ssr: false });
+const ModelViewer = dynamic(() => import('../reactbits/src/Components/ModelViewer/ModelViewer'), { ssr: false });
+const ScrollStack = dynamic(() => import('../reactbits/src/Components/ScrollStack/ScrollStack'), { ssr: false });
+const Stepper = dynamic(() => import('../reactbits/src/Components/Stepper/Stepper'), { ssr: false });
+const CardSwap = dynamic(() => import('../reactbits/src/Components/CardSwap/CardSwap'), { ssr: false });
+const ReflectiveCard = dynamic(() => import('../reactbits/src/Components/ReflectiveCard/ReflectiveCard'), { ssr: false });
+
+// ── Animations (dynamic imports) ─────────────────────────────
+const Antigravity = dynamic(() => import('../reactbits/src/Animations/Antigravity/Antigravity'), { ssr: false });
+const BlobCursor = dynamic(() => import('../reactbits/src/Animations/BlobCursor/BlobCursor'), { ssr: false });
+const ClickSpark = dynamic(() => import('../reactbits/src/Animations/ClickSpark/ClickSpark'), { ssr: false });
+const Crosshair = dynamic(() => import('../reactbits/src/Animations/Crosshair/Crosshair'), { ssr: false });
+const Cubes = dynamic(() => import('../reactbits/src/Animations/Cubes/Cubes'), { ssr: false });
+const ElectricBorder = dynamic(() => import('../reactbits/src/Animations/ElectricBorder/ElectricBorder'), { ssr: false });
+const GlareHover = dynamic(() => import('../reactbits/src/Animations/GlareHover/GlareHover'), { ssr: false });
+const ImageTrail = dynamic(() => import('../reactbits/src/Animations/ImageTrail/ImageTrail'), { ssr: false });
+const LaserFlow = dynamic(() => import('../reactbits/src/Animations/LaserFlow/LaserFlow'), { ssr: false });
+const LogoLoop = dynamic(() => import('../reactbits/src/Animations/LogoLoop/LogoLoop'), { ssr: false });
+const Magnet = dynamic(() => import('../reactbits/src/Animations/Magnet/Magnet'), { ssr: false });
+const MagnetLines = dynamic(() => import('../reactbits/src/Animations/MagnetLines/MagnetLines'), { ssr: false });
+const MetaBalls = dynamic(() => import('../reactbits/src/Animations/MetaBalls/MetaBalls'), { ssr: false });
+const MetallicPaint = dynamic(() => import('../reactbits/src/Animations/MetallicPaint/MetallicPaint'), { ssr: false });
+const Noise = dynamic(() => import('../reactbits/src/Animations/Noise/Noise'), { ssr: false });
+const PixelTrail = dynamic(() => import('../reactbits/src/Animations/PixelTrail/PixelTrail'), { ssr: false });
+const PixelTransition = dynamic(() => import('../reactbits/src/Animations/PixelTransition/PixelTransition'), { ssr: false });
+const Ribbons = dynamic(() => import('../reactbits/src/Animations/Ribbons/Ribbons'), { ssr: false });
+const ShapeBlur = dynamic(() => import('../reactbits/src/Animations/ShapeBlur/ShapeBlur'), { ssr: false });
+const SplashCursor = dynamic(() => import('../reactbits/src/Animations/SplashCursor/SplashCursor'), { ssr: false });
+const StarBorder = dynamic(() => import('../reactbits/src/Animations/StarBorder/StarBorder'), { ssr: false });
+const StickerPeel = dynamic(() => import('../reactbits/src/Animations/StickerPeel/StickerPeel'), { ssr: false });
 
 interface CanvasElementProps {
   component: EditorComponent;
@@ -221,36 +323,9 @@ export const CanvasElement = ({ component }: CanvasElementProps) => {
 
 const renderContent = (component: EditorComponent) => {
     switch (component.type) {
+        // ── Core Elements ────────────────────────────────────
         case 'text':
             return <p style={{ fontSize: 'inherit', color: 'inherit' }}>{component.content || 'Double click to edit'}</p>;
-        case 'split-text':
-            return <SplitText text={component.content || 'Splitting Text'} />;
-        case 'shiny-text':
-            return <ShinyText text={component.content || 'Metallic Shine'} />;
-        case 'blur-text':
-            return <BlurText text={component.content || 'Blurry Reveal'} />;
-        case 'gradient-text':
-            return <GradientText text={component.content || 'Color Flow'} />;
-        case 'glitch-text':
-            return <GlitchText text={component.content || 'System Glitch'} />;
-        case 'count-up':
-            return <CountUp to={parseInt(component.content) || 100} />;
-        case 'aurora-bg':
-            return <Aurora />;
-        case 'squares-bg':
-            return <Squares />;
-        case 'hyperspeed-bg':
-            return <Hyperspeed />;
-        case 'waves-bg':
-            return <Waves />;
-        case 'liquid-chrome':
-            return <LiquidChrome />;
-        case 'shiny-button':
-            return <ShinyButton text={component.content || 'Shiny Button'} />;
-        case 'spotlight-card':
-            return <SpotlightCard>{component.content || 'Spotlight Card'}</SpotlightCard>;
-        case 'tilted-card':
-            return <TiltedCard>{component.content || '3D Tilted Card'}</TiltedCard>;
         case 'button':
             return (
                 <button className="w-full h-full px-4 py-2 bg-indigo-500 text-white rounded shadow-sm flex items-center justify-center">
@@ -270,6 +345,227 @@ const renderContent = (component: EditorComponent) => {
         case 'row':
         case 'column':
             return <div className="w-full h-full border border-dashed border-neutral-700 bg-neutral-900/50" />;
+
+        // ── Text Animations (23) ─────────────────────────────
+        case 'split-text':
+            return <SplitText text={component.content || 'Splitting Text'} />;
+        case 'blur-text':
+            return <BlurText text={component.content || 'Blurry Reveal'} />;
+        case 'shiny-text':
+            return <ShinyText text={component.content || 'Metallic Shine'} />;
+        case 'gradient-text':
+            return <GradientText text={component.content || 'Color Flow'} />;
+        case 'glitch-text':
+            return <GlitchText text={component.content || 'System Glitch'} />;
+        case 'count-up':
+            return <CountUp to={parseInt(component.content) || 100} />;
+        case 'decrypted-text':
+            return <DecryptedText text={component.content || 'Decrypting...'} animateOn="view" />;
+        case 'rotating-text':
+            return <RotatingText texts={['React', 'Bits', 'Magic', component.content || 'Wow']} />;
+        case 'fuzzy-text':
+            return <FuzzyText>{component.content || 'Fuzzy Effect'}</FuzzyText>;
+        case 'scrambled-text':
+            return <ScrambledText text={component.content || 'Scrambled'} />;
+        case 'circular-text':
+            return <CircularText text={component.content || 'CIRCULAR TEXT • REACT BITS • '} />;
+        case 'text-type':
+            return <TextType text={component.content || 'Typing effect...'} />;
+        case 'true-focus':
+            return <TrueFocus sentence={component.content || 'True Focus Effect'} />;
+        case 'scroll-float':
+            return <ScrollFloat>{component.content || 'Floating Text'}</ScrollFloat>;
+        case 'scroll-reveal':
+            return <ScrollReveal>{component.content || 'Scroll to Reveal'}</ScrollReveal>;
+        case 'scroll-velocity':
+            return <ScrollVelocity texts={[component.content || 'React Bits']} velocity={3} />;
+        case 'shuffle':
+            return <Shuffle text={component.content || 'Shuffle Me'} />;
+
+        // ── Backgrounds (34) ─────────────────────────────────
+        case 'aurora-bg':
+            return <Aurora />;
+        case 'balatro-bg':
+            return <Balatro />;
+        case 'ballpit-bg':
+            return <Ballpit />;
+        case 'beams-bg':
+            return <Beams />;
+        case 'color-bends-bg':
+            return <ColorBends />;
+        case 'dark-veil-bg':
+            return <DarkVeil />;
+        case 'dither-bg':
+            return <Dither />;
+        case 'dot-grid-bg':
+            return <DotGrid />;
+        case 'faulty-terminal-bg':
+            return <FaultyTerminal />;
+        case 'floating-lines-bg':
+            return <FloatingLines />;
+        case 'galaxy-bg':
+            return <Galaxy />;
+        case 'gradient-blinds-bg':
+            return <GradientBlinds />;
+        case 'grainient-bg':
+            return <Grainient />;
+        case 'grid-distortion-bg':
+            return <GridDistortion />;
+        case 'grid-motion-bg':
+            return <GridMotion />;
+        case 'grid-scan-bg':
+            return <GridScan />;
+        case 'hyperspeed-bg':
+            return <Hyperspeed />;
+        case 'iridescence-bg':
+            return <Iridescence />;
+        case 'letter-glitch-bg':
+            return <LetterGlitch />;
+        case 'light-pillar-bg':
+            return <LightPillar />;
+        case 'light-rays-bg':
+            return <LightRays />;
+        case 'lightning-bg':
+            return <Lightning />;
+        case 'liquid-chrome':
+            return <LiquidChrome />;
+        case 'liquid-ether-bg':
+            return <LiquidEther />;
+        case 'orb-bg':
+            return <Orb />;
+        case 'particles-bg':
+            return <Particles />;
+        case 'pixel-blast-bg':
+            return <PixelBlast />;
+        case 'pixel-snow-bg':
+            return <PixelSnow />;
+        case 'plasma-bg':
+            return <Plasma />;
+        case 'prism-bg':
+            return <Prism />;
+        case 'prismatic-burst-bg':
+            return <PrismaticBurst />;
+        case 'ripple-grid-bg':
+            return <RippleGrid />;
+        case 'silk-bg':
+            return <Silk />;
+        case 'squares-bg':
+            return <Squares />;
+        case 'threads-bg':
+            return <Threads />;
+        case 'waves-bg':
+            return <Waves />;
+
+        // ── Components (35) ──────────────────────────────────
+        case 'spotlight-card':
+            return <SpotlightCard>{component.content || 'Spotlight Card'}</SpotlightCard>;
+        case 'tilted-card':
+            return <TiltedCard>{component.content || '3D Tilted Card'}</TiltedCard>;
+        case 'decay-card':
+            return <DecayCard />;
+        case 'pixel-card':
+            return <PixelCard />;
+        case 'profile-card':
+            return <ProfileCard />;
+        case 'reflective-card':
+            return <ReflectiveCard />;
+        case 'bounce-cards':
+            return <BounceCards />;
+        case 'card-swap':
+            return <CardSwap />;
+        case 'animated-list':
+            return <AnimatedList />;
+        case 'stack':
+            return <Stack />;
+        case 'folder':
+            return <Folder />;
+        case 'dock':
+            return <Dock />;
+        case 'elastic-slider':
+            return <ElasticSlider />;
+        case 'carousel':
+            return <Carousel />;
+        case 'chroma-grid':
+            return <ChromaGrid />;
+        case 'circular-gallery':
+            return <CircularGallery />;
+        case 'counter':
+            return <Counter />;
+        case 'dome-gallery':
+            return <DomeGallery />;
+        case 'flowing-menu':
+            return <FlowingMenu />;
+        case 'fluid-glass':
+            return <FluidGlass />;
+        case 'flying-posters':
+            return <FlyingPosters />;
+        case 'glass-icons':
+            return <GlassIcons />;
+        case 'glass-surface':
+            return <GlassSurface />;
+        case 'infinite-menu':
+            return <InfiniteMenu />;
+        case 'lanyard':
+            return <Lanyard />;
+        case 'magic-bento':
+            return <MagicBento />;
+        case 'masonry':
+            return <Masonry />;
+        case 'model-viewer':
+            return <ModelViewer />;
+        case 'scroll-stack':
+            return <ScrollStack />;
+        case 'stepper':
+            return <Stepper />;
+
+        // ── Animations (28) ──────────────────────────────────
+        case 'antigravity':
+            return <Antigravity />;
+        case 'blob-cursor':
+            return <BlobCursor />;
+        case 'click-spark':
+            return <ClickSpark />;
+        case 'crosshair':
+            return <Crosshair />;
+        case 'cubes':
+            return <Cubes />;
+        case 'electric-border':
+            return <ElectricBorder>{component.content || 'Electric Border'}</ElectricBorder>;
+        case 'glare-hover':
+            return <GlareHover>{component.content || 'Glare Effect'}</GlareHover>;
+        case 'image-trail':
+            return <ImageTrail />;
+        case 'laser-flow':
+            return <LaserFlow />;
+        case 'logo-loop':
+            return <LogoLoop />;
+        case 'magnet':
+            return <Magnet>{component.content || 'Magnet'}</Magnet>;
+        case 'magnet-lines':
+            return <MagnetLines />;
+        case 'meta-balls':
+            return <MetaBalls />;
+        case 'metallic-paint':
+            return <MetallicPaint />;
+        case 'noise':
+            return <Noise />;
+        case 'pixel-trail':
+            return <PixelTrail />;
+        case 'pixel-transition':
+            return <PixelTransition />;
+        case 'ribbons':
+            return <Ribbons />;
+        case 'shape-blur':
+            return <ShapeBlur />;
+        case 'splash-cursor':
+            return <SplashCursor />;
+        case 'star-border':
+            return <StarBorder>{component.content || 'Star Border'}</StarBorder>;
+        case 'sticker-peel':
+            return <StickerPeel />;
+        case 'shiny-button':
+            return <button className="w-full h-full px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg shadow-lg transition-all hover:shadow-xl">{component.content || 'Shiny Button'}</button>;
+
         default:
             return <div className="w-full h-full bg-neutral-800 flex items-center justify-center text-xs text-neutral-500">{component.type}</div>;
     }

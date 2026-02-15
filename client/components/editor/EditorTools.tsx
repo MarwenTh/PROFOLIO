@@ -2,14 +2,18 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Type, Image as ImageIcon, Box, MousePointer2, Smartphone, Plus, LayoutDashboard } from 'lucide-react';
+import { Type, ImageIcon, Box, MousePointer2, Smartphone, Plus, LayoutDashboard, Wand2 } from 'lucide-react';
 import { useEditor } from '@/context/EditorContext';
 import { cn } from '@/lib/utils';
-import { ComponentsLibrary } from './ComponentsLibrary';
 import { toast } from 'sonner';
+import { ComponentsLibrary } from './ComponentsLibrary';
+import Link from 'next/link';
 
 export const EditorTools = () => {
-    const { addComponent, sections, addSection, setMediaModalOpen, selectedSectionId, activeTool, setActiveTool } = useEditor();
+    const { 
+        addComponent, sections, addSection, setMediaModalOpen, 
+        selectedSectionId, activeTool, setActiveTool,
+    } = useEditor();
 
     const handleAdd = (type: string, defaultContent: any, defaultSize: any) => {
         const targetSectionId = selectedSectionId || sections[0]?.id;
@@ -50,6 +54,14 @@ export const EditorTools = () => {
                     onClick={() => setActiveTool(activeTool === 'components' ? 'select' : 'components')}
                     className={cn(activeTool === 'components' && "text-indigo-400")}
                 />
+
+                <Link href="/dashboard/edit/studio">
+                    <ToolButton 
+                        icon={Wand2} 
+                        label="Creative Studio" 
+                        className="text-neutral-400 hover:text-indigo-400"
+                    />
+                </Link>
 
                 <div className="h-px bg-white/10 w-full my-1" />
                 

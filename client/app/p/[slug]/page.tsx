@@ -7,20 +7,22 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useGSAPAnimation } from "@/hooks/useGSAPAnimation";
 import { Github, Linkedin, Twitter } from "lucide-react";
-import { ShinyText } from '@/components/reactbits/ShinyText';
-import { SplitText } from '@/components/reactbits/SplitText';
-import { Aurora } from '@/components/reactbits/Aurora';
-import { ShinyButton } from '@/components/reactbits/ShinyButton';
-import { BlurText } from '@/components/reactbits/BlurText';
-import { GradientText } from '@/components/reactbits/GradientText';
-import { CountUp } from '@/components/reactbits/CountUp';
-import { Squares } from '@/components/reactbits/Squares';
-import { Hyperspeed } from '@/components/reactbits/Hyperspeed';
-import { Waves } from '@/components/reactbits/Waves';
-import { SpotlightCard } from '@/components/reactbits/SpotlightCard';
-import { TiltedCard } from '@/components/reactbits/TiltedCard';
-import { LiquidChrome } from '@/components/reactbits/LiquidChrome';
-import { GlitchText } from '@/components/reactbits/GlitchText';
+import { 
+  ShinyText, 
+  SplitText, 
+  Aurora, 
+  ShinyButton, 
+  BlurText, 
+  GradientText, 
+  CountUp, 
+  Squares, 
+  Hyperspeed, 
+  Waves, 
+  SpotlightCard, 
+  TiltedCard, 
+  LiquidChrome, 
+  GlitchText 
+} from '@/components/reactbits';
 
 export default function PublicPortfolioPage() {
   const { slug } = useParams();
@@ -186,11 +188,11 @@ const Content = () => {
       }
 
       if (type === 'gradient-text') {
-        return <GradientText text={content || 'Color Flow'} className="text-4xl font-bold" />;
+        return <GradientText className="text-4xl font-bold">{content || 'Color Flow'}</GradientText>;
       }
 
       if (type === 'glitch-text') {
-        return <GlitchText text={content || 'System Glitch'} className="text-4xl font-black" />;
+        return <GlitchText className="text-4xl font-black">{content || 'System Glitch'}</GlitchText>;
       }
 
       if (type === 'count-up') {
@@ -198,23 +200,23 @@ const Content = () => {
       }
 
       if (type === 'aurora-bg') {
-        return <Aurora className="w-full h-full" />;
+        return <div className="w-full h-full"><Aurora /></div>;
       }
 
       if (type === 'squares-bg') {
-        return <Squares className="w-full h-full" />;
+        return <div className="w-full h-full"><Squares /></div>;
       }
 
       if (type === 'hyperspeed-bg') {
-        return <Hyperspeed className="w-full h-full" />;
+        return <div className="w-full h-full"><Hyperspeed /></div>;
       }
 
       if (type === 'waves-bg') {
-        return <Waves className="w-full h-full" />;
+        return <div className="w-full h-full"><Waves /></div>;
       }
 
       if (type === 'liquid-chrome') {
-        return <LiquidChrome className="w-full h-full" />;
+        return <div className="w-full h-full"><LiquidChrome /></div>;
       }
 
       if (type === 'shiny-button') {
@@ -226,7 +228,7 @@ const Content = () => {
       }
 
       if (type === 'tilted-card') {
-        return <TiltedCard className="w-full h-full">{content || '3D Card Content'}</TiltedCard>;
+        return <TiltedCard imageSrc={content || 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7'} captionText="3D Card" containerHeight="100%" containerWidth="100%" />;
       }
       
       if (type === 'image') {
