@@ -62,12 +62,22 @@ export const CanvasElement = ({ component }: CanvasElementProps) => {
   const isSelected = selectedId === component.id;
   const elementRef = useRef<HTMLDivElement>(null);
 
+  const dragControls = useDragControls();
   const [isResizing, setIsResizing] = useState(false);
-  const [initialSize, setInitialSize] = useState({ width: 0, height: 0 });
+  const activeLayout = useRef({
+    width: component.width,
+    height: component.height,
+    x: component.x,
+    y: component.y,
+  });
+  const dragStartPos = useRef({ x: 0, y: 0 });
+  const initialSize = useRef({ width: 0, height: 0 });
+  const initialPos = useRef({ x: 0, y: 0 });
   const [size, setSize] = useState({
     width: component.width,
     height: component.height,
   });
+  const [pos, setPos] = useState({ x: component.x, y: component.y });
 
   const gsapRef = useGSAPAnimation(component.animation);
 
@@ -76,27 +86,85 @@ export const CanvasElement = ({ component }: CanvasElementProps) => {
       ? { ...component, ...component.responsive[device] }
       : component;
 
-  // Sync internal size when component props change
+  // Sync internal size/pos when component props change
   useEffect(() => {
-    if (!isResizing) {
-      setSize({ width: displayData.width, height: displayData.height });
-    }
-  }, [displayData.width, displayData.height, isResizing]);
+    if (isResizing) return;
 
-  const handleResize = (event: any, info: any) => {
-    const newWidth = Math.max(50, initialSize.width + info.offset.x / scale);
-    const newHeight = Math.max(20, initialSize.height + info.offset.y / scale);
+    setSize({ width: displayData.width, height: displayData.height });
+    setPos({ x: displayData.x, y: displayData.y });
+    activeLayout.current = {
+      width: displayData.width,
+      height: displayData.height,
+      x: displayData.x,
+      y: displayData.y,
+    };
+  }, [
+    displayData.width,
+    displayData.height,
+    displayData.x,
+    displayData.y,
+    isResizing,
+  ]);
+
+  const handleResize = (e: any, direction: string) => {
+    const currentX =
+      (e as any).touches && (e as any).touches.length > 0
+        ? (e as any).touches[0].clientX
+        : (e as any).clientX;
+    const currentY =
+      (e as any).touches && (e as any).touches.length > 0
+        ? (e as any).touches[0].clientY
+        : (e as any).clientY;
+
+    const dx = (currentX - dragStartPos.current.x) / scale;
+    const dy = (currentY - dragStartPos.current.y) / scale;
+
+    let newWidth = initialSize.current.width;
+    let newHeight = initialSize.current.height;
+    let newX = initialPos.current.x;
+    let newY = initialPos.current.y;
+
+    if (direction.includes("e")) {
+      newWidth = Math.max(30, initialSize.current.width + dx);
+    }
+    if (direction.includes("w")) {
+      const delta = Math.min(dx, initialSize.current.width - 30);
+      newWidth = initialSize.current.width - delta;
+      newX = initialPos.current.x + delta;
+    }
+    if (direction.includes("s")) {
+      newHeight = Math.max(30, initialSize.current.height + dy);
+    }
+    if (direction.includes("n")) {
+      const delta = Math.min(dy, initialSize.current.height - 30);
+      newHeight = initialSize.current.height - delta;
+      newY = initialPos.current.y + delta;
+    }
+
+    activeLayout.current = {
+      width: newWidth,
+      height: newHeight,
+      x: newX,
+      y: newY,
+    };
     setSize({ width: newWidth, height: newHeight });
+    setPos({ x: newX, y: newY });
   };
 
   const handleResizeEnd = () => {
     setIsResizing(false);
-    updateComponent(component.id, { width: size.width, height: size.height });
+    updateComponent(component.id, {
+      width: activeLayout.current.width,
+      height: activeLayout.current.height,
+      x: activeLayout.current.x,
+      y: activeLayout.current.y,
+    });
   };
 
   const handleDragEnd = (event: any, info: any) => {
     const newX = displayData.x + info.offset.x;
     const newY = displayData.y + info.offset.y;
+    setPos({ x: newX, y: newY });
     updateComponent(component.id, { x: newX, y: newY });
   };
 
@@ -106,19 +174,19 @@ export const CanvasElement = ({ component }: CanvasElementProps) => {
     fade: { initial: { opacity: 0 }, animate: { opacity: 1 } },
     "slide-up": {
       initial: { y: 50, opacity: 0 },
-      animate: { y: displayData.y, opacity: 1 },
+      animate: { y: pos.y, opacity: 1 },
     },
     "slide-down": {
       initial: { y: -50, opacity: 0 },
-      animate: { y: displayData.y, opacity: 1 },
+      animate: { y: pos.y, opacity: 1 },
     },
     "slide-left": {
       initial: { x: 50, opacity: 0 },
-      animate: { x: displayData.x, opacity: 1 },
+      animate: { x: pos.x, opacity: 1 },
     },
     "slide-right": {
       initial: { x: -50, opacity: 0 },
-      animate: { x: displayData.x, opacity: 1 },
+      animate: { x: pos.x, opacity: 1 },
     },
     "scale-up": {
       initial: { scale: 0.5, opacity: 0 },
@@ -127,7 +195,7 @@ export const CanvasElement = ({ component }: CanvasElementProps) => {
     bounce: {
       initial: { y: -20, opacity: 0 },
       animate: {
-        y: displayData.y,
+        y: pos.y,
         opacity: 1,
         transition: { type: "spring", stiffness: 400, damping: 10 },
       },
@@ -158,6 +226,17 @@ export const CanvasElement = ({ component }: CanvasElementProps) => {
     }
   };
 
+  const resizeHandles = [
+    { dir: "nw", class: "top-0 left-0 cursor-nwse-resize" },
+    { dir: "n", class: "top-0 left-1/2 cursor-ns-resize" },
+    { dir: "ne", class: "top-0 left-full cursor-nesw-resize" },
+    { dir: "e", class: "top-1/2 left-full cursor-ew-resize" },
+    { dir: "se", class: "top-full left-full cursor-nwse-resize" },
+    { dir: "s", class: "top-full left-1/2 cursor-ns-resize" },
+    { dir: "sw", class: "top-full left-0 cursor-nesw-resize" },
+    { dir: "w", class: "top-1/2 left-0 cursor-ew-resize" },
+  ];
+
   return (
     <motion.div
       ref={(el) => {
@@ -165,9 +244,16 @@ export const CanvasElement = ({ component }: CanvasElementProps) => {
         elementRef.current = el;
         gsapRef.current = el;
       }}
-      drag={isResizing ? false : isSelected ? true : false}
+      drag={isSelected && !isResizing ? true : false}
+      dragControls={dragControls}
+      dragListener={false}
       dragMomentum={false}
       dragElastic={0}
+      onPointerDown={(e) => {
+        if (isSelected && !isResizing) {
+          dragControls.start(e);
+        }
+      }}
       onDragStart={() => selectComponent(component.id)}
       onDragEnd={handleDragEnd}
       onDragOver={(e) => {
@@ -189,11 +275,15 @@ export const CanvasElement = ({ component }: CanvasElementProps) => {
       initial={
         currentAnim
           ? currentAnim.initial
-          : { x: displayData.x, y: displayData.y, opacity: 0, scale: 0.9 }
+          : { x: pos.x, y: pos.y, opacity: 0, scale: 0.9 }
       }
+      style={{
+        position: "absolute",
+        ...component.styles,
+      }}
       animate={{
-        x: component.styles?.isBackground ? 0 : displayData.x,
-        y: component.styles?.isBackground ? 0 : displayData.y,
+        x: component.styles?.isBackground ? 0 : pos.x,
+        y: component.styles?.isBackground ? 0 : pos.y,
         width: isResizing
           ? size.width
           : component.styles?.isBackground
@@ -204,8 +294,8 @@ export const CanvasElement = ({ component }: CanvasElementProps) => {
                 : device === "wide"
                   ? 1920
                   : 1280
-            : displayData.width,
-        height: isResizing ? size.height : displayData.height,
+            : size.width,
+        height: isResizing ? size.height : size.height,
         opacity: 1,
         scale: 1,
         rotate: 0,
@@ -218,7 +308,7 @@ export const CanvasElement = ({ component }: CanvasElementProps) => {
       }}
       transition={
         isResizing
-          ? { duration: 0 }
+          ? { type: "tween", duration: 0 }
           : {
               type: "spring",
               bounce: 0,
@@ -227,10 +317,6 @@ export const CanvasElement = ({ component }: CanvasElementProps) => {
               ...(currentAnim?.animate?.transition || {}),
             }
       }
-      style={{
-        position: "absolute",
-        ...component.styles,
-      }}
       className={cn(
         "group cursor-pointer select-none transition-shadow",
         isSelected
@@ -248,49 +334,77 @@ export const CanvasElement = ({ component }: CanvasElementProps) => {
       {isSelected && (
         <>
           {/* Resize Handles */}
-          <div className="absolute -top-1 -left-1 w-2 h-2 bg-white border border-indigo-500 rounded-full" />
-          <div className="absolute -top-1 -right-1 w-2 h-2 bg-white border border-indigo-500 rounded-full" />
-          <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-white border border-indigo-500 rounded-full" />
+          {resizeHandles.map((h) => (
+            <motion.div
+              key={h.dir}
+              onPanStart={(e) => {
+                // @ts-ignore - Some browsers pass event in different ways
+                if (e && e.stopPropagation) e.stopPropagation();
 
-          {/* Active Resize Handle (Bottom Right) */}
-          <motion.div
-            drag
-            dragMomentum={false}
-            dragElastic={0}
-            onDragStart={(e) => {
-              e.stopPropagation();
-              setIsResizing(true);
-              setInitialSize({ width: size.width, height: size.height });
-            }}
-            onDrag={handleResize}
-            onDragEnd={(e) => {
-              e.stopPropagation();
-              handleResizeEnd();
-            }}
-            onPointerDown={(e) => e.stopPropagation()}
-            className="absolute -bottom-1 -right-1 w-3 h-3 bg-white border-2 border-indigo-500 rounded-full cursor-nwse-resize z-[60]"
-          />
+                const clientX =
+                  (e as any).touches && (e as any).touches.length > 0
+                    ? (e as any).touches[0].clientX
+                    : (e as any).clientX;
+                const clientY =
+                  (e as any).touches && (e as any).touches.length > 0
+                    ? (e as any).touches[0].clientY
+                    : (e as any).clientY;
+                dragStartPos.current = { x: clientX, y: clientY };
 
-          {/* Quick Actions */}
-          <div className="absolute -top-8 right-0 flex items-center gap-1 bg-indigo-500 text-white rounded px-2 py-1 shadow-lg transform scale-0 group-hover:scale-100 transition-transform origin-bottom">
-            <Move className="w-3 h-3" />
-            <div className="w-px h-3 bg-white/20 mx-1" />
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                removeComponent(component.id);
+                setIsResizing(true);
+                initialSize.current = {
+                  width: size.width,
+                  height: size.height,
+                };
+                initialPos.current = { x: pos.x, y: pos.y };
               }}
-              className="hover:text-red-200"
+              onPan={(e, info) => {
+                // @ts-ignore
+                if (e && e.stopPropagation) e.stopPropagation();
+                handleResize(e, h.dir);
+              }}
+              onPanEnd={(e) => {
+                // @ts-ignore
+                if (e && e.stopPropagation) e.stopPropagation();
+                handleResizeEnd();
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              className={cn(
+                "absolute w-6 h-6 flex items-center justify-center z-[60] -translate-x-1/2 -translate-y-1/2",
+                h.class,
+                // Hide middle handles if element is too small
+                (h.dir === "n" || h.dir === "s") && size.width < 40 && "hidden",
+                (h.dir === "e" || h.dir === "w") &&
+                  size.height < 40 &&
+                  "hidden",
+              )}
             >
-              <Trash2 className="w-3 h-3" />
-            </button>
+              <div className="w-3 h-3 bg-white border-2 border-indigo-500 rounded-full shadow-sm" />
+            </motion.div>
+          ))}
+
+          {/* Quick Actions - Added a wrapper with padding to bridge the hover gap */}
+          <div className="absolute -top-12 right-0 h-12 flex items-end pb-2 group/toolbar z-[70]">
+            <div className="flex items-center gap-1 bg-indigo-500 text-white rounded px-2 py-1 shadow-lg transform scale-0 group-hover:scale-100 transition-transform origin-bottom">
+              <Move className="w-3 h-3" />
+              <div className="w-px h-3 bg-white/20 mx-1" />
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeComponent(component.id);
+                }}
+                className="hover:text-red-200 transition-colors"
+                title="Delete element"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </div>
           </div>
         </>
       )}
     </motion.div>
   );
 };
-
 const renderContent = (component: EditorComponent) => {
   switch (component.type) {
     case "text":
