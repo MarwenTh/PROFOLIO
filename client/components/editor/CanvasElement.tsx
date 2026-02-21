@@ -657,7 +657,29 @@ const renderContent = (component: EditorComponent) => {
           {component.content || "Glow"}
         </button>
       );
-    // Iconify Icon
+    case "bg-gradient": {
+      const isFullCss = component.content?.includes(";");
+      const styles: any = {};
+
+      if (isFullCss) {
+        const parts = component.content.split(";");
+        parts.forEach((part: string) => {
+          const colonIndex = part.indexOf(":");
+          if (colonIndex > -1) {
+            const prop = part.substring(0, colonIndex).trim();
+            const val = part.substring(colonIndex + 1).trim();
+            const camelProp = prop.replace(/-([a-z])/g, (g) =>
+              g[1].toUpperCase(),
+            );
+            styles[camelProp] = val;
+          }
+        });
+      } else {
+        styles.background = component.content;
+      }
+
+      return <div className="w-full h-full" style={styles} />;
+    }
     case "iconify-icon":
       return (
         <div

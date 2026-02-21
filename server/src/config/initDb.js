@@ -1,4 +1,4 @@
-const { pool } = require('./db');
+const { pool } = require("./db");
 
 const initDb = async () => {
   const createUsersTable = `
@@ -365,7 +365,7 @@ const initDb = async () => {
 
   try {
     await pool.query(createUsersTable);
-    console.log('✅ Users table initialized');
+    console.log("✅ Users table initialized");
     await pool.query(addNewUserColumns);
     await pool.query(createAccountsTable);
     await pool.query(createSessionsTable);
@@ -398,7 +398,7 @@ const initDb = async () => {
       END $$;
     `;
     await pool.query(addMediaColumns);
-    
+
     await pool.query(createCollectionsTable);
     await pool.query(createCollectionItemsTable);
 
@@ -411,7 +411,7 @@ const initDb = async () => {
       );
     `;
     await pool.query(createSearchHistoryTable);
-    
+
     await pool.query(createPortfolioSeoTable);
     await pool.query(createPortfolioDomainsTable);
     await pool.query(createMarketplaceItemsTable);
@@ -421,9 +421,24 @@ const initDb = async () => {
     await pool.query(createNewslettersTable);
     await pool.query(createReferralsTable);
     await pool.query(createCodeSnippetsTable);
-    console.log('✅ All database tables initialized successfully (including marketplace, subscribers, referrals & code editor)');
+
+    const createRecentlyUsedTable = `
+      CREATE TABLE IF NOT EXISTS recently_used (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        type VARCHAR(50) NOT NULL, -- 'background', 'icon', 'upload'
+        content JSONB NOT NULL,
+        used_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, type, content)
+      );
+    `;
+    await pool.query(createRecentlyUsedTable);
+
+    console.log(
+      "✅ All database tables initialized successfully (including marketplace, subscribers, referrals, code editor & recently used)",
+    );
   } catch (err) {
-    console.error('❌ Error initializing database:', err);
+    console.error("❌ Error initializing database:", err);
   }
 };
 

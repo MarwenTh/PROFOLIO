@@ -133,7 +133,8 @@ function RenderComponent({ comp }: { comp: any }) {
   const getDevice = () => {
     if (windowWidth < 768) return "mobile";
     if (windowWidth < 1280) return "tablet";
-    return "desktop";
+    if (windowWidth < 1920) return "desktop";
+    return "wide";
   };
 
   const device = getDevice();
@@ -158,7 +159,13 @@ function RenderComponent({ comp }: { comp: any }) {
   const getLeftPostion = () => {
     if (styles.isBackground) return 0;
     const baseWidth =
-      device === "mobile" ? 375 : device === "tablet" ? 768 : 1920;
+      device === "mobile"
+        ? 375
+        : device === "tablet"
+          ? 768
+          : device === "desktop"
+            ? 1280
+            : 1920;
     return `calc(50% - ${baseWidth / 2}px + ${x}px)`;
   };
 
@@ -175,6 +182,7 @@ function RenderComponent({ comp }: { comp: any }) {
           type === "image" || type === "video" || type.includes("-bg")
             ? "none"
             : "auto",
+        overflow: "hidden",
       }
     : {
         position: "absolute",
@@ -183,6 +191,7 @@ function RenderComponent({ comp }: { comp: any }) {
         width: width,
         height: height,
         zIndex: rootZIndex ?? styles.zIndex ?? 10,
+        overflow: "hidden",
       };
 
   const animationVariants: Record<string, any> = {
@@ -498,6 +507,30 @@ function RenderComponent({ comp }: { comp: any }) {
           }}
         />
       );
+
+    if (type === "bg-gradient") {
+      const isFullCss = content?.includes(";");
+      const bgStyles: any = {};
+
+      if (isFullCss) {
+        const parts = content.split(";");
+        parts.forEach((part: string) => {
+          const colonIndex = part.indexOf(":");
+          if (colonIndex > -1) {
+            const prop = part.substring(0, colonIndex).trim();
+            const val = part.substring(colonIndex + 1).trim();
+            const camelProp = prop.replace(/-([a-z])/g, (g) =>
+              g[1].toUpperCase(),
+            );
+            bgStyles[camelProp] = val;
+          }
+        });
+      } else {
+        bgStyles.background = content;
+      }
+
+      return <div className="w-full h-full" style={bgStyles} />;
+    }
 
     return null;
   };

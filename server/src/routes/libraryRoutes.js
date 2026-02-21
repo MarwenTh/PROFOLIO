@@ -1,8 +1,8 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { 
-  getMedia, 
-  addMedia, 
+const {
+  getMedia,
+  addMedia,
   deleteMedia,
   searchUnsplash,
   createCollection,
@@ -13,32 +13,38 @@ const {
   getSearchHistory,
   saveSearchHistory,
   updateCollection,
-  deleteCollection
-} = require('../controllers/libraryController');
-const authMiddleware = require('../middleware/authMiddleware');
+  deleteCollection,
+} = require("../controllers/libraryController");
+const recentlyUsedController = require("../controllers/recentlyUsedController");
+const authMiddleware = require("../middleware/authMiddleware");
 
 // All routes require authentication
 router.use(authMiddleware);
 
+// Recently Used
+router.get("/recently-used", recentlyUsedController.getRecentlyUsed);
+router.post("/recently-used", recentlyUsedController.recordUsage);
+router.delete("/recently-used/:id", recentlyUsedController.deleteRecentlyUsed);
+
 // Media
-router.get('/', getMedia);
-router.post('/', addMedia);
-router.delete('/:id', deleteMedia);
+router.get("/", getMedia);
+router.post("/", addMedia);
+router.delete("/:id", deleteMedia);
 
 // Unsplash
-router.get('/unsplash/search', searchUnsplash);
+router.get("/unsplash/search", searchUnsplash);
 
 // Collections
-router.get('/collections', getCollections);
-router.post('/collections', createCollection);
-router.get('/collections/:id', getCollectionItems);
-router.patch('/collections/:id', updateCollection);
-router.delete('/collections/:id', deleteCollection);
-router.post('/collections/:id/items', addToCollection);
-router.delete('/collections/:id/items/:mediaId', removeFromCollection);
+router.get("/collections", getCollections);
+router.post("/collections", createCollection);
+router.get("/collections/:id", getCollectionItems);
+router.patch("/collections/:id", updateCollection);
+router.delete("/collections/:id", deleteCollection);
+router.post("/collections/:id/items", addToCollection);
+router.delete("/collections/:id/items/:mediaId", removeFromCollection);
 
 // Search History
-router.get('/search-history', getSearchHistory);
-router.post('/search-history', saveSearchHistory);
+router.get("/search-history", getSearchHistory);
+router.post("/search-history", saveSearchHistory);
 
 module.exports = router;

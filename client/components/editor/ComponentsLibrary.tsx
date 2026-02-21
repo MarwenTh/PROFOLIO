@@ -20,9 +20,11 @@ import {
   Palette,
   Smile,
   MousePointer2,
+  Clock,
 } from "lucide-react";
 import { useEditor } from "@/context/EditorContext";
 import { cn } from "@/lib/utils";
+import { useLibrary } from "@/hooks/useLibrary";
 import { BackgroundStudio } from "./BackgroundStudio";
 import { IconPicker } from "./IconPicker";
 
@@ -46,7 +48,15 @@ export const ComponentsLibrary = () => {
     selectedSectionId,
     setMediaModalOpen,
   } = useEditor();
+  const { recentlyUsed, fetchRecentlyUsed, deleteRecentlyUsed } = useLibrary();
   const [category, setCategory] = useState<Category>("elements");
+
+  React.useEffect(() => {
+    if (category === "backgrounds") fetchRecentlyUsed("background");
+    if (category === "icons") fetchRecentlyUsed("icon");
+    if (category === "uploads") fetchRecentlyUsed("upload");
+  }, [category, fetchRecentlyUsed]);
+
   const [searchQuery, setSearchQuery] = useState("");
 
   const isOpen = activeTool === "components";
@@ -54,7 +64,7 @@ export const ComponentsLibrary = () => {
   const handleAddElement = (
     type: any,
     content: any,
-    size: { w: number; h: number },
+    size: { w: number; h: number; [key: string]: any },
   ) => {
     const targetSectionId = selectedSectionId || sections[0]?.id;
     if (!targetSectionId) return;
@@ -62,7 +72,7 @@ export const ComponentsLibrary = () => {
     addComponent(targetSectionId, {
       type,
       content,
-      styles: {},
+      styles: size.styles || {},
       width: size.w,
       height: size.h,
       x: 100,
@@ -745,23 +755,119 @@ export const ComponentsLibrary = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="flex flex-col items-center justify-center py-10 px-4 space-y-4 text-center"
+                    className={cn(
+                      "flex flex-col gap-4",
+                      recentlyUsed.background.length === 0 &&
+                        "items-center justify-center py-10 text-center",
+                    )}
                   >
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
-                      <Palette className="w-8 h-8 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-white font-bold">
-                        Background Studio
-                      </p>
-                      <p className="text-[10px] text-neutral-500 mt-1 pb-4 max-w-[200px]">
-                        Create custom gradients, mesh backgrounds, and patterns
-                      </p>
+                    {recentlyUsed.background.length > 0 && (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-neutral-500 mb-1">
+                          <Clock className="w-3 h-3" />
+                          <span className="text-[10px] font-bold uppercase tracking-wider">
+                            Recently Used
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {recentlyUsed.background
+                            .slice(0, 4)
+                            .map((item, i) => (
+                              <button
+                                key={i}
+                                onClick={() =>
+                                  handleAddElement(
+                                    "bg-gradient",
+                                    item.content.css,
+                                    { w: 800, h: 400 },
+                                  )
+                                }
+                                className="group aspect-video rounded-xl border border-white/5 hover:border-indigo-500/50 transition-all relative overflow-hidden bg-[#2a2a2b]"
+                              >
+                                <div
+                                  className="absolute inset-0"
+                                  style={(() => {
+                                    const content = item.content.css;
+                                    const isFullCss = content?.includes(";");
+                                    if (!isFullCss)
+                                      return { background: content };
+
+                                    const styles: any = {};
+                                    content
+                                      .split(";")
+                                      .forEach((part: string) => {
+                                        const colonIndex = part.indexOf(":");
+                                        if (colonIndex > -1) {
+                                          const prop = part
+                                            .substring(0, colonIndex)
+                                            .trim();
+                                          const val = part
+                                            .substring(colonIndex + 1)
+                                            .trim();
+                                          const camelProp = prop.replace(
+                                            /-([a-z])/g,
+                                            (g) => g[1].toUpperCase(),
+                                          );
+                                          styles[camelProp] = val;
+                                        }
+                                      });
+                                    return styles;
+                                  })()}
+                                />
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteRecentlyUsed(item.id, "background");
+                                  }}
+                                  className="absolute top-1 right-1 p-1 rounded-md bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+                                >
+                                  <X className="w-2 h-2" />
+                                </button>
+                              </button>
+                            ))}
+                        </div>
+                        <div className="h-px bg-white/5 my-4" />
+                      </div>
+                    )}
+
+                    <div
+                      className={cn(
+                        recentlyUsed.background.length > 0 &&
+                          "flex items-center justify-between p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10",
+                      )}
+                    >
+                      {recentlyUsed.background.length === 0 && (
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center mb-4 mx-auto">
+                          <Palette className="w-8 h-8 text-white" />
+                        </div>
+                      )}
+                      <div
+                        className={cn(
+                          recentlyUsed.background.length > 0
+                            ? "text-left"
+                            : "mb-4",
+                        )}
+                      >
+                        <p className="text-[11px] text-white font-bold">
+                          Background Studio
+                        </p>
+                        <p className="text-[10px] text-neutral-500 mt-1 max-w-[200px]">
+                          Create custom gradients, mesh backgrounds, and
+                          patterns
+                        </p>
+                      </div>
                       <button
                         onClick={() => setBgStudioOpen(true)}
-                        className="px-6 py-2 bg-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-colors shadow-xl"
+                        className={cn(
+                          "bg-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-colors shadow-xl",
+                          recentlyUsed.background.length > 0
+                            ? "px-4 py-2"
+                            : "px-6 py-2",
+                        )}
                       >
-                        Open Studio
+                        {recentlyUsed.background.length > 0
+                          ? "Studio"
+                          : "Open Studio"}
                       </button>
                     </div>
                   </motion.div>
@@ -773,23 +879,98 @@ export const ComponentsLibrary = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="flex flex-col items-center justify-center py-10 px-4 space-y-4 text-center"
+                    className={cn(
+                      "flex flex-col gap-4",
+                      recentlyUsed.icon.length === 0 &&
+                        "items-center justify-center py-10 text-center",
+                    )}
                   >
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center">
-                      <Smile className="w-8 h-8 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-white font-bold">
-                        Icon Library
-                      </p>
-                      <p className="text-[10px] text-neutral-500 mt-1 pb-4 max-w-[200px]">
-                        275,000+ icons powered by Iconify
-                      </p>
+                    {recentlyUsed.icon.length > 0 && (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-neutral-500 mb-1">
+                          <Clock className="w-3 h-3" />
+                          <span className="text-[10px] font-bold uppercase tracking-wider">
+                            Recently Used
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2">
+                          {recentlyUsed.icon.slice(0, 8).map((item, i) => (
+                            <button
+                              key={i}
+                              onClick={() =>
+                                handleAddElement("iconify-icon", item.content, {
+                                  w: 100,
+                                  h: 100,
+                                })
+                              }
+                              className="aspect-square flex items-center justify-center rounded-xl bg-white/5 border border-white/5 hover:border-orange-500/50 hover:bg-orange-500/5 transition-all p-2 group"
+                              title={item.content.name}
+                            >
+                              {item.content.type === "iconify" ? (
+                                <img
+                                  src={`https://api.iconify.design/${item.content.name.split(":")[0]}/${item.content.name.split(":")[1]}.svg?color=%23f97316&height=24`}
+                                  className="w-6 h-6 opacity-70 group-hover:opacity-100 transition-opacity"
+                                  alt=""
+                                />
+                              ) : (
+                                <div
+                                  className="w-6 h-6 text-orange-500 opacity-70 group-hover:opacity-100 transition-opacity"
+                                  dangerouslySetInnerHTML={{
+                                    __html: item.content.svg,
+                                  }}
+                                />
+                              )}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteRecentlyUsed(item.id, "icon");
+                                }}
+                                className="absolute top-1 right-1 p-1 rounded-md bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+                              >
+                                <X className="w-2 h-2" />
+                              </button>
+                            </button>
+                          ))}
+                        </div>
+                        <div className="h-px bg-white/5 my-4" />
+                      </div>
+                    )}
+
+                    <div
+                      className={cn(
+                        recentlyUsed.icon.length > 0 &&
+                          "flex items-center justify-between p-4 rounded-2xl bg-orange-500/5 border border-orange-500/10",
+                      )}
+                    >
+                      {recentlyUsed.icon.length === 0 && (
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center mb-4 mx-auto">
+                          <Smile className="w-8 h-8 text-white" />
+                        </div>
+                      )}
+                      <div
+                        className={cn(
+                          recentlyUsed.icon.length > 0 ? "text-left" : "mb-4",
+                        )}
+                      >
+                        <p className="text-[11px] text-white font-bold">
+                          Icon Library
+                        </p>
+                        <p className="text-[10px] text-neutral-500 mt-1 max-w-[180px]">
+                          275,000+ icons powered by Iconify
+                        </p>
+                      </div>
                       <button
                         onClick={() => setIconPickerOpen(true)}
-                        className="px-6 py-2 bg-orange-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-colors shadow-xl"
+                        className={cn(
+                          "bg-orange-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-colors shadow-xl",
+                          recentlyUsed.icon.length > 0
+                            ? "px-4 py-2"
+                            : "px-6 py-2",
+                        )}
                       >
-                        Browse Icons
+                        {recentlyUsed.icon.length > 0
+                          ? "Library"
+                          : "Browse Icons"}
                       </button>
                     </div>
                   </motion.div>
@@ -801,23 +982,88 @@ export const ComponentsLibrary = () => {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="flex flex-col items-center justify-center py-10 px-4 space-y-4 text-center border-2 border-dashed border-white/5 rounded-2xl"
+                    className={cn(
+                      "flex flex-col gap-4",
+                      recentlyUsed.upload.length === 0 &&
+                        "items-center justify-center py-10 text-center border-2 border-dashed border-white/5 rounded-2xl px-4",
+                    )}
                   >
-                    <div className="w-16 h-16 rounded-full bg-neutral-800 flex items-center justify-center">
-                      <Upload className="w-8 h-8 text-neutral-500" />
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-white font-bold">
-                        Upload your assets
-                      </p>
-                      <p className="text-[10px] text-neutral-500 mt-1 pb-4">
-                        Images, videos, or icons
-                      </p>
+                    {recentlyUsed.upload.length > 0 && (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-neutral-500 mb-1">
+                          <Clock className="w-3 h-3" />
+                          <span className="text-[10px] font-bold uppercase tracking-wider">
+                            Recently Used
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {recentlyUsed.upload.slice(0, 4).map((item, i) => (
+                            <button
+                              key={i}
+                              onClick={() =>
+                                handleAddElement("image", item.content.url, {
+                                  w: 400,
+                                  h: 400,
+                                })
+                              }
+                              className="group aspect-square rounded-xl border border-white/5 hover:border-indigo-500/50 transition-all relative overflow-hidden bg-neutral-900"
+                            >
+                              <img
+                                src={item.content.url}
+                                className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
+                                alt=""
+                              />
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteRecentlyUsed(item.id, "upload");
+                                }}
+                                className="absolute top-1 right-1 p-1 rounded-md bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+                              >
+                                <X className="w-2 h-2" />
+                              </button>
+                            </button>
+                          ))}
+                        </div>
+                        <div className="h-px bg-white/5 my-4" />
+                      </div>
+                    )}
+
+                    <div
+                      className={cn(
+                        recentlyUsed.upload.length > 0 &&
+                          "flex items-center justify-between p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10",
+                      )}
+                    >
+                      {recentlyUsed.upload.length === 0 && (
+                        <div className="w-16 h-16 rounded-full bg-neutral-800 flex items-center justify-center mb-4 mx-auto">
+                          <Upload className="w-8 h-8 text-neutral-500" />
+                        </div>
+                      )}
+                      <div
+                        className={cn(
+                          recentlyUsed.upload.length > 0 ? "text-left" : "mb-4",
+                        )}
+                      >
+                        <p className="text-[11px] text-white font-bold">
+                          Uploads
+                        </p>
+                        <p className="text-[10px] text-neutral-500 mt-1 max-w-[200px]">
+                          Images, videos, or icons
+                        </p>
+                      </div>
                       <button
                         onClick={() => setMediaModalOpen(true)}
-                        className="px-6 py-2 bg-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-colors shadow-xl"
+                        className={cn(
+                          "bg-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-colors shadow-xl",
+                          recentlyUsed.upload.length > 0
+                            ? "px-4 py-2"
+                            : "px-6 py-2",
+                        )}
                       >
-                        Open Library
+                        {recentlyUsed.upload.length > 0
+                          ? "Library"
+                          : "Open Library"}
                       </button>
                     </div>
                   </motion.div>

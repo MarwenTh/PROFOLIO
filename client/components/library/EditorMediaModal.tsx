@@ -1,27 +1,27 @@
 "use client";
-import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  ImageIcon, 
-  FolderOpen, 
-  Search, 
-  Plus, 
-  Check, 
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  ImageIcon,
+  FolderOpen,
+  Search,
+  Plus,
+  Check,
   X,
   Grid,
   List,
   ChevronRight,
   ChevronLeft,
-  Upload
+  Upload,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { 
-  DashboardModal, 
-  DashboardCard, 
-  DashboardButton, 
+import {
+  DashboardModal,
+  DashboardCard,
+  DashboardButton,
   EmptyState,
   DashboardBadge,
-  DeleteConfirmationModal
+  DeleteConfirmationModal,
 } from "@/components/dashboard/Shared";
 import { useLibrary, MediaItem, Collection } from "@/hooks/useLibrary";
 import { UnsplashSearch } from "./UnsplashSearch";
@@ -40,46 +40,67 @@ interface EditorMediaModalProps {
   currentAssets: string[];
 }
 
-export function EditorMediaModal({ isOpen, onClose, onSelectImage, onImportCollection, currentAssets }: EditorMediaModalProps) {
-  const { 
-    media, 
-    collections, 
-    loading, 
-    unsplashResults, 
+export function EditorMediaModal({
+  isOpen,
+  onClose,
+  onSelectImage,
+  onImportCollection,
+  currentAssets,
+}: EditorMediaModalProps) {
+  const {
+    media,
+    collections,
+    loading,
+    unsplashResults,
     isSearching,
     searchHistory,
-    fetchMedia, 
-    fetchCollections, 
+    fetchMedia,
+    fetchCollections,
     fetchSearchHistory,
-    searchUnsplash, 
+    searchUnsplash,
     saveUnsplashPhoto,
     createCollection,
     updateCollection,
     deleteCollection,
-    uploadMedia
+    uploadMedia,
+    recordUsage,
   } = useLibrary();
 
-  const [activeTab, setActiveTab] = useState<"library" | "collections" | "unsplash">("library");
-  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
+  const handleSelectImage = (url: string) => {
+    recordUsage("upload", { url });
+    onSelectImage(url);
+  };
+
+  const [activeTab, setActiveTab] = useState<
+    "library" | "collections" | "unsplash"
+  >("library");
+  const [selectedCollection, setSelectedCollection] =
+    useState<Collection | null>(null);
   const [collectionItems, setCollectionItems] = useState<MediaItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
-  
-  const [addToCollectionModal, setAddToCollectionModal] = useState<{ isOpen: boolean; mediaId: number | null }>({
+
+  const [addToCollectionModal, setAddToCollectionModal] = useState<{
+    isOpen: boolean;
+    mediaId: number | null;
+  }>({
     isOpen: false,
-    mediaId: null
+    mediaId: null,
   });
 
   useEffect(() => {
     // Restore Modal Tab
-    const savedTab = localStorage.getItem('editor_media_modal_tab');
-    if (savedTab && ['library', 'collections', 'unsplash'].includes(savedTab)) {
+    const savedTab = localStorage.getItem("editor_media_modal_tab");
+    if (savedTab && ["library", "collections", "unsplash"].includes(savedTab)) {
       setActiveTab(savedTab as any);
     }
   }, []);
 
-  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{ isOpen: boolean; mediaId: number | null }>({
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
+    isOpen: boolean;
+    mediaId: number | null;
+  }>({
     isOpen: false,
-    mediaId: null
+    mediaId: null,
   });
 
   useEffect(() => {
@@ -106,23 +127,23 @@ export function EditorMediaModal({ isOpen, onClose, onSelectImage, onImportColle
   };
 
   const handleTabChange = (tab: typeof activeTab) => {
-      setActiveTab(tab);
-      localStorage.setItem('editor_media_modal_tab', tab);
-      if (tab !== "collections") setSelectedCollection(null);
+    setActiveTab(tab);
+    localStorage.setItem("editor_media_modal_tab", tab);
+    if (tab !== "collections") setSelectedCollection(null);
   };
 
   const handleDeleteMedia = async () => {
-      if(!deleteConfirmModal.mediaId) return;
-      try {
-          await api.delete(`/library/${deleteConfirmModal.mediaId}`);
-          toast.success("Media deleted");
-          fetchMedia();
-          fetchCollections();
-          if(selectedCollection) handleSelectCollection(selectedCollection);
-          setDeleteConfirmModal({ isOpen: false, mediaId: null });
-      } catch(err) {
-          toast.error("Failed to delete media");
-      }
+    if (!deleteConfirmModal.mediaId) return;
+    try {
+      await api.delete(`/library/${deleteConfirmModal.mediaId}`);
+      toast.success("Media deleted");
+      fetchMedia();
+      fetchCollections();
+      if (selectedCollection) handleSelectCollection(selectedCollection);
+      setDeleteConfirmModal({ isOpen: false, mediaId: null });
+    } catch (err) {
+      toast.error("Failed to delete media");
+    }
   };
 
   return (
@@ -136,176 +157,205 @@ export function EditorMediaModal({ isOpen, onClose, onSelectImage, onImportColle
       <div className="flex flex-col h-[70vh]">
         {/* Tabs */}
         <div className="flex items-center gap-2 mb-6 shrink-0 overflow-x-auto pb-2 custom-scrollbar">
-          <TabButton 
-            active={activeTab === "library"} 
-            onClick={() => handleTabChange("library")} 
-            icon={ImageIcon} 
-            label="My Library" 
+          <TabButton
+            active={activeTab === "library"}
+            onClick={() => handleTabChange("library")}
+            icon={ImageIcon}
+            label="My Library"
           />
-          <TabButton 
-            active={activeTab === "collections"} 
-            onClick={() => handleTabChange("collections")} 
-            icon={FolderOpen} 
-            label="Collections" 
+          <TabButton
+            active={activeTab === "collections"}
+            onClick={() => handleTabChange("collections")}
+            icon={FolderOpen}
+            label="Collections"
           />
-          <TabButton 
-            active={activeTab === "unsplash"} 
-            onClick={() => handleTabChange("unsplash")} 
-            icon={Search} 
-            label="Unsplash" 
+          <TabButton
+            active={activeTab === "unsplash"}
+            onClick={() => handleTabChange("unsplash")}
+            icon={Search}
+            label="Unsplash"
           />
         </div>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
-            <AnimatePresence mode="wait">
-                {activeTab === "library" && (
-                    <motion.div
-                        key="library"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                    >
-                        {loading && media.length === 0 ? (
-                            <PageLoader />
-                        ) : (
-                            <div className="space-y-6">
-                                <div className="flex items-center justify-between bg-white/[0.02] border border-white/5 rounded-2xl p-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex -space-x-2 mr-2">
-                                            {media.slice(0, 3).map((item, i) => (
-                                                <div key={i} className="w-6 h-6 rounded-full border-2 border-white dark:border-neutral-900 bg-neutral-200 dark:bg-neutral-800 overflow-hidden">
-                                                    <img src={item.url} className="w-full h-full object-cover" alt="" />
-                                                </div>
-                                            ))}
-                                            {media.length > 3 && (
-                                                <div className="w-6 h-6 rounded-full border-2 border-white dark:border-neutral-900 bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-[8px] font-black">
-                                                    +{media.length - 3}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <span className="text-xs font-black uppercase tracking-widest text-white">Your Library</span>
-                                            <p className="text-[10px] text-neutral-500 font-medium">Click images to add to your sidebar assets</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <MediaGrid 
-                                    media={media} 
-                                    loading={loading}
-                                    onSelect={(url: string) => { onSelectImage(url); }}
-                                    currentAssets={currentAssets}
-                                    onAddToCollection={(id) => setAddToCollectionModal({ isOpen: true, mediaId: id })}
-                                    onDelete={(id) => setDeleteConfirmModal({ isOpen: true, mediaId: id })}
-                                />
+          <AnimatePresence mode="wait">
+            {activeTab === "library" && (
+              <motion.div
+                key="library"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+              >
+                {loading && media.length === 0 ? (
+                  <PageLoader />
+                ) : (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between bg-white/[0.02] border border-white/5 rounded-2xl p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex -space-x-2 mr-2">
+                          {media.slice(0, 3).map((item, i) => (
+                            <div
+                              key={i}
+                              className="w-6 h-6 rounded-full border-2 border-white dark:border-neutral-900 bg-neutral-200 dark:bg-neutral-800 overflow-hidden"
+                            >
+                              <img
+                                src={item.url}
+                                className="w-full h-full object-cover"
+                                alt=""
+                              />
                             </div>
-                        )}
-                        {media.length === 0 && !loading && (
-                            <EmptyState 
-                                title="No uploads" 
-                                description="Start by searching Unsplash or uploading photos." 
-                                icon={ImageIcon} 
-                            />
-                        )}
-                    </motion.div>
-                )}
-
-                {activeTab === "collections" && (
-                    <motion.div
-                        key="collections"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                    >
-                        {!selectedCollection ? (
-                            <CollectionsList 
-                                collections={collections}
-                                onCreateCollection={createCollection}
-                                onUpdateCollection={updateCollection}
-                                onDeleteCollection={deleteCollection}
-                                onSelectCollection={handleSelectCollection}
-                            />
-                        ) : (
-                            <div className="space-y-6">
-                                <div className="flex items-center justify-between bg-white/50 dark:bg-neutral-900/50 backdrop-blur-md p-4 rounded-3xl sticky top-0 z-20 border border-neutral-100 dark:border-white/5 mb-6">
-                                    <div className="flex items-center gap-4">
-                                        <button 
-                                            onClick={() => setSelectedCollection(null)}
-                                            className="p-2 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-xl transition-colors"
-                                        >
-                                            <ChevronLeft className="w-5 h-5" />
-                                        </button>
-                                        <div>
-                                            <h3 className="font-black italic text-xl">{selectedCollection.name}</h3>
-                                            <p className="text-xs text-neutral-500 font-medium">{selectedCollection.item_count} items</p>
-                                        </div>
-                                    </div>
-                                    <DashboardButton 
-                                        variant="primary" 
-                                        className="h-10 px-4 rounded-xl text-xs"
-                                        onClick={() => {
-                                            onImportCollection(collectionItems.map(i => i.url));
-                                        }}
-                                        disabled={collectionItems.length === 0}
-                                    >
-                                        Import Collection
-                                    </DashboardButton>
-                                </div>
-
-                                <MediaGrid 
-                                    media={collectionItems}
-                                    loading={loadingItems}
-                                    onSelect={(url: string) => { onSelectImage(url); }}
-                                    currentAssets={currentAssets}
-                                    onDelete={async (id) => {
-                                        try {
-                                            await api.delete(`/library/collections/${selectedCollection.id}/items/${id}`);
-                                            toast.success("Removed from collection");
-                                            handleSelectCollection(selectedCollection);
-                                            fetchCollections();
-                                        } catch(err) {
-                                            toast.error("Failed to remove item");
-                                        }
-                                    }}
-                                />
+                          ))}
+                          {media.length > 3 && (
+                            <div className="w-6 h-6 rounded-full border-2 border-white dark:border-neutral-900 bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-[8px] font-black">
+                              +{media.length - 3}
                             </div>
-                        )}
-                    </motion.div>
+                          )}
+                        </div>
+                        <div>
+                          <span className="text-xs font-black uppercase tracking-widest text-white">
+                            Your Library
+                          </span>
+                          <p className="text-[10px] text-neutral-500 font-medium">
+                            Click images to add to your sidebar assets
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <MediaGrid
+                      media={media}
+                      loading={loading}
+                      onSelect={(url: string) => {
+                        handleSelectImage(url);
+                      }}
+                      currentAssets={currentAssets}
+                      onAddToCollection={(id) =>
+                        setAddToCollectionModal({ isOpen: true, mediaId: id })
+                      }
+                      onDelete={(id) =>
+                        setDeleteConfirmModal({ isOpen: true, mediaId: id })
+                      }
+                    />
+                  </div>
                 )}
+                {media.length === 0 && !loading && (
+                  <EmptyState
+                    title="No uploads"
+                    description="Start by searching Unsplash or uploading photos."
+                    icon={ImageIcon}
+                  />
+                )}
+              </motion.div>
+            )}
 
-                {activeTab === "unsplash" && (
-                    <motion.div
-                        key="unsplash"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                    >
-                        <UnsplashSearch 
-                            onSearch={searchUnsplash}
-                            onSave={saveUnsplashPhoto}
-                            onSelect={(url: string) => { onSelectImage(url); }}
-                            results={unsplashResults || []}
-                            loading={isSearching}
-                            media={media}
-                            currentAssets={currentAssets}
-                            history={searchHistory}
-                            onFetchHistory={fetchSearchHistory}
-                        />
-                    </motion.div>
+            {activeTab === "collections" && (
+              <motion.div
+                key="collections"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+              >
+                {!selectedCollection ? (
+                  <CollectionsList
+                    collections={collections}
+                    onCreateCollection={createCollection}
+                    onUpdateCollection={updateCollection}
+                    onDeleteCollection={deleteCollection}
+                    onSelectCollection={handleSelectCollection}
+                  />
+                ) : (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between bg-white/50 dark:bg-neutral-900/50 backdrop-blur-md p-4 rounded-3xl sticky top-0 z-20 border border-neutral-100 dark:border-white/5 mb-6">
+                      <div className="flex items-center gap-4">
+                        <button
+                          onClick={() => setSelectedCollection(null)}
+                          className="p-2 hover:bg-neutral-100 dark:hover:bg-white/5 rounded-xl transition-colors"
+                        >
+                          <ChevronLeft className="w-5 h-5" />
+                        </button>
+                        <div>
+                          <h3 className="font-black italic text-xl">
+                            {selectedCollection.name}
+                          </h3>
+                          <p className="text-xs text-neutral-500 font-medium">
+                            {selectedCollection.item_count} items
+                          </p>
+                        </div>
+                      </div>
+                      <DashboardButton
+                        variant="primary"
+                        className="h-10 px-4 rounded-xl text-xs"
+                        onClick={() => {
+                          onImportCollection(collectionItems.map((i) => i.url));
+                        }}
+                        disabled={collectionItems.length === 0}
+                      >
+                        Import Collection
+                      </DashboardButton>
+                    </div>
+
+                    <MediaGrid
+                      media={collectionItems}
+                      loading={loadingItems}
+                      onSelect={(url: string) => {
+                        handleSelectImage(url);
+                      }}
+                      currentAssets={currentAssets}
+                      onDelete={async (id) => {
+                        try {
+                          await api.delete(
+                            `/library/collections/${selectedCollection.id}/items/${id}`,
+                          );
+                          toast.success("Removed from collection");
+                          handleSelectCollection(selectedCollection);
+                          fetchCollections();
+                        } catch (err) {
+                          toast.error("Failed to remove item");
+                        }
+                      }}
+                    />
+                  </div>
                 )}
-            </AnimatePresence>
+              </motion.div>
+            )}
+
+            {activeTab === "unsplash" && (
+              <motion.div
+                key="unsplash"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+              >
+                <UnsplashSearch
+                  onSearch={searchUnsplash}
+                  onSave={saveUnsplashPhoto}
+                  onSelect={(url: string) => {
+                    onSelectImage(url);
+                  }}
+                  results={unsplashResults || []}
+                  loading={isSearching}
+                  media={media}
+                  currentAssets={currentAssets}
+                  history={searchHistory}
+                  onFetchHistory={fetchSearchHistory}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
       {/* Internal Modals */}
-      <AddToCollectionModal 
+      <AddToCollectionModal
         isOpen={addToCollectionModal.isOpen}
-        onClose={() => setAddToCollectionModal({ isOpen: false, mediaId: null })}
+        onClose={() =>
+          setAddToCollectionModal({ isOpen: false, mediaId: null })
+        }
         mediaId={addToCollectionModal.mediaId}
         collections={collections}
         onSuccess={fetchCollections}
       />
 
-      <DeleteConfirmationModal 
+      <DeleteConfirmationModal
         isOpen={deleteConfirmModal.isOpen}
         onClose={() => setDeleteConfirmModal({ isOpen: false, mediaId: null })}
         onConfirm={handleDeleteMedia}
@@ -316,28 +366,38 @@ export function EditorMediaModal({ isOpen, onClose, onSelectImage, onImportColle
   );
 }
 
-function TabButton({ active, onClick, icon: Icon, label }: { active: boolean; onClick: () => void; icon: any; label: string }) {
-    return (
-      <button
-        onClick={onClick}
-        className={cn(
-          "relative px-6 py-3 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2.5 outline-none whitespace-nowrap",
-          active 
-            ? "text-white dark:text-black" 
-            : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100/50 dark:hover:bg-white/5"
-        )}
-      >
-        {active && (
-          <motion.div
-            layoutId="activeTabModal"
-            className="absolute inset-0 bg-neutral-900 dark:bg-white rounded-xl shadow-lg"
-            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-          />
-        )}
-        <span className="relative z-10 flex items-center gap-2">
-          <Icon className="w-4 h-4" />
-          {label}
-        </span>
-      </button>
-    );
+function TabButton({
+  active,
+  onClick,
+  icon: Icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: any;
+  label: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "relative px-6 py-3 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2.5 outline-none whitespace-nowrap",
+        active
+          ? "text-white dark:text-black"
+          : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100/50 dark:hover:bg-white/5",
+      )}
+    >
+      {active && (
+        <motion.div
+          layoutId="activeTabModal"
+          className="absolute inset-0 bg-neutral-900 dark:bg-white rounded-xl shadow-lg"
+          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+        />
+      )}
+      <span className="relative z-10 flex items-center gap-2">
+        <Icon className="w-4 h-4" />
+        {label}
+      </span>
+    </button>
+  );
 }

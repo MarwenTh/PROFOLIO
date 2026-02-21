@@ -4,6 +4,7 @@ import React, { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Search, Upload, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLibrary } from "@/hooks/useLibrary";
 
 /**
  * IconPicker — Search and browse 275,000+ icons via Iconify API.
@@ -74,6 +75,7 @@ export const IconPicker: React.FC<IconPickerProps> = ({
   onClose,
   onSelect,
 }) => {
+  const { recordUsage } = useLibrary();
   const [query, setQuery] = useState("");
   const [icons, setIcons] = useState<string[]>(POPULAR_ICONS);
   const [loading, setLoading] = useState(false);
@@ -145,6 +147,7 @@ export const IconPicker: React.FC<IconPickerProps> = ({
   /** Handle icon click */
   const handleIconClick = async (iconName: string) => {
     const svg = await fetchIconSvg(iconName);
+    recordUsage("icon", { type: "iconify", name: iconName, svg });
     onSelect({ type: "iconify", name: iconName, svg });
   };
 
@@ -156,7 +159,9 @@ export const IconPicker: React.FC<IconPickerProps> = ({
     const reader = new FileReader();
     reader.onload = () => {
       const svg = reader.result as string;
-      onSelect({ type: "svg", name: file.name.replace(".svg", ""), svg });
+      const name = file.name.replace(".svg", "");
+      recordUsage("icon", { type: "svg", name, svg });
+      onSelect({ type: "svg", name, svg });
     };
     reader.readAsText(file);
     e.target.value = ""; // Reset file input

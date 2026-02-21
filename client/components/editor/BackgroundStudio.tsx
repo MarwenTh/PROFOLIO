@@ -13,6 +13,7 @@ import {
   Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLibrary } from "@/hooks/useLibrary";
 
 /**
  * BackgroundStudio — A full modal for creating and selecting backgrounds.
@@ -121,7 +122,13 @@ export const BackgroundStudio: React.FC<BackgroundStudioProps> = ({
   onClose,
   onApply,
 }) => {
+  const { recordUsage } = useLibrary();
   const [tab, setTab] = useState<Tab>("presets");
+
+  const handleApply = (css: string) => {
+    recordUsage("background", { css });
+    onApply(css);
+  };
   const [copied, setCopied] = useState(false);
 
   // Gradient builder state
@@ -219,7 +226,7 @@ export const BackgroundStudio: React.FC<BackgroundStudioProps> = ({
                       <button
                         key={i}
                         className="group aspect-video rounded-xl overflow-hidden border border-white/5 hover:border-indigo-500/50 transition-all relative"
-                        onClick={() => onApply(g.css)}
+                        onClick={() => handleApply(g.css)}
                       >
                         <div
                           className="absolute inset-0"
@@ -393,7 +400,7 @@ export const BackgroundStudio: React.FC<BackgroundStudioProps> = ({
                     {/* Actions */}
                     <div className="flex gap-3 pt-2">
                       <button
-                        onClick={() => onApply(buildGradient())}
+                        onClick={() => handleApply(buildGradient())}
                         className="flex-1 py-3 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-xl text-sm transition-all"
                       >
                         Apply to Section
