@@ -685,17 +685,7 @@ const renderContent = (component: EditorComponent) => {
 
       return <div className="w-full h-full" style={styles} />;
     }
-    case "profolio-branding":
-      return (
-        <div className="w-full h-full flex items-center justify-center bg-white/5 dark:bg-black/20 rounded-xl border border-dashed border-white/10 group/branding">
-          <div className="px-4 py-2 rounded-2xl bg-white dark:bg-white/10 border border-neutral-200 dark:border-white/10 flex items-center gap-2 shadow-sm group-hover/branding:scale-105 transition-transform duration-300">
-            <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
-              Built with PROFOLIO
-            </span>
-          </div>
-        </div>
-      );
+
     case "iconify-icon":
       return (
         <div

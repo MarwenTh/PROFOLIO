@@ -6,6 +6,7 @@ import { useEditor } from "@/context/EditorContext";
 import { Section } from "./Section";
 import { ContextMenu } from "./ContextMenu";
 import { Maximize } from "lucide-react";
+import { BrandingOverlay } from "../portfolio/BrandingOverlay";
 
 export const Canvas = () => {
   const {
@@ -27,6 +28,7 @@ export const Canvas = () => {
     desktop: 1280,
     wide: 1920,
   };
+  const { setProModalOpen } = useEditor();
 
   const currentWidth = deviceWidths[device] || deviceWidths.desktop;
 
@@ -107,6 +109,10 @@ export const Canvas = () => {
             transformOrigin: "top center",
           }}
         >
+          <BrandingOverlay
+            onClick={() => setProModalOpen(true)}
+            className="top-6 left-6"
+          />
           {sections.map((section, index) => (
             <Section key={section.id} section={section} index={index} />
           ))}

@@ -29,7 +29,7 @@ interface EditorState {
   };
 }
 
-interface EditorContextType extends EditorState {
+export interface EditorContextType extends EditorState {
   // Component Actions
   addComponent: (
     sectionId: string,
@@ -66,7 +66,9 @@ interface EditorContextType extends EditorState {
   setElementAsBackground: (componentId: string) => void;
 }
 
-const EditorContext = createContext<EditorContextType | undefined>(undefined);
+export const EditorContext = createContext<EditorContextType | undefined>(
+  undefined,
+);
 
 export const EditorProvider = ({
   children,
@@ -77,59 +79,6 @@ export const EditorProvider = ({
 }) => {
   const [sections, setSections] = useState<EditorSection[]>(() => {
     if (initialSections.length > 0) {
-      // Ensure branding exists in loaded sections
-      const hasBranding = initialSections.some((s) =>
-        s.components.some((c) => c.type === "profolio-branding"),
-      );
-
-      if (!hasBranding) {
-        const next = [...initialSections];
-        const lastSectionIndex = next.length - 1;
-        const lastSection = next[lastSectionIndex];
-
-        const brandingComp: EditorComponent = {
-          id: "built-with-profolio",
-          type: "profolio-branding",
-          content: {},
-          styles: { isBackground: false },
-          x: 0,
-          y: (lastSection?.height || 400) - 100,
-          width: 1280,
-          height: 100,
-          zIndex: 0,
-          responsive: {
-            mobile: {
-              x: 0,
-              y: (lastSection?.height || 400) - 80,
-              width: 375,
-              height: 80,
-              zIndex: 0,
-            },
-            tablet: {
-              x: 0,
-              y: (lastSection?.height || 400) - 100,
-              width: 768,
-              height: 100,
-              zIndex: 0,
-            },
-            wide: {
-              x: 0,
-              y: (lastSection?.height || 400) - 100,
-              width: 1920,
-              height: 100,
-              zIndex: 0,
-            },
-          },
-        };
-
-        if (lastSection) {
-          next[lastSectionIndex] = {
-            ...lastSection,
-            components: [...lastSection.components, brandingComp],
-          };
-        }
-        return next;
-      }
       return initialSections;
     }
 
@@ -153,19 +102,7 @@ export const EditorProvider = ({
         type: "footer",
         height: 200,
         styles: { backgroundColor: "#333333" },
-        components: [
-          {
-            id: "built-with-profolio",
-            type: "profolio-branding",
-            content: {},
-            styles: { isBackground: false },
-            x: 0,
-            y: 50,
-            width: 1280,
-            height: 100,
-            zIndex: 200,
-          },
-        ],
+        components: [],
       },
     ];
   });
@@ -493,10 +430,7 @@ export const EditorProvider = ({
         y: componentData.y || 50,
         width: componentData.width || 200,
         height: componentData.height || 100,
-        styles:
-          componentData.type === "profolio-branding"
-            ? { ...componentData.styles, zIndex: 0 }
-            : componentData.styles || {},
+        styles: componentData.styles || {},
       };
 
       setSections((prev) =>
@@ -563,21 +497,6 @@ export const EditorProvider = ({
   const removeComponent = useCallback(
     (id: string) => {
       setSections((prev) => {
-        // Check if component is branding before removal
-        let isBranding = false;
-        for (const section of prev) {
-          const comp = section.components.find((c) => c.id === id);
-          if (comp?.type === "profolio-branding") {
-            isBranding = true;
-            break;
-          }
-        }
-
-        if (isBranding) {
-          setProModalOpen(true);
-          return prev;
-        }
-
         return prev.map((section) => ({
           ...section,
           components: section.components.filter((c) => c.id !== id),

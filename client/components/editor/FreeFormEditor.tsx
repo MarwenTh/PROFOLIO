@@ -23,6 +23,7 @@ import { useParams } from "next/navigation";
 
 import { LibraryProvider } from "@/context/LibraryContext";
 import { toast } from "sonner";
+import { BrandingOverlay } from "../portfolio/BrandingOverlay";
 
 // Inner component to consume context
 const EditorLayout = () => {
@@ -40,6 +41,7 @@ const EditorLayout = () => {
     isMediaModalOpen,
     setMediaModalOpen,
     addComponent,
+    setProModalOpen,
   } = useEditor();
 
   const { updatePortfolio, getPortfolioById } = usePortfolio();
@@ -143,7 +145,7 @@ const EditorLayout = () => {
         <EditorTools />
 
         {/* Main Canvas Area */}
-        <div className="flex-1 relative flex flex-col">
+        <div className="flex-1 relative flex flex-col overflow-hidden">
           <Canvas />
         </div>
 

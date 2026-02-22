@@ -60,8 +60,7 @@ export type ComponentType =
   | "btn-pill"
   | "btn-glow"
   // Iconify icon
-  | "iconify-icon"
-  | "profolio-branding";
+  | "iconify-icon";
 
 export interface EditorComponent {
   id: string;

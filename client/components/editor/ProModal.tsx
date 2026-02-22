@@ -1,15 +1,31 @@
 "use client";
 
-import React from "react";
+import React, { useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, Rocket } from "lucide-react";
-import { useEditor } from "@/context/EditorContext";
+import { EditorContext } from "@/context/EditorContext";
 import { cn } from "@/lib/utils";
 
-export const ProModal = () => {
-  const { isProModalOpen, setProModalOpen } = useEditor();
+interface ProModalProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
 
-  if (!isProModalOpen) return null;
+export const ProModal = ({
+  isOpen: propIsOpen,
+  onClose: propOnClose,
+}: ProModalProps) => {
+  const editorContext = useContext(EditorContext);
+
+  const isOpen =
+    propIsOpen !== undefined ? propIsOpen : editorContext?.isProModalOpen;
+  const setOpen = propOnClose || editorContext?.setProModalOpen;
+
+  if (!isOpen) return null;
+
+  const handleClose = () => {
+    if (setOpen) setOpen(false);
+  };
 
   return (
     <AnimatePresence>
@@ -19,7 +35,7 @@ export const ProModal = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={() => setProModalOpen(false)}
+          onClick={handleClose}
           className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         />
 
@@ -41,7 +57,7 @@ export const ProModal = () => {
               </div>
             </div>
             <button
-              onClick={() => setProModalOpen(false)}
+              onClick={handleClose}
               className="absolute top-4 right-4 p-2 rounded-full bg-black/20 text-white/70 hover:text-white hover:bg-black/40 transition-all"
             >
               <X className="w-4 h-4" />
@@ -83,7 +99,7 @@ export const ProModal = () => {
 
             <div className="flex gap-3 pt-4">
               <button
-                onClick={() => setProModalOpen(false)}
+                onClick={handleClose}
                 className="flex-1 px-4 py-3 rounded-xl border border-white/5 bg-white/5 text-white font-bold text-sm hover:bg-white/10 transition-all"
               >
                 Maybe Later
@@ -91,7 +107,7 @@ export const ProModal = () => {
               <button
                 onClick={() => {
                   window.open("/pricing", "_blank");
-                  setProModalOpen(false);
+                  handleClose();
                 }}
                 className="flex-[1.5] px-4 py-3 rounded-xl bg-indigo-500 text-white font-bold text-sm hover:bg-indigo-600 shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center gap-2"
               >
