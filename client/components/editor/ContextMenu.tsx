@@ -65,8 +65,15 @@ export const ContextMenu = () => {
       },
       show:
         !!contextMenu.componentId &&
-        (targetComponent?.type === "image" ||
-          targetComponent?.type === "bg-gradient"),
+        ![
+          "button",
+          "shiny-button",
+          "btn-primary",
+          "btn-outline",
+          "btn-ghost",
+          "btn-pill",
+          "btn-glow",
+        ].includes(targetComponent?.type || ""),
     },
     {
       label: "Remove Animation",

@@ -5,6 +5,7 @@ import { EditorProvider, useEditor } from "@/context/EditorContext";
 import { Canvas } from "./Canvas";
 import { EditorTools } from "./EditorTools";
 import { PropertiesPanel } from "./PropertiesPanel";
+import { ProModal } from "./ProModal";
 import { usePortfolio } from "@/hooks/usePortfolio"; // Hook for saving?
 
 import { EditorMediaModal } from "../library/EditorMediaModal";
@@ -188,6 +189,7 @@ const EditorLayout = () => {
         onImportCollection={() => {}}
         currentAssets={[]}
       />
+      <ProModal />
     </div>
   );
 };

@@ -87,7 +87,7 @@ export default function PublicPortfolioPage() {
     <div className="min-h-screen bg-white dark:bg-[#0a0a0b] text-neutral-900 dark:text-white">
       <title>{`${portfolio.title} | PROFOLIO`}</title>
 
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center overflow-x-hidden">
         {sections.map((section: any, index: number) => (
           <div
             key={section.id}
@@ -106,14 +106,18 @@ export default function PublicPortfolioPage() {
           </div>
         ))}
 
-        <div className="py-20 flex items-center justify-center w-full bg-neutral-50 dark:bg-black/20 z-[200] relative">
-          <div className="px-4 py-2 rounded-2xl bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/10 flex items-center gap-2 shadow-sm">
-            <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400">
-              Built with PROFOLIO
-            </span>
+        {!sections.some((s) =>
+          s.components.some((c: any) => c.type === "profolio-branding"),
+        ) && (
+          <div className="py-20 flex items-center justify-center w-full bg-neutral-50 dark:bg-black/20 z-[200] relative text-center">
+            <div className="px-4 py-2 rounded-2xl bg-white dark:bg-white/5 border border-neutral-200 dark:border-white/10 flex items-center gap-2 shadow-sm">
+              <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400">
+                Built with PROFOLIO
+              </span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -169,30 +173,25 @@ function RenderComponent({ comp }: { comp: any }) {
     return `calc(50% - ${baseWidth / 2}px + ${x}px)`;
   };
 
-  // Separate layout (position/size) from visual styling
-  const wrapperStyles: any = styles.isBackground
-    ? {
-        position: "absolute",
-        left: 0,
-        top: 0,
-        width: "100%",
-        height: "100%",
-        zIndex: rootZIndex ?? styles.zIndex ?? 0,
-        pointerEvents:
-          type === "image" || type === "video" || type.includes("-bg")
-            ? "none"
-            : "auto",
-        overflow: "hidden",
-      }
-    : {
-        position: "absolute",
-        left: getLeftPostion(),
-        top: y,
-        width: width,
-        height: height,
-        zIndex: rootZIndex ?? styles.zIndex ?? 10,
-        overflow: "hidden",
-      };
+  const zIndex = styles.isBackground
+    ? (rootZIndex ?? styles.zIndex ?? 0)
+    : (rootZIndex ?? styles.zIndex ?? (type === "profolio-branding" ? 0 : 10));
+
+  const wrapperStyles: any = {
+    position: "absolute",
+    ...styles, // Move ...styles before to allow overrides for things like background image
+    left: styles.isBackground ? 0 : getLeftPostion(),
+    top: styles.isBackground ? 0 : y,
+    width: styles.isBackground ? "100%" : width,
+    height: styles.isBackground ? "100%" : height,
+    zIndex: styles.isBackground ? (rootZIndex ?? styles.zIndex ?? 0) : zIndex,
+    overflow: "hidden",
+    pointerEvents:
+      styles.isBackground &&
+      (type === "image" || type === "video" || type.includes("-bg"))
+        ? "none"
+        : "auto",
+  };
 
   const animationVariants: Record<string, any> = {
     fade: { initial: { opacity: 0 }, animate: { opacity: 1 } },
@@ -530,6 +529,19 @@ function RenderComponent({ comp }: { comp: any }) {
       }
 
       return <div className="w-full h-full" style={bgStyles} />;
+    }
+
+    if (type === "profolio-branding") {
+      return (
+        <div className="w-full h-full flex items-center justify-center bg-white/5 dark:bg-black/20 rounded-xl border border-dashed border-white/10">
+          <div className="px-4 py-2 rounded-2xl bg-white dark:bg-white/10 border border-neutral-200 dark:border-white/10 flex items-center gap-2 shadow-sm transition-transform duration-300">
+            <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
+              Built with PROFOLIO
+            </span>
+          </div>
+        </div>
+      );
     }
 
     return null;

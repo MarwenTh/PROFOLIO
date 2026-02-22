@@ -244,7 +244,11 @@ export const CanvasElement = ({ component }: CanvasElementProps) => {
         elementRef.current = el;
         gsapRef.current = el;
       }}
-      drag={isSelected && !isResizing ? true : false}
+      drag={
+        isSelected && !isResizing && !component.styles?.isBackground
+          ? true
+          : false
+      }
       dragControls={dragControls}
       dragListener={false}
       dragMomentum={false}
@@ -287,15 +291,13 @@ export const CanvasElement = ({ component }: CanvasElementProps) => {
         width: isResizing
           ? size.width
           : component.styles?.isBackground
-            ? device === "mobile"
-              ? 375
-              : device === "tablet"
-                ? 768
-                : device === "wide"
-                  ? 1920
-                  : 1280
+            ? "100%"
             : size.width,
-        height: isResizing ? size.height : size.height,
+        height: isResizing
+          ? size.height
+          : component.styles?.isBackground
+            ? "100%"
+            : size.height,
         opacity: 1,
         scale: 1,
         rotate: 0,
@@ -334,54 +336,57 @@ export const CanvasElement = ({ component }: CanvasElementProps) => {
       {isSelected && (
         <>
           {/* Resize Handles */}
-          {resizeHandles.map((h) => (
-            <motion.div
-              key={h.dir}
-              onPanStart={(e) => {
-                // @ts-ignore - Some browsers pass event in different ways
-                if (e && e.stopPropagation) e.stopPropagation();
+          {!component.styles?.isBackground &&
+            resizeHandles.map((h) => (
+              <motion.div
+                key={h.dir}
+                onPanStart={(e) => {
+                  // @ts-ignore - Some browsers pass event in different ways
+                  if (e && e.stopPropagation) e.stopPropagation();
 
-                const clientX =
-                  (e as any).touches && (e as any).touches.length > 0
-                    ? (e as any).touches[0].clientX
-                    : (e as any).clientX;
-                const clientY =
-                  (e as any).touches && (e as any).touches.length > 0
-                    ? (e as any).touches[0].clientY
-                    : (e as any).clientY;
-                dragStartPos.current = { x: clientX, y: clientY };
+                  const clientX =
+                    (e as any).touches && (e as any).touches.length > 0
+                      ? (e as any).touches[0].clientX
+                      : (e as any).clientX;
+                  const clientY =
+                    (e as any).touches && (e as any).touches.length > 0
+                      ? (e as any).touches[0].clientY
+                      : (e as any).clientY;
+                  dragStartPos.current = { x: clientX, y: clientY };
 
-                setIsResizing(true);
-                initialSize.current = {
-                  width: size.width,
-                  height: size.height,
-                };
-                initialPos.current = { x: pos.x, y: pos.y };
-              }}
-              onPan={(e, info) => {
-                // @ts-ignore
-                if (e && e.stopPropagation) e.stopPropagation();
-                handleResize(e, h.dir);
-              }}
-              onPanEnd={(e) => {
-                // @ts-ignore
-                if (e && e.stopPropagation) e.stopPropagation();
-                handleResizeEnd();
-              }}
-              onPointerDown={(e) => e.stopPropagation()}
-              className={cn(
-                "absolute w-6 h-6 flex items-center justify-center z-[60] -translate-x-1/2 -translate-y-1/2",
-                h.class,
-                // Hide middle handles if element is too small
-                (h.dir === "n" || h.dir === "s") && size.width < 40 && "hidden",
-                (h.dir === "e" || h.dir === "w") &&
-                  size.height < 40 &&
-                  "hidden",
-              )}
-            >
-              <div className="w-3 h-3 bg-white border-2 border-indigo-500 rounded-full shadow-sm" />
-            </motion.div>
-          ))}
+                  setIsResizing(true);
+                  initialSize.current = {
+                    width: size.width,
+                    height: size.height,
+                  };
+                  initialPos.current = { x: pos.x, y: pos.y };
+                }}
+                onPan={(e, info) => {
+                  // @ts-ignore
+                  if (e && e.stopPropagation) e.stopPropagation();
+                  handleResize(e, h.dir);
+                }}
+                onPanEnd={(e) => {
+                  // @ts-ignore
+                  if (e && e.stopPropagation) e.stopPropagation();
+                  handleResizeEnd();
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                className={cn(
+                  "absolute w-6 h-6 flex items-center justify-center z-[60] -translate-x-1/2 -translate-y-1/2",
+                  h.class,
+                  // Hide middle handles if element is too small
+                  (h.dir === "n" || h.dir === "s") &&
+                    size.width < 40 &&
+                    "hidden",
+                  (h.dir === "e" || h.dir === "w") &&
+                    size.height < 40 &&
+                    "hidden",
+                )}
+              >
+                <div className="w-3 h-3 bg-white border-2 border-indigo-500 rounded-full shadow-sm" />
+              </motion.div>
+            ))}
 
           {/* Quick Actions - Added a wrapper with padding to bridge the hover gap */}
           <div className="absolute -top-12 right-0 h-12 flex items-end pb-2 group/toolbar z-[70]">
@@ -680,6 +685,17 @@ const renderContent = (component: EditorComponent) => {
 
       return <div className="w-full h-full" style={styles} />;
     }
+    case "profolio-branding":
+      return (
+        <div className="w-full h-full flex items-center justify-center bg-white/5 dark:bg-black/20 rounded-xl border border-dashed border-white/10 group/branding">
+          <div className="px-4 py-2 rounded-2xl bg-white dark:bg-white/10 border border-neutral-200 dark:border-white/10 flex items-center gap-2 shadow-sm group-hover/branding:scale-105 transition-transform duration-300">
+            <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
+              Built with PROFOLIO
+            </span>
+          </div>
+        </div>
+      );
     case "iconify-icon":
       return (
         <div

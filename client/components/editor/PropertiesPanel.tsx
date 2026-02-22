@@ -24,6 +24,7 @@ import {
   StretchVertical,
   X,
   Play,
+  Ban,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEditor } from "@/context/EditorContext";
@@ -39,7 +40,8 @@ export const PropertiesPanel = ({
   onUpdate,
   onDelete,
 }: PropertiesPanelProps) => {
-  const { selectComponent, selectSection } = useEditor();
+  const { selectComponent, selectSection, setElementAsBackground } =
+    useEditor();
 
   const updateStyle = (key: string, value: any) => {
     onUpdate(component.id, {
@@ -488,6 +490,29 @@ export const PropertiesPanel = ({
             onChange={(v: string) => updateStyle("backgroundColor", v)}
           />
 
+          {!isSection &&
+            ![
+              "button",
+              "shiny-button",
+              "btn-primary",
+              "btn-outline",
+              "btn-ghost",
+              "btn-pill",
+              "btn-glow",
+            ].includes(component.type) && (
+              <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                <label className="text-[10px] uppercase text-neutral-500 font-bold tracking-wider">
+                  Set as Background
+                </label>
+                <input
+                  type="checkbox"
+                  checked={!!component.styles.isBackground}
+                  onChange={() => setElementAsBackground(component.id)}
+                  className="w-4 h-4 rounded border-white/10 bg-[#1A1A1E] text-indigo-500 focus:ring-0"
+                />
+              </div>
+            )}
+
           <div className="grid grid-cols-2 gap-3">
             <NumberInput
               label="Radius"
@@ -710,17 +735,37 @@ const ColorInput = ({ label, value, onChange }: any) => (
       <div className="w-9 h-9 rounded-lg border border-white/10 overflow-hidden relative shrink-0">
         <input
           type="color"
-          value={value.startsWith("#") ? value : "#000000"}
+          value={value && value.startsWith("#") ? value : "#000000"}
           onChange={(e) => onChange(e.target.value)}
           className="absolute inset-0 w-[150%] h-[150%] -top-[25%] -left-[25%] p-0 border-0 cursor-pointer"
         />
+        {(value === "transparent" || !value) && (
+          <div className="absolute inset-0 flex items-center justify-center bg-[#1A1A1E] pointer-events-none">
+            <Ban className="w-4 h-4 text-neutral-600" />
+          </div>
+        )}
       </div>
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full h-9 bg-[#1A1A1E] border border-white/5 rounded-lg px-2 text-xs text-white outline-none focus:border-indigo-500/50 font-mono uppercase"
-      />
+      <div className="flex-1 flex gap-2">
+        <input
+          type="text"
+          value={value || ""}
+          onChange={(e) => onChange(e.target.value)}
+          className="flex-1 h-9 bg-[#1A1A1E] border border-white/5 rounded-lg px-2 text-xs text-white outline-none focus:border-indigo-500/50 font-mono uppercase"
+          placeholder="transparent"
+        />
+        <button
+          onClick={() => onChange("transparent")}
+          className={cn(
+            "w-9 h-9 flex items-center justify-center rounded-lg border border-white/5 transition-colors",
+            value === "transparent"
+              ? "bg-indigo-500/20 border-indigo-500/50 text-indigo-400"
+              : "bg-[#1A1A1E] text-neutral-500 hover:text-white hover:border-white/20",
+          )}
+          title="Clear color (transparent)"
+        >
+          <Ban className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   </div>
 );
