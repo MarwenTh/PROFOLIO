@@ -249,7 +249,7 @@ const initDb = async () => {
       id SERIAL PRIMARY KEY,
       seller_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
       portfolio_id INTEGER REFERENCES portfolios(id) ON DELETE SET NULL,
-      type VARCHAR(50) NOT NULL CHECK (type IN ('template', 'component', 'theme')),
+      type VARCHAR(50) NOT NULL CHECK (type IN ('template', 'component', 'theme', 'portfolio', 'animation')),
       title VARCHAR(255) NOT NULL,
       description TEXT,
       price DECIMAL(10,2) NOT NULL DEFAULT 0,
@@ -415,6 +415,19 @@ const initDb = async () => {
     await pool.query(createPortfolioSeoTable);
     await pool.query(createPortfolioDomainsTable);
     await pool.query(createMarketplaceItemsTable);
+
+    // Update existing constraint to allow new types
+    const updateMarketplaceItemsTypeConstraint = `
+      DO $$ 
+      BEGIN 
+        ALTER TABLE marketplace_items DROP CONSTRAINT IF EXISTS marketplace_items_type_check;
+        ALTER TABLE marketplace_items ADD CONSTRAINT marketplace_items_type_check CHECK (type IN ('template', 'component', 'theme', 'portfolio', 'animation'));
+      EXCEPTION
+        WHEN undefined_object THEN null;
+      END $$;
+    `;
+    await pool.query(updateMarketplaceItemsTypeConstraint);
+
     await pool.query(createMarketplacePurchasesTable);
     await pool.query(createMarketplaceSavesTable);
     await pool.query(createSubscribersTable);

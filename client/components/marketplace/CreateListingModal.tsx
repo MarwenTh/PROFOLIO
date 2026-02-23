@@ -1,12 +1,19 @@
 "use client";
-import React, { useState } from "react";
-import { 
-  DashboardCard, 
-  DashboardButton, 
+import React, { useState, useEffect } from "react";
+import {
+  DashboardCard,
+  DashboardButton,
   DashboardInput,
-  DashboardSection 
+  DashboardSection,
 } from "@/components/dashboard/Shared";
-import { X, Upload, DollarSign, Image as ImageIcon, FileText, Eye } from "lucide-react";
+import {
+  X,
+  Upload,
+  DollarSign,
+  Image as ImageIcon,
+  FileText,
+  Eye,
+} from "lucide-react";
 import { useMyCreations } from "@/hooks/useMarketplace";
 import { toast } from "sonner";
 
@@ -17,41 +24,69 @@ interface CreateListingModalProps {
 }
 
 const ITEM_TYPES = [
-  { value: 'template', label: 'Template', desc: 'Full website template' },
-  { value: 'component', label: 'Component', desc: 'Reusable UI component' },
-  { value: 'theme', label: 'Theme', desc: 'Color scheme & styling' },
+  { value: "template", label: "Template", desc: "Full website template" },
+  { value: "component", label: "Component", desc: "Reusable UI component" },
+  { value: "theme", label: "Theme", desc: "Color scheme & styling" },
+  {
+    value: "portfolio",
+    label: "Portfolio",
+    desc: "Full Portfolio for Workspace",
+  },
+  { value: "animation", label: "Animation", desc: "GSAP or Framer animation" },
 ];
 
-export function CreateListingModal({ isOpen, onClose, editingItem }: CreateListingModalProps) {
+export function CreateListingModal({
+  isOpen,
+  onClose,
+  editingItem,
+}: CreateListingModalProps) {
   const { createItem, updateItem } = useMyCreations();
   const [loading, setLoading] = useState(false);
-  
+
   const [formData, setFormData] = useState({
-    title: editingItem?.title || '',
-    description: editingItem?.description || '',
-    type: editingItem?.type || 'template',
+    title: editingItem?.title || "",
+    description: editingItem?.description || "",
+    type: editingItem?.type || "template",
     price: editingItem?.price || 0,
     preview_images: editingItem?.preview_images || [],
-    status: editingItem?.status || 'draft',
+    status: editingItem?.status || "draft",
+    content: editingItem?.content || null,
   });
 
-  const [imageUrl, setImageUrl] = useState('');
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        title: editingItem?.title || "",
+        description: editingItem?.description || "",
+        type: editingItem?.type || "template",
+        price: editingItem?.price || 0,
+        preview_images: editingItem?.preview_images || [],
+        status: editingItem?.status || "draft",
+        content: editingItem?.content || null,
+      });
+      setImageUrl("");
+    }
+  }, [isOpen, editingItem]);
+
+  const [imageUrl, setImageUrl] = useState("");
 
   const handleAddImage = () => {
     if (imageUrl.trim()) {
       setFormData({
         ...formData,
-        preview_images: [...formData.preview_images, imageUrl.trim()]
+        preview_images: [...formData.preview_images, imageUrl.trim()],
       });
-      setImageUrl('');
-      toast.success('Image added!');
+      setImageUrl("");
+      toast.success("Image added!");
     }
   };
 
   const handleRemoveImage = (index: number) => {
     setFormData({
       ...formData,
-      preview_images: formData.preview_images.filter((_: any, i: number) => i !== index)
+      preview_images: formData.preview_images.filter(
+        (_: any, i: number) => i !== index,
+      ),
     });
   };
 
@@ -60,16 +95,20 @@ export function CreateListingModal({ isOpen, onClose, editingItem }: CreateListi
     setLoading(true);
 
     try {
-      if (editingItem) {
+      if (editingItem?.id) {
         await updateItem(editingItem.id, formData);
-        toast.success('Listing updated!');
+        toast.success("Listing updated!");
       } else {
-        await createItem(formData);
-        toast.success('Listing created!');
+        // Only pass content if we are publishing a component or animation from editor
+        await createItem({
+          ...formData,
+          content: editingItem?.content || formData.content,
+        });
+        toast.success("Listing created!");
       }
       onClose();
     } catch (error) {
-      toast.error('Failed to save listing');
+      toast.error("Failed to save listing");
     } finally {
       setLoading(false);
     }
@@ -83,7 +122,7 @@ export function CreateListingModal({ isOpen, onClose, editingItem }: CreateListi
         {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 p-6 flex items-center justify-between">
           <h2 className="text-2xl font-black italic tracking-tighter">
-            {editingItem ? 'Edit Listing' : 'Create New Listing'}
+            {editingItem ? "Edit Listing" : "Create New Listing"}
           </h2>
           <button
             onClick={onClose}
@@ -100,7 +139,9 @@ export function CreateListingModal({ isOpen, onClose, editingItem }: CreateListi
             <label className="block text-sm font-bold mb-2">Title *</label>
             <DashboardInput
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
               placeholder="e.g., Modern Portfolio Template"
               required
             />
@@ -117,8 +158,8 @@ export function CreateListingModal({ isOpen, onClose, editingItem }: CreateListi
                   onClick={() => setFormData({ ...formData, type: type.value })}
                   className={`p-4 rounded-xl border-2 transition-all text-left ${
                     formData.type === type.value
-                      ? 'border-indigo-500 bg-indigo-500/10'
-                      : 'border-neutral-200 dark:border-neutral-800 hover:border-indigo-500/50'
+                      ? "border-indigo-500 bg-indigo-500/10"
+                      : "border-neutral-200 dark:border-neutral-800 hover:border-indigo-500/50"
                   }`}
                 >
                   <div className="font-bold text-sm mb-1">{type.label}</div>
@@ -130,10 +171,14 @@ export function CreateListingModal({ isOpen, onClose, editingItem }: CreateListi
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-bold mb-2">Description *</label>
+            <label className="block text-sm font-bold mb-2">
+              Description *
+            </label>
             <textarea
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               placeholder="Describe your item..."
               rows={4}
               required
@@ -143,7 +188,9 @@ export function CreateListingModal({ isOpen, onClose, editingItem }: CreateListi
 
           {/* Price */}
           <div>
-            <label className="block text-sm font-bold mb-2">Price (USD) *</label>
+            <label className="block text-sm font-bold mb-2">
+              Price (USD) *
+            </label>
             <div className="relative">
               <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
               <input
@@ -151,7 +198,12 @@ export function CreateListingModal({ isOpen, onClose, editingItem }: CreateListi
                 step="0.01"
                 min="0"
                 value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    price: parseFloat(e.target.value) || 0,
+                  })
+                }
                 className="w-full pl-12 pr-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 focus:border-indigo-500 focus:outline-none transition-colors"
                 required
               />
@@ -160,7 +212,9 @@ export function CreateListingModal({ isOpen, onClose, editingItem }: CreateListi
 
           {/* Preview Images */}
           <div>
-            <label className="block text-sm font-bold mb-2">Preview Images</label>
+            <label className="block text-sm font-bold mb-2">
+              Preview Images
+            </label>
             <div className="space-y-3">
               {/* Add Image URL */}
               <div className="flex gap-2">
@@ -184,8 +238,15 @@ export function CreateListingModal({ isOpen, onClose, editingItem }: CreateListi
               {formData.preview_images.length > 0 && (
                 <div className="grid grid-cols-3 gap-3">
                   {formData.preview_images.map((url: string, index: number) => (
-                    <div key={index} className="relative group aspect-video rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800">
-                      <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+                    <div
+                      key={index}
+                      className="relative group aspect-video rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800"
+                    >
+                      <img
+                        src={url}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
                       <button
                         type="button"
                         onClick={() => handleRemoveImage(index)}
@@ -205,7 +266,9 @@ export function CreateListingModal({ isOpen, onClose, editingItem }: CreateListi
             <label className="block text-sm font-bold mb-2">Status</label>
             <select
               value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, status: e.target.value })
+              }
               className="w-full px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 focus:border-indigo-500 focus:outline-none transition-colors"
             >
               <option value="draft">Draft</option>
@@ -227,7 +290,11 @@ export function CreateListingModal({ isOpen, onClose, editingItem }: CreateListi
               disabled={loading}
               className="flex-1 h-12 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Saving...' : editingItem ? 'Update Listing' : 'Create Listing'}
+              {loading
+                ? "Saving..."
+                : editingItem
+                  ? "Update Listing"
+                  : "Create Listing"}
             </button>
           </div>
         </form>

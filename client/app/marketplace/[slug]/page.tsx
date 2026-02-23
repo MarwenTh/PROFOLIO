@@ -2,20 +2,28 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { 
-  ArrowLeft, 
-  Star, 
-  Download, 
-  Heart, 
+import {
+  ArrowLeft,
+  Star,
+  Download,
+  Heart,
   ShoppingCart,
   Check,
   Globe,
   Share2,
-  ExternalLink
+  ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
-import { DashboardButton, DashboardCard, DashboardBadge } from "@/components/dashboard/Shared";
-import { useMarketplace, useSavedItems, usePurchases } from "@/hooks/useMarketplace";
+import {
+  DashboardButton,
+  DashboardCard,
+  DashboardBadge,
+} from "@/components/dashboard/Shared";
+import {
+  useMarketplace,
+  useSavedItems,
+  usePurchases,
+} from "@/hooks/useMarketplace";
 import { Loader } from "@/components/ui/Loader";
 import { toast } from "sonner";
 
@@ -23,16 +31,16 @@ export default function MarketplaceItemPage() {
   const params = useParams();
   const router = useRouter();
   const itemId = parseInt(params.slug as string);
-  
+
   const { items, loading } = useMarketplace();
   const { items: savedItems, toggleSave } = useSavedItems();
-  const { purchases, purchaseItem } = usePurchases();
+  const { purchases, purchaseItem, integrateItem } = usePurchases();
   const [selectedImage, setSelectedImage] = useState(0);
   const [purchasing, setPurchasing] = useState(false);
 
-  const item = items.find(i => i.id === itemId);
-  const isSaved = savedItems.some(saved => saved.id === itemId);
-  const isPurchased = purchases.some(purchase => purchase.item_id === itemId);
+  const item = items.find((i) => i.id === itemId);
+  const isSaved = savedItems.some((saved) => saved.id === itemId);
+  const isPurchased = purchases.some((purchase) => purchase.item_id === itemId);
 
   const handleSaveToggle = async () => {
     try {
@@ -46,9 +54,9 @@ export default function MarketplaceItemPage() {
     setPurchasing(true);
     try {
       await purchaseItem(itemId);
-      toast.success('Purchase successful!');
+      toast.success("Purchase successful!");
     } catch (error) {
-      toast.error('Purchase failed');
+      toast.error("Purchase failed");
     } finally {
       setPurchasing(false);
     }
@@ -85,7 +93,10 @@ export default function MarketplaceItemPage() {
           <ArrowLeft className="w-5 h-5" />
           <span className="font-bold">Back to Marketplace</span>
         </Link>
-        <Link href="/dashboard" className="text-sm font-bold text-neutral-500 hover:text-black dark:hover:text-white transition-colors">
+        <Link
+          href="/dashboard"
+          className="text-sm font-bold text-neutral-500 hover:text-black dark:hover:text-white transition-colors"
+        >
           Dashboard
         </Link>
       </nav>
@@ -98,8 +109,8 @@ export default function MarketplaceItemPage() {
             {/* Main Image */}
             <div className="aspect-[4/3] rounded-3xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
               {images.length > 0 ? (
-                <img 
-                  src={images[selectedImage]} 
+                <img
+                  src={images[selectedImage]}
                   alt={item.title}
                   className="w-full h-full object-cover"
                 />
@@ -119,11 +130,15 @@ export default function MarketplaceItemPage() {
                     onClick={() => setSelectedImage(idx)}
                     className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${
                       selectedImage === idx
-                        ? 'border-indigo-500 scale-95'
-                        : 'border-neutral-200 dark:border-neutral-800 hover:border-indigo-500/50'
+                        ? "border-indigo-500 scale-95"
+                        : "border-neutral-200 dark:border-neutral-800 hover:border-indigo-500/50"
                     }`}
                   >
-                    <img src={img} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover" />
+                    <img
+                      src={img}
+                      alt={`Preview ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
                   </button>
                 ))}
               </div>
@@ -146,7 +161,9 @@ export default function MarketplaceItemPage() {
             <div className="flex items-center gap-6 text-sm">
               <div className="flex items-center gap-2">
                 <Star className="w-5 h-5 fill-amber-500 text-amber-500" />
-                <span className="font-bold">{Number(item.rating).toFixed(1)}</span>
+                <span className="font-bold">
+                  {Number(item.rating).toFixed(1)}
+                </span>
                 <span className="text-neutral-500">rating</span>
               </div>
               <div className="flex items-center gap-2">
@@ -164,19 +181,55 @@ export default function MarketplaceItemPage() {
             {/* Price */}
             <div className="p-6 rounded-2xl bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-bold text-neutral-500 uppercase tracking-widest">Price</span>
+                <span className="text-sm font-bold text-neutral-500 uppercase tracking-widest">
+                  Price
+                </span>
                 <span className="text-4xl font-black italic">
-                  {Number(item.price) === 0 ? 'FREE' : `$${Number(item.price).toFixed(2)}`}
+                  {Number(item.price) === 0
+                    ? "FREE"
+                    : `$${Number(item.price).toFixed(2)}`}
                 </span>
               </div>
 
               {/* Action Buttons */}
               <div className="space-y-3">
-                {isPurchased ? (
-                  <div className="h-14 rounded-xl bg-emerald-500/10 border-2 border-emerald-500 text-emerald-500 flex items-center justify-center gap-2 font-bold">
-                    <Check className="w-5 h-5" />
-                    Already Purchased
-                  </div>
+                {isPurchased || Number(item.price) === 0 ? (
+                  <button
+                    onClick={async () => {
+                      if (isPurchased && item.type !== "portfolio") return;
+                      setPurchasing(true);
+                      try {
+                        const res = await integrateItem(itemId);
+                        if (res?.portfolio?.id) {
+                          router.push(`/portfolio/${res.portfolio.id}/builder`);
+                        }
+                      } catch (err) {
+                        // Error handled by hook
+                      } finally {
+                        setPurchasing(false);
+                      }
+                    }}
+                    disabled={
+                      purchasing || (isPurchased && item.type !== "portfolio")
+                    }
+                    className="w-full h-14 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {purchasing ? (
+                      <>
+                        <Loader size="sm" />
+                        Integrating...
+                      </>
+                    ) : (
+                      <>
+                        <ExternalLink className="w-5 h-5" />
+                        {item.type === "portfolio"
+                          ? "Integrate to Workspace"
+                          : isPurchased
+                            ? "Added to Library"
+                            : "Add to Library"}
+                      </>
+                    )}
+                  </button>
                 ) : (
                   <button
                     onClick={handlePurchase}
@@ -191,7 +244,7 @@ export default function MarketplaceItemPage() {
                     ) : (
                       <>
                         <ShoppingCart className="w-5 h-5" />
-                        {item.price === 0 ? 'Get for Free' : 'Purchase Now'}
+                        Purchase Now
                       </>
                     )}
                   </button>
@@ -202,12 +255,14 @@ export default function MarketplaceItemPage() {
                     onClick={handleSaveToggle}
                     className={`h-12 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
                       isSaved
-                        ? 'bg-red-500/10 border-2 border-red-500 text-red-500'
-                        : 'bg-white dark:bg-neutral-900 border-2 border-neutral-200 dark:border-neutral-800 hover:border-indigo-500/50'
+                        ? "bg-red-500/10 border-2 border-red-500 text-red-500"
+                        : "bg-white dark:bg-neutral-900 border-2 border-neutral-200 dark:border-neutral-800 hover:border-indigo-500/50"
                     }`}
                   >
-                    <Heart className={`w-4 h-4 ${isSaved ? 'fill-red-500' : ''}`} />
-                    {isSaved ? 'Saved' : 'Save'}
+                    <Heart
+                      className={`w-4 h-4 ${isSaved ? "fill-red-500" : ""}`}
+                    />
+                    {isSaved ? "Saved" : "Save"}
                   </button>
                   <button className="h-12 rounded-xl bg-white dark:bg-neutral-900 border-2 border-neutral-200 dark:border-neutral-800 hover:border-indigo-500/50 font-bold transition-all flex items-center justify-center gap-2">
                     <Share2 className="w-4 h-4" />

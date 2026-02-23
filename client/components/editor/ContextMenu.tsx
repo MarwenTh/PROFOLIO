@@ -9,6 +9,7 @@ import {
   MoveUp,
   MoveDown,
   Sparkles,
+  Store,
 } from "lucide-react";
 import { useEditor } from "@/context/EditorContext";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,8 @@ export const ContextMenu = () => {
     removeComponent,
     updateComponent,
     sections,
+    setPublishModalOpen,
+    setPublishItemData,
   } = useEditor();
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -111,6 +114,24 @@ export const ContextMenu = () => {
       className: "text-red-400 hover:bg-red-500/10",
       onClick: () => {
         if (contextMenu.componentId) removeComponent(contextMenu.componentId);
+        closeContextMenu();
+      },
+      show: !!contextMenu.componentId,
+    },
+    {
+      label: "Publish to Marketplace",
+      icon: Store,
+      onClick: () => {
+        if (contextMenu.componentId && targetComponent) {
+          setPublishItemData({
+            title: "My Custom Component",
+            description: "A component designed in PROFOLIO.",
+            type: targetComponent.animation ? "animation" : "component",
+            content: targetComponent,
+            price: 0,
+          });
+          setPublishModalOpen(true);
+        }
         closeContextMenu();
       },
       show: !!contextMenu.componentId,

@@ -9,6 +9,7 @@ import { ProModal } from "./ProModal";
 import { usePortfolio } from "@/hooks/usePortfolio"; // Hook for saving?
 
 import { EditorMediaModal } from "../library/EditorMediaModal";
+import { CreateListingModal } from "../marketplace/CreateListingModal";
 import {
   Smartphone,
   Tablet,
@@ -42,6 +43,9 @@ const EditorLayout = () => {
     setMediaModalOpen,
     addComponent,
     setProModalOpen,
+    isPublishModalOpen,
+    setPublishModalOpen,
+    publishItemData,
   } = useEditor();
 
   const { updatePortfolio, getPortfolioById } = usePortfolio();
@@ -192,6 +196,11 @@ const EditorLayout = () => {
         currentAssets={[]}
       />
       <ProModal />
+      <CreateListingModal
+        isOpen={isPublishModalOpen}
+        onClose={() => setPublishModalOpen(false)}
+        editingItem={publishItemData}
+      />
     </div>
   );
 };

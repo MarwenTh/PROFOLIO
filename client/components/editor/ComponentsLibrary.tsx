@@ -21,12 +21,15 @@ import {
   Smile,
   MousePointer2,
   Clock,
+  Store,
 } from "lucide-react";
 import { useEditor } from "@/context/EditorContext";
 import { cn } from "@/lib/utils";
 import { useLibrary } from "@/hooks/useLibrary";
 import { BackgroundStudio } from "./BackgroundStudio";
 import { IconPicker } from "./IconPicker";
+import { usePurchases } from "@/hooks/useMarketplace";
+import { toast } from "sonner";
 
 type Category =
   | "elements"
@@ -36,7 +39,8 @@ type Category =
   | "templates"
   | "backgrounds"
   | "icons"
-  | "uploads";
+  | "uploads"
+  | "store";
 
 export const ComponentsLibrary = () => {
   const {
@@ -49,6 +53,7 @@ export const ComponentsLibrary = () => {
     setMediaModalOpen,
   } = useEditor();
   const { recentlyUsed, fetchRecentlyUsed, deleteRecentlyUsed } = useLibrary();
+  const { purchases, loading: loadingPurchases } = usePurchases();
   const [category, setCategory] = useState<Category>("elements");
 
   React.useEffect(() => {
@@ -92,6 +97,7 @@ export const ComponentsLibrary = () => {
     { id: "backgrounds", icon: Palette, label: "BG Studio" },
     { id: "icons", icon: Smile, label: "Icons" },
     { id: "uploads", icon: Upload, label: "Uploads" },
+    { id: "store", icon: Store, label: "Purchases" },
   ];
 
   const basicElements = [
@@ -1066,6 +1072,110 @@ export const ComponentsLibrary = () => {
                           : "Open Library"}
                       </button>
                     </div>
+                  </motion.div>
+                )}
+
+                {category === "store" && (
+                  <motion.div
+                    key="store"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className={cn(
+                      "flex flex-col gap-4",
+                      purchases.length === 0 &&
+                        "items-center justify-center py-10 text-center border-2 border-dashed border-white/5 rounded-2xl px-4",
+                    )}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-[11px] text-white font-bold">
+                        Your Marketplace Items
+                      </p>
+                      <span className="text-[9px] text-neutral-500 bg-white/5 px-2 py-1 rounded-md">
+                        {purchases.length} Items
+                      </span>
+                    </div>
+
+                    {loadingPurchases ? (
+                      <div className="flex justify-center py-8">
+                        <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    ) : purchases.length > 0 ? (
+                      <div className="grid grid-cols-2 gap-3">
+                        {purchases.map((purchase) => {
+                          const isComponent = purchase.type === "component";
+                          const isAnimation = purchase.type === "animation";
+                          const isTheme = purchase.type === "theme";
+
+                          return (
+                            <button
+                              key={purchase.id}
+                              onClick={() => {
+                                // Handle addition based on type
+                                if (isComponent && purchase.content) {
+                                  // Make sure type/content exists in the db
+                                  handleAddElement(
+                                    purchase.content.type || "container",
+                                    purchase.content.content || "",
+                                    {
+                                      w: purchase.content.width || 300,
+                                      h: purchase.content.height || 200,
+                                      styles: purchase.content.styles || {},
+                                    },
+                                  );
+                                } else if (isAnimation && purchase.content) {
+                                  // Provide a visually noticeable container pre-equipped with the animation
+                                  handleAddElement("container", "", {
+                                    w: 200,
+                                    h: 200,
+                                    styles: {
+                                      backgroundColor: "#4f46e5",
+                                      borderRadius: "16px",
+                                    },
+                                  });
+                                  // TODO: Actually attach the animation properly.
+                                  toast.success("Animation component added");
+                                } else if (isTheme) {
+                                  toast.info(
+                                    "Theme support coming soon in Editor.",
+                                  );
+                                }
+                              }}
+                              className="group flex flex-col items-center justify-center p-4 rounded-2xl bg-[#2a2a2b] border border-white/5 hover:border-indigo-500/50 hover:bg-indigo-500/[0.03] transition-all relative overflow-hidden active:scale-95 text-center"
+                            >
+                              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center mb-3 group-hover:bg-indigo-500/20 transition-colors">
+                                {isComponent ? (
+                                  <Blocks className="w-5 h-5 text-indigo-400" />
+                                ) : isAnimation ? (
+                                  <Play className="w-5 h-5 text-indigo-400" />
+                                ) : (
+                                  <Palette className="w-5 h-5 text-indigo-400" />
+                                )}
+                              </div>
+                              <span className="text-[10px] text-neutral-400 group-hover:text-white font-semibold line-clamp-1 w-full px-2">
+                                {purchase.title || "Marketplace Item"}
+                              </span>
+                              <span className="text-[8px] text-neutral-600 mt-1 uppercase">
+                                {purchase.type || "Component"}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="w-16 h-16 rounded-full bg-neutral-800 flex items-center justify-center mb-4 mx-auto">
+                          <Store className="w-8 h-8 text-neutral-500" />
+                        </div>
+                        <p className="text-[11px] text-white font-bold">
+                          No purchases yet
+                        </p>
+                        <p className="text-[10px] text-neutral-500 mt-1 max-w-[200px]">
+                          Visit the Marketplace to buy components, themes, and
+                          animations.
+                        </p>
+                      </>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>

@@ -19,6 +19,8 @@ interface EditorState {
   device: "mobile" | "tablet" | "desktop" | "wide";
   isMediaModalOpen: boolean;
   isProModalOpen: boolean;
+  isPublishModalOpen: boolean;
+  publishItemData: any;
   activeTool: string;
   contextMenu: {
     isOpen: boolean;
@@ -53,6 +55,8 @@ export interface EditorContextType extends EditorState {
   setDevice: (device: "mobile" | "tablet" | "desktop" | "wide") => void;
   setMediaModalOpen: (open: boolean) => void;
   setProModalOpen: (open: boolean) => void;
+  setPublishModalOpen: (open: boolean) => void;
+  setPublishItemData: (data: any) => void;
   setActiveTool: (tool: string) => void;
 
   // Context Menu Actions
@@ -118,6 +122,8 @@ export const EditorProvider = ({
   const [activeTool, setActiveTool] = useState("select");
   const [isMediaModalOpen, setMediaModalOpen] = useState(false);
   const [isProModalOpen, setProModalOpen] = useState(false);
+  const [isPublishModalOpen, setPublishModalOpen] = useState(false);
+  const [publishItemData, setPublishItemData] = useState<any>(null);
   const [contextMenu, setContextMenu] = useState({
     isOpen: false,
     x: 0,
@@ -544,6 +550,10 @@ export const EditorProvider = ({
         setElementAsBackground,
         isProModalOpen,
         setProModalOpen,
+        isPublishModalOpen,
+        setPublishModalOpen,
+        publishItemData,
+        setPublishItemData,
       }}
     >
       {children}
