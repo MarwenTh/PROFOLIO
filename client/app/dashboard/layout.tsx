@@ -2,17 +2,17 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { 
-  LayoutDashboard, 
-  Settings, 
-  Globe, 
+import {
+  LayoutDashboard,
+  Settings,
+  Globe,
   BarChart3,
   LogOut,
   ChevronLeft,
   ChevronRight,
   Menu,
   Users2,
-  X
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut, useSession } from "next-auth/react";
@@ -47,7 +47,7 @@ export default function DashboardLayout({
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        setIsSearchOpen(prev => !prev);
+        setIsSearchOpen((prev) => !prev);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -55,8 +55,9 @@ export default function DashboardLayout({
   }, []);
 
   const isEditor = pathname.includes("/dashboard/edit/");
+  const isSandbox = pathname.includes("/dashboard/studio/sandbox/");
 
-  if (isEditor) {
+  if (isEditor || isSandbox) {
     return (
       <div className="h-screen bg-white dark:bg-neutral-950 overflow-hidden">
         {children}
@@ -68,7 +69,10 @@ export default function DashboardLayout({
     <div className="flex h-screen bg-[#fbfbfc] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50 selection:bg-indigo-500/30 transition-colors duration-500 relative overflow-hidden">
       <AuthSync />
       {/* Search Palette */}
-      <CommandPalette isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      <CommandPalette
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+      />
 
       {/* Aurora Background Effect */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-30 dark:opacity-50">
@@ -79,22 +83,27 @@ export default function DashboardLayout({
       {/* Mobile Nav Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 border-b border-neutral-200/50 dark:border-white/5 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-xl z-[60] flex items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 relative">
-                <Image src="/assets/logo2.png" alt="Logo" fill className="object-contain" />
-            </div>
-            <span className="font-bold tracking-tighter italic">PROFOLIO</span>
+          <div className="w-8 h-8 relative">
+            <Image
+              src="/assets/logo2.png"
+              alt="Logo"
+              fill
+              className="object-contain"
+            />
+          </div>
+          <span className="font-bold tracking-tighter italic">PROFOLIO</span>
         </Link>
-        <button 
-            onClick={() => setIsMobileMenuOpen(true)}
-            className="p-2 rounded-xl bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors"
+        <button
+          onClick={() => setIsMobileMenuOpen(true)}
+          className="p-2 rounded-xl bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 transition-colors"
         >
-            <Menu className="w-5 h-5" />
+          <Menu className="w-5 h-5" />
         </button>
       </div>
 
       {/* Sidebar - Desktop Only with its own logic */}
       <div className="hidden lg:block shrink-0 h-full">
-          <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+        <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
       </div>
 
       {/* Mobile Sidebar Overlay */}
@@ -115,59 +124,82 @@ export default function DashboardLayout({
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
               className="lg:hidden fixed inset-y-0 left-0 w-[300px] bg-white dark:bg-neutral-900 z-[80] p-6 shadow-2xl flex flex-col"
             >
-                <div className="flex items-center justify-between mb-8 overflow-hidden">
-                    <Link href="/" className="flex items-center gap-2 group">
-                        <div className="w-8 h-8 relative shrink-0">
-                            <Image src="/assets/logo2.png" alt="Logo" fill className="object-contain" />
-                        </div>
-                        <span className="text-xl font-bold tracking-tighter italic">PROFOLIO</span>
-                    </Link>
-                    <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-white/5">
-                        <X className="w-5 h-5 text-neutral-400" />
-                    </button>
-                </div>
+              <div className="flex items-center justify-between mb-8 overflow-hidden">
+                <Link href="/" className="flex items-center gap-2 group">
+                  <div className="w-8 h-8 relative shrink-0">
+                    <Image
+                      src="/assets/logo2.png"
+                      alt="Logo"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                  <span className="text-xl font-bold tracking-tighter italic">
+                    PROFOLIO
+                  </span>
+                </Link>
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-white/5"
+                >
+                  <X className="w-5 h-5 text-neutral-400" />
+                </button>
+              </div>
 
-                <div className="flex-1 overflow-y-auto -mx-6 custom-scrollbar px-6">
-                    <Sidebar isCollapsed={false} setIsCollapsed={() => {}} />
-                </div>
+              <div className="flex-1 overflow-y-auto -mx-6 custom-scrollbar px-6">
+                <Sidebar isCollapsed={false} setIsCollapsed={() => {}} />
+              </div>
 
-                <div className="mt-auto pt-6 border-t border-neutral-200 dark:border-white/5 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 flex-1">
-                        <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center overflow-hidden border border-neutral-200 dark:border-white/10">
-                            {session?.user?.image ? (
-                                <Image src={session.user.image} alt="User" width={40} height={40} className="object-cover" />
-                            ) : (
-                                <Users2 className="w-5 h-5 text-neutral-400" />
-                            )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold line-clamp-1">{session?.user?.name}</p>
-                            <p className="text-[10px] text-neutral-500 font-medium line-clamp-1 italic">{session?.user?.email}</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <ModeToggle />
-                        <button onClick={() => signOut()} className="p-3 rounded-xl bg-red-500/10 text-red-500">
-                            <LogOut className="w-5 h-5" />
-                        </button>
-                    </div>
+              <div className="mt-auto pt-6 border-t border-neutral-200 dark:border-white/5 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center overflow-hidden border border-neutral-200 dark:border-white/10">
+                    {session?.user?.image ? (
+                      <Image
+                        src={session.user.image}
+                        alt="User"
+                        width={40}
+                        height={40}
+                        className="object-cover"
+                      />
+                    ) : (
+                      <Users2 className="w-5 h-5 text-neutral-400" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold line-clamp-1">
+                      {session?.user?.name}
+                    </p>
+                    <p className="text-[10px] text-neutral-500 font-medium line-clamp-1 italic">
+                      {session?.user?.email}
+                    </p>
+                  </div>
                 </div>
+                <div className="flex items-center gap-2">
+                  <ModeToggle />
+                  <button
+                    onClick={() => signOut()}
+                    className="p-3 rounded-xl bg-red-500/10 text-red-500"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
 
       {/* Main Content Area */}
-      <div 
+      <div
         className={cn(
           "flex-1 flex flex-col min-w-0 transition-all duration-300",
-          !isEditor && (isCollapsed ? "lg:ml-[100px]" : "lg:ml-[300px]")
+          !isEditor && (isCollapsed ? "lg:ml-[100px]" : "lg:ml-[300px]"),
         )}
       >
         <div className="hidden lg:block w-full">
-            <TopNavbar onSearchOpen={() => setIsSearchOpen(true)} />
+          <TopNavbar onSearchOpen={() => setIsSearchOpen(true)} />
         </div>
-        
+
         <main className="flex-1 overflow-y-auto custom-scrollbar pt-20 lg:pt-0">
           <div className="p-4 md:p-12 max-w-[1600px] mx-auto min-h-full flex flex-col">
             {children}

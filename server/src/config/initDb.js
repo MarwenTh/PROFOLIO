@@ -363,6 +363,25 @@ const initDb = async () => {
     );
   `;
 
+  const createSandboxComponentsTable = `
+    CREATE TABLE IF NOT EXISTS sandbox_components (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title TEXT NOT NULL DEFAULT 'Untitled',
+      slug TEXT,
+      description TEXT,
+      category TEXT DEFAULT 'general',
+      status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'review', 'published')),
+      visibility TEXT NOT NULL DEFAULT 'private' CHECK (visibility IN ('public', 'private')),
+      files JSONB NOT NULL DEFAULT '{}',
+      views INTEGER DEFAULT 0,
+      code_copies INTEGER DEFAULT 0,
+      likes INTEGER DEFAULT 0,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
   try {
     await pool.query(createUsersTable);
     console.log("✅ Users table initialized");
@@ -446,9 +465,11 @@ const initDb = async () => {
       );
     `;
     await pool.query(createRecentlyUsedTable);
+    await pool.query(createSandboxComponentsTable);
+    console.log("✅ Sandbox components table initialized");
 
     console.log(
-      "✅ All database tables initialized successfully (including marketplace, subscribers, referrals, code editor & recently used)",
+      "✅ All database tables initialized successfully (including marketplace, subscribers, referrals, code editor, recently used & sandbox)",
     );
   } catch (err) {
     console.error("❌ Error initializing database:", err);

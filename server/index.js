@@ -1,23 +1,24 @@
-const express = require('express');
-const cors = require('cors');
-const cookieParser = require('cookie-parser');
-require('dotenv').config();
-const path = require('path');
-const { pool } = require('./src/config/db');
-const { initDb } = require('./src/config/initDb');
-const authRoutes = require('./src/routes/authRoutes');
-const portfolioRoutes = require('./src/routes/portfolioRoutes');
-const integrationRoutes = require('./src/routes/integrationRoutes');
-const projectRoutes = require('./src/routes/projectRoutes');
-const templateRoutes = require('./src/routes/templateRoutes');
-const analyticsRoutes = require('./src/routes/analyticsRoutes');
-const libraryRoutes = require('./src/routes/libraryRoutes');
-const seoRoutes = require('./src/routes/seoRoutes');
-const domainRoutes = require('./src/routes/domainRoutes');
-const marketplaceRoutes = require('./src/routes/marketplaceRoutes');
-const subscriberRoutes = require('./src/routes/subscriberRoutes');
-const referralRoutes = require('./src/routes/referralRoutes');
-const codeRoutes = require('./src/routes/codeRoutes');
+const express = require("express");
+const cors = require("cors");
+const cookieParser = require("cookie-parser");
+require("dotenv").config();
+const path = require("path");
+const { pool } = require("./src/config/db");
+const { initDb } = require("./src/config/initDb");
+const authRoutes = require("./src/routes/authRoutes");
+const portfolioRoutes = require("./src/routes/portfolioRoutes");
+const integrationRoutes = require("./src/routes/integrationRoutes");
+const projectRoutes = require("./src/routes/projectRoutes");
+const templateRoutes = require("./src/routes/templateRoutes");
+const analyticsRoutes = require("./src/routes/analyticsRoutes");
+const libraryRoutes = require("./src/routes/libraryRoutes");
+const seoRoutes = require("./src/routes/seoRoutes");
+const domainRoutes = require("./src/routes/domainRoutes");
+const marketplaceRoutes = require("./src/routes/marketplaceRoutes");
+const subscriberRoutes = require("./src/routes/subscriberRoutes");
+const referralRoutes = require("./src/routes/referralRoutes");
+const codeRoutes = require("./src/routes/codeRoutes");
+const sandboxRoutes = require("./src/routes/sandboxRoutes");
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -26,32 +27,35 @@ const port = process.env.PORT || 3001;
 initDb();
 
 // Middleware
-app.use(cors({
-  origin: 'http://localhost:3000', // Allow client
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: "http://localhost:3000", // Allow client
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use(cookieParser());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/portfolios', portfolioRoutes);
-app.use('/api/integrations', integrationRoutes);
-app.use('/api/projects', projectRoutes);
-app.use('/api/templates', templateRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/library', libraryRoutes);
-app.use('/api/seo', seoRoutes);
-app.use('/api/domains', domainRoutes);
-app.use('/api/marketplace', marketplaceRoutes);
-app.use('/api/subscribers', subscriberRoutes);
-app.use('/api/referrals', referralRoutes);
-app.use('/api/code', codeRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/portfolios", portfolioRoutes);
+app.use("/api/integrations", integrationRoutes);
+app.use("/api/projects", projectRoutes);
+app.use("/api/templates", templateRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/library", libraryRoutes);
+app.use("/api/seo", seoRoutes);
+app.use("/api/domains", domainRoutes);
+app.use("/api/marketplace", marketplaceRoutes);
+app.use("/api/subscribers", subscriberRoutes);
+app.use("/api/referrals", referralRoutes);
+app.use("/api/code", codeRoutes);
+app.use("/api/sandbox", sandboxRoutes);
 
 // Health Check
-app.get('/', (req, res) => {
-  res.json({ message: 'Server is running', timestamp: new Date() });
+app.get("/", (req, res) => {
+  res.json({ message: "Server is running", timestamp: new Date() });
 });
 
 app.listen(port, () => {
