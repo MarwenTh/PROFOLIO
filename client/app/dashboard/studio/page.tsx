@@ -14,7 +14,6 @@ import {
   ExternalLink,
   Trash2,
 } from "lucide-react";
-import { useSandbox, SandboxComponent, SandboxStats } from "@/hooks/useSandbox";
 import { Loader } from "@/components/ui/Loader";
 import {
   PageHeader,
@@ -38,11 +37,8 @@ const statusColors: Record<string, string> = {
 export default function StudioPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const { listUserSandboxes, createSandbox, deleteSandbox, loading } =
-    useSandbox();
-
-  const [components, setComponents] = useState<SandboxComponent[]>([]);
-  const [stats, setStats] = useState<SandboxStats>({
+  const [components, setComponents] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>({
     published: 0,
     drafts: 0,
     totalViews: 0,
@@ -52,37 +48,17 @@ export default function StudioPage() {
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
 
-  const fetchComponents = async () => {
-    if (!session?.user?.id) return;
-    const data = await listUserSandboxes(String(session.user.id));
-    if (data.success) {
-      setComponents(data.components);
-      setStats(data.stats);
-    }
-  };
-
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
-    fetchComponents();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.user?.id, status]);
+  }, [session?.user?.id, status, router]);
 
-  const handleCreateNew = async () => {
-    if (!session?.user?.id) return;
-    setCreating(true);
-    const result = await createSandbox(String(session.user.id));
-    setCreating(false);
-    if (result.success && result.component) {
-      router.push(`/dashboard/studio/sandbox/${result.component.id}`);
-    }
+  const handleCreateNew = () => {
+    alert("Sandbox feature has been removed.");
   };
 
-  const handleDelete = async (id: string, e: React.MouseEvent) => {
+  const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm("Delete this component? This action cannot be undone."))
-      return;
-    await deleteSandbox(id);
-    fetchComponents();
+    // Logic for deleting standard components would go here
   };
 
   const filtered = components.filter((c) => {
@@ -105,7 +81,7 @@ export default function StudioPage() {
     { label: "Draft", value: "draft", count: stats.drafts },
   ];
 
-  if (status === "loading" || (loading && components.length === 0)) {
+  if (status === "loading" || (components.length === 0 && !session)) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <Loader size="lg" />

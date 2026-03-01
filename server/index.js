@@ -18,7 +18,7 @@ const marketplaceRoutes = require("./src/routes/marketplaceRoutes");
 const subscriberRoutes = require("./src/routes/subscriberRoutes");
 const referralRoutes = require("./src/routes/referralRoutes");
 const codeRoutes = require("./src/routes/codeRoutes");
-const sandboxRoutes = require("./src/routes/sandboxRoutes");
+// const sandboxRoutes = require("./src/routes/sandboxRoutes"); // Removed
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -51,7 +51,7 @@ app.use("/api/marketplace", marketplaceRoutes);
 app.use("/api/subscribers", subscriberRoutes);
 app.use("/api/referrals", referralRoutes);
 app.use("/api/code", codeRoutes);
-app.use("/api/sandbox", sandboxRoutes);
+// app.use("/api/sandbox", sandboxRoutes); // Removed
 
 // Health Check
 app.get("/", (req, res) => {
