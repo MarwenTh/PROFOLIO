@@ -1,41 +1,101 @@
 "use client";
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
-import { 
-    PageHeader, 
-    DashboardCard, 
-    DashboardBadge, 
-    DashboardButton,
-    DashboardSection,
-    EmptyState 
+import {
+  PageHeader,
+  DashboardCard,
+  DashboardBadge,
+  DashboardButton,
+  DashboardSection,
+  EmptyState,
 } from "@/components/dashboard/Shared";
-import { Code, Terminal, Plus, Save, Trash2, Eye, EyeOff, Globe, Clipboard, Image as ImageIcon, Monitor, Loader2 } from "lucide-react";
+import {
+  Code,
+  Terminal,
+  Plus,
+  Save,
+  Trash2,
+  Eye,
+  EyeOff,
+  Globe,
+  Clipboard,
+  Image as ImageIcon,
+  Monitor,
+  Loader2,
+} from "lucide-react";
 import { useCodeSnippets, usePublicSnippets } from "@/hooks/useCode";
 import { useLibrary } from "@/hooks/useLibrary";
+import { LibraryProvider } from "@/context/LibraryContext";
 import { Loader } from "@/components/ui/Loader";
 import { toast } from "sonner";
 
 // Dynamically import Monaco to avoid SSR issues
-const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
+const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
+  ssr: false,
+});
 
 const LANGUAGES = [
-  { value: 'javascript', label: 'JavaScript', color: 'bg-yellow-500/10 text-yellow-500', monacoLang: 'javascript' },
-  { value: 'typescript', label: 'TypeScript', color: 'bg-blue-500/10 text-blue-500', monacoLang: 'typescript' },
-  { value: 'python', label: 'Python', color: 'bg-green-500/10 text-green-500', monacoLang: 'python' },
-  { value: 'html', label: 'HTML', color: 'bg-orange-500/10 text-orange-500', monacoLang: 'html' },
-  { value: 'css', label: 'CSS', color: 'bg-purple-500/10 text-purple-500', monacoLang: 'css' },
-  { value: 'json', label: 'JSON', color: 'bg-neutral-500/10 text-neutral-500', monacoLang: 'json' },
-  { value: 'sql', label: 'SQL', color: 'bg-indigo-500/10 text-indigo-500', monacoLang: 'sql' },
+  {
+    value: "javascript",
+    label: "JavaScript",
+    color: "bg-yellow-500/10 text-yellow-500",
+    monacoLang: "javascript",
+  },
+  {
+    value: "typescript",
+    label: "TypeScript",
+    color: "bg-blue-500/10 text-blue-500",
+    monacoLang: "typescript",
+  },
+  {
+    value: "python",
+    label: "Python",
+    color: "bg-green-500/10 text-green-500",
+    monacoLang: "python",
+  },
+  {
+    value: "html",
+    label: "HTML",
+    color: "bg-orange-500/10 text-orange-500",
+    monacoLang: "html",
+  },
+  {
+    value: "css",
+    label: "CSS",
+    color: "bg-purple-500/10 text-purple-500",
+    monacoLang: "css",
+  },
+  {
+    value: "json",
+    label: "JSON",
+    color: "bg-neutral-500/10 text-neutral-500",
+    monacoLang: "json",
+  },
+  {
+    value: "sql",
+    label: "SQL",
+    color: "bg-indigo-500/10 text-indigo-500",
+    monacoLang: "sql",
+  },
 ];
 
 export default function CustomCodePage() {
-  const { snippets, loading, createSnippet, updateSnippet, deleteSnippet } = useCodeSnippets();
+  return (
+    <LibraryProvider>
+      <CodePageContent />
+    </LibraryProvider>
+  );
+}
+
+function CodePageContent() {
+  const { snippets, loading, createSnippet, updateSnippet, deleteSnippet } =
+    useCodeSnippets();
   const { media } = useLibrary();
   const [selectedSnippet, setSelectedSnippet] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [title, setTitle] = useState('');
-  const [language, setLanguage] = useState('javascript');
-  const [code, setCode] = useState('');
+  const [title, setTitle] = useState("");
+  const [language, setLanguage] = useState("javascript");
+  const [code, setCode] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
@@ -44,18 +104,18 @@ export default function CustomCodePage() {
   const handleNew = () => {
     setSelectedSnippet(null);
     setIsEditing(true);
-    setTitle('');
-    setLanguage('javascript');
-    setCode('');
+    setTitle("");
+    setLanguage("javascript");
+    setCode("");
     setIsPublic(false);
     setShowPreview(false);
   };
 
   const handleLanguageChange = (newLang: string) => {
     setLanguage(newLang);
-    
+
     // Auto-populate with template for HTML
-    if (newLang === 'html' && !code) {
+    if (newLang === "html" && !code) {
       setCode(`<h1>Hello World!</h1>
 
 <button onclick="alert('Hello!')">Click Me!</button>
@@ -69,7 +129,7 @@ export default function CustomCodePage() {
   const handleEdit = (snippet: any) => {
     setSelectedSnippet(snippet);
     setIsEditing(true);
-    setTitle(snippet.title || '');
+    setTitle(snippet.title || "");
     setLanguage(snippet.language);
     setCode(snippet.code);
     setIsPublic(snippet.is_public);
@@ -80,23 +140,28 @@ export default function CustomCodePage() {
     setSaving(true);
     try {
       if (selectedSnippet) {
-        await updateSnippet(selectedSnippet.id, { title, language, code, is_public: isPublic });
-        toast.success('Snippet updated!');
+        await updateSnippet(selectedSnippet.id, {
+          title,
+          language,
+          code,
+          is_public: isPublic,
+        });
+        toast.success("Snippet updated!");
       } else {
         await createSnippet({ title, language, code, is_public: isPublic });
-        toast.success('Snippet created!');
+        toast.success("Snippet created!");
       }
       setIsEditing(false);
       setSelectedSnippet(null);
     } catch (error) {
-      toast.error('Failed to save snippet');
+      toast.error("Failed to save snippet");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (confirm('Are you sure you want to delete this snippet?')) {
+    if (confirm("Are you sure you want to delete this snippet?")) {
       await deleteSnippet(id);
       if (selectedSnippet?.id === id) {
         setSelectedSnippet(null);
@@ -109,28 +174,31 @@ export default function CustomCodePage() {
     try {
       const text = await navigator.clipboard.readText();
       setCode(text);
-      toast.success('Code pasted from clipboard!');
+      toast.success("Code pasted from clipboard!");
     } catch (err) {
-      toast.error('Failed to read clipboard');
+      toast.error("Failed to read clipboard");
     }
   };
 
   const insertFromLibrary = (imageUrl: string) => {
-    const insertText = language === 'html' 
-      ? `<img src="${imageUrl}" alt="Image" />`
-      : language === 'css'
-      ? `background-image: url('${imageUrl}');`
-      : language === 'markdown'
-      ? `![Image](${imageUrl})`
-      : `"${imageUrl}"`;
-    
-    setCode(code + '\n' + insertText);
+    const insertText =
+      language === "html"
+        ? `<img src="${imageUrl}" alt="Image" />`
+        : language === "css"
+          ? `background-image: url('${imageUrl}');`
+          : language === "markdown"
+            ? `![Image](${imageUrl})`
+            : `"${imageUrl}"`;
+
+    setCode(code + "\n" + insertText);
     setShowLibrary(false);
-    toast.success('Image URL inserted!');
+    toast.success("Image URL inserted!");
   };
 
   const getMonacoLanguage = () => {
-    return LANGUAGES.find(l => l.value === language)?.monacoLang || 'javascript';
+    return (
+      LANGUAGES.find((l) => l.value === language)?.monacoLang || "javascript"
+    );
   };
 
   if (loading) {
@@ -143,23 +211,26 @@ export default function CustomCodePage() {
 
   return (
     <div className="space-y-10">
-      <PageHeader 
-        title="Code Snippets" 
+      <PageHeader
+        title="Code Snippets"
         description="Save and manage your code snippets with syntax highlighting."
         action={{
           label: "New Snippet",
           icon: Plus,
-          onClick: handleNew
+          onClick: handleNew,
         }}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Snippets List */}
         <div className="lg:col-span-1">
-          <DashboardSection title="Your Snippets" description={`${snippets.length} saved`}>
+          <DashboardSection
+            title="Your Snippets"
+            description={`${snippets.length} saved`}
+          >
             {snippets.length === 0 ? (
-              <EmptyState 
-                title="No snippets yet" 
+              <EmptyState
+                title="No snippets yet"
                 description="Create your first code snippet to get started."
                 icon={Code}
                 actionLabel="New Snippet"
@@ -173,20 +244,29 @@ export default function CustomCodePage() {
                     onClick={() => handleEdit(snippet)}
                     className={`w-full text-left p-4 rounded-xl border transition-all ${
                       selectedSnippet?.id === snippet.id
-                        ? 'bg-indigo-500/10 border-indigo-500/50'
-                        : 'bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 hover:border-indigo-500/30'
+                        ? "bg-indigo-500/10 border-indigo-500/50"
+                        : "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 hover:border-indigo-500/30"
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className={`px-2 py-1 rounded text-xs font-bold ${
-                        LANGUAGES.find(l => l.value === snippet.language)?.color || 'bg-neutral-500/10 text-neutral-500'
-                      }`}>
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-bold ${
+                          LANGUAGES.find((l) => l.value === snippet.language)
+                            ?.color || "bg-neutral-500/10 text-neutral-500"
+                        }`}
+                      >
                         {snippet.language}
                       </span>
-                      {snippet.is_public && <Globe className="w-4 h-4 text-emerald-500" />}
+                      {snippet.is_public && (
+                        <Globe className="w-4 h-4 text-emerald-500" />
+                      )}
                     </div>
-                    <h4 className="font-bold text-sm mb-1">{snippet.title || 'Untitled'}</h4>
-                    <p className="text-xs text-neutral-500 truncate font-mono">{snippet.code.substring(0, 50)}...</p>
+                    <h4 className="font-bold text-sm mb-1">
+                      {snippet.title || "Untitled"}
+                    </h4>
+                    <p className="text-xs text-neutral-500 truncate font-mono">
+                      {snippet.code.substring(0, 50)}...
+                    </p>
                   </button>
                 ))}
               </div>
@@ -197,7 +277,10 @@ export default function CustomCodePage() {
         {/* Editor */}
         <div className="lg:col-span-2">
           {isEditing ? (
-            <DashboardCard className="bg-neutral-900 border-white/5 shadow-2xl overflow-hidden p-0" hoverable={false}>
+            <DashboardCard
+              className="bg-neutral-900 border-white/5 shadow-2xl overflow-hidden p-0"
+              hoverable={false}
+            >
               <div className="p-6 flex items-center justify-between border-b border-white/5">
                 <div className="flex items-center gap-3 flex-1">
                   <Terminal className="w-5 h-5 text-indigo-500" />
@@ -215,8 +298,12 @@ export default function CustomCodePage() {
                     onChange={(e) => handleLanguageChange(e.target.value)}
                     className="px-3 py-1 rounded-lg bg-white/10 text-white border border-white/10 text-sm font-bold"
                   >
-                    {LANGUAGES.map(lang => (
-                      <option key={lang.value} value={lang.value} className="bg-neutral-900">
+                    {LANGUAGES.map((lang) => (
+                      <option
+                        key={lang.value}
+                        value={lang.value}
+                        className="bg-neutral-900"
+                      >
                         {lang.label}
                       </option>
                     ))}
@@ -224,20 +311,24 @@ export default function CustomCodePage() {
                   <button
                     onClick={() => setIsPublic(!isPublic)}
                     className={`px-3 py-1 rounded-lg text-sm font-bold flex items-center gap-2 ${
-                      isPublic 
-                        ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/30' 
-                        : 'bg-white/10 text-white border border-white/10'
+                      isPublic
+                        ? "bg-emerald-500/20 text-emerald-500 border border-emerald-500/30"
+                        : "bg-white/10 text-white border border-white/10"
                     }`}
                   >
-                    {isPublic ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                    {isPublic ? 'Public' : 'Private'}
+                    {isPublic ? (
+                      <Eye className="w-4 h-4" />
+                    ) : (
+                      <EyeOff className="w-4 h-4" />
+                    )}
+                    {isPublic ? "Public" : "Private"}
                   </button>
                   <button
                     onClick={() => setShowPreview(!showPreview)}
                     className={`px-3 py-1 rounded-lg text-sm font-bold flex items-center gap-2 ${
                       showPreview
-                        ? 'bg-indigo-500/20 text-indigo-500 border border-indigo-500/30'
-                        : 'bg-white/10 text-white border border-white/10'
+                        ? "bg-indigo-500/20 text-indigo-500 border border-indigo-500/30"
+                        : "bg-white/10 text-white border border-white/10"
                     }`}
                   >
                     <Monitor className="w-4 h-4" />
@@ -245,7 +336,7 @@ export default function CustomCodePage() {
                   </button>
                 </div>
               </div>
-              
+
               {/* Toolbar */}
               <div className="px-6 py-3 bg-white/5 border-b border-white/5 flex gap-2">
                 <button
@@ -268,8 +359,15 @@ export default function CustomCodePage() {
               {showLibrary && (
                 <div className="px-6 py-4 bg-black/40 border-b border-white/5">
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-sm font-bold text-white">Insert from Library</h4>
-                    <button onClick={() => setShowLibrary(false)} className="text-white/50 hover:text-white">✕</button>
+                    <h4 className="text-sm font-bold text-white">
+                      Insert from Library
+                    </h4>
+                    <button
+                      onClick={() => setShowLibrary(false)}
+                      className="text-white/50 hover:text-white"
+                    >
+                      ✕
+                    </button>
                   </div>
                   <div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto">
                     {media.slice(0, 8).map((item: any) => (
@@ -278,7 +376,11 @@ export default function CustomCodePage() {
                         onClick={() => insertFromLibrary(item.url)}
                         className="aspect-square rounded-lg overflow-hidden border border-white/10 hover:border-indigo-500/50 transition-colors"
                       >
-                        <img src={item.url} alt={item.filename} className="w-full h-full object-cover" />
+                        <img
+                          src={item.url}
+                          alt={item.filename}
+                          className="w-full h-full object-cover"
+                        />
                       </button>
                     ))}
                   </div>
@@ -287,21 +389,25 @@ export default function CustomCodePage() {
 
               <div className="grid grid-cols-1 lg:grid-cols-2">
                 {/* Monaco Editor */}
-                <div className={`bg-black/40 ${showPreview ? '' : 'lg:col-span-2'}`}>
+                <div
+                  className={`bg-black/40 ${showPreview ? "" : "lg:col-span-2"}`}
+                >
                   <MonacoEditor
                     height="500px"
                     language={getMonacoLanguage()}
                     theme="vs-dark"
                     value={code}
-                    onChange={(value: string | undefined) => setCode(value || '')}
+                    onChange={(value: string | undefined) =>
+                      setCode(value || "")
+                    }
                     options={{
                       minimap: { enabled: false },
                       fontSize: 14,
-                      lineNumbers: 'on',
+                      lineNumbers: "on",
                       scrollBeyondLastLine: false,
                       automaticLayout: true,
                       tabSize: 2,
-                      wordWrap: 'on',
+                      wordWrap: "on",
                     }}
                   />
                 </div>
@@ -309,8 +415,10 @@ export default function CustomCodePage() {
                 {/* Preview */}
                 {showPreview && (
                   <div className="bg-white dark:bg-neutral-800 p-6 border-l border-white/5 overflow-auto">
-                    <div className="mb-2 text-xs font-bold text-neutral-500 uppercase tracking-widest">Preview</div>
-                    {language === 'html' ? (
+                    <div className="mb-2 text-xs font-bold text-neutral-500 uppercase tracking-widest">
+                      Preview
+                    </div>
+                    {language === "html" ? (
                       <div className="w-full h-[450px] border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white overflow-auto">
                         <style>{`
                           .html-preview * {
@@ -361,7 +469,7 @@ export default function CustomCodePage() {
                             margin: 5px 0;
                           }
                         `}</style>
-                        <div 
+                        <div
                           className="html-preview"
                           dangerouslySetInnerHTML={{ __html: code }}
                         />
@@ -421,8 +529,12 @@ export default function CustomCodePage() {
             <DashboardCard>
               <div className="text-center py-20">
                 <Code className="w-16 h-16 mx-auto mb-4 text-neutral-400" />
-                <h3 className="text-xl font-black italic mb-2">No snippet selected</h3>
-                <p className="text-neutral-500 mb-6">Select a snippet from the list or create a new one</p>
+                <h3 className="text-xl font-black italic mb-2">
+                  No snippet selected
+                </h3>
+                <p className="text-neutral-500 mb-6">
+                  Select a snippet from the list or create a new one
+                </p>
                 <DashboardButton onClick={handleNew} icon={Plus}>
                   New Snippet
                 </DashboardButton>

@@ -21,6 +21,7 @@ import {
   EmptyState,
 } from "@/components/dashboard/Shared";
 import { formatDistanceToNow } from "date-fns";
+import SimpleIDE from "@/components/studio/SimpleIDE";
 
 type StatusFilter = "all" | "published" | "review" | "draft";
 
@@ -29,6 +30,39 @@ const statusColors: Record<string, string> = {
   review: "warning",
   draft: "neutral",
 };
+
+const DEFAULT_CODE = `import React from 'react';
+
+export default function MyComponent() {
+  return (
+    <div className="p-4 bg-white rounded-xl shadow-sm border border-neutral-100">
+      <h2 className="text-xl font-bold text-neutral-800">Hello World</h2>
+      <p className="text-neutral-500 mt-2">Start building your component here.</p>
+    </div>
+  );
+}
+`;
+
+const DEFAULT_UTILS_CODE = `import { ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+`;
+
+const DEFAULT_FILES = [
+  {
+    name: "component.tsx",
+    language: "typescript",
+    value: DEFAULT_CODE,
+  },
+  {
+    name: "utils.ts",
+    language: "typescript",
+    value: DEFAULT_UTILS_CODE,
+  },
+];
 
 /**
  * Studio Dashboard — lists all user sandbox components with stats,
@@ -50,15 +84,91 @@ export default function StudioPage() {
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
+    if (session?.user?.id) {
+      fetchComponents();
+    }
   }, [session?.user?.id, status, router]);
 
-  const handleCreateNew = () => {
-    alert("Sandbox feature has been removed.");
+  const fetchComponents = async () => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3001/api"}/sandbox`,
+        {
+          headers: {
+            Authorization: `Bearer ${(session as any)?.user?.accessToken || ""}`,
+          },
+        },
+      );
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setComponents(data);
+
+        // Calculate basic stats
+        const published = data.filter((c) => c.status === "published").length;
+        const drafts = data.filter((c) => c.status === "draft").length;
+        const totalViews = data.reduce((acc, c) => acc + (c.views || 0), 0);
+        const totalLikes = data.reduce((acc, c) => acc + (c.likes || 0), 0);
+
+        setStats({ published, drafts, totalViews, totalLikes });
+      }
+    } catch (error) {
+      console.error("Error fetching components:", error);
+    }
   };
 
-  const handleDelete = (id: string, e: React.MouseEvent) => {
+  const handleCreateNew = async () => {
+    if (creating) return;
+    setCreating(true);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3001/api"}/sandbox/save`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${(session as any)?.user?.accessToken || ""}`,
+          },
+          body: JSON.stringify({
+            title: "Untitled Component",
+            files: DEFAULT_FILES,
+            status: "draft",
+          }),
+        },
+      );
+      if (res.ok) {
+        const data = await res.json();
+        router.push(`/dashboard/studio/${data.id}`);
+      } else {
+        alert("Failed to create new component");
+      }
+    } catch (error) {
+      console.error("Error creating component:", error);
+      alert("Error creating component");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    // Logic for deleting standard components would go here
+    if (!confirm("Are you sure you want to delete this component?")) return;
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3001/api"}/sandbox/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${(session as any)?.user?.accessToken || ""}`,
+          },
+        },
+      );
+      if (res.ok) {
+        setComponents((prev) => prev.filter((c) => c.id !== id));
+      }
+    } catch (error) {
+      console.error("Error deleting component:", error);
+    }
   };
 
   const filtered = components.filter((c) => {
@@ -256,7 +366,7 @@ export default function StudioPage() {
                   exit={{ opacity: 0, y: -4 }}
                   transition={{ delay: i * 0.03 }}
                   onClick={() =>
-                    router.push(`/dashboard/studio/sandbox/${component.id}`)
+                    router.push(`/dashboard/studio/${component.id}`)
                   }
                   className="grid grid-cols-[1fr_100px_80px_120px_60px_60px_40px] gap-4 items-center px-5 py-3.5 border-b border-neutral-100 dark:border-white/5 last:border-0 cursor-pointer hover:bg-neutral-50 dark:hover:bg-white/[0.02] transition-colors group"
                 >
