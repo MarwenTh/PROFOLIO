@@ -1109,20 +1109,42 @@ export const ComponentsLibrary = () => {
 
                           return (
                             <button
-                              key={purchase.id}
+                              key={purchase.item_id}
                               onClick={() => {
                                 // Handle addition based on type
                                 if (isComponent && purchase.content) {
-                                  // Make sure type/content exists in the db
-                                  handleAddElement(
-                                    purchase.content.type || "container",
-                                    purchase.content.content || "",
-                                    {
-                                      w: purchase.content.width || 300,
-                                      h: purchase.content.height || 200,
-                                      styles: purchase.content.styles || {},
-                                    },
-                                  );
+                                  if (purchase.content?.isSandbox) {
+                                    // This is a component created in the Sandbox/Studio
+                                    handleAddElement(
+                                      "sandbox-component",
+                                      JSON.stringify(
+                                        purchase.content.files || [],
+                                      ),
+                                      {
+                                        w: 600,
+                                        h: 400,
+                                        styles: {
+                                          borderRadius: "12px",
+                                          overflow: "hidden",
+                                          border:
+                                            "1px solid rgba(255,255,255,0.1)",
+                                        },
+                                      },
+                                    );
+                                    toast.success(
+                                      "Sandbox component added to canvas",
+                                    );
+                                  } else {
+                                    handleAddElement(
+                                      purchase.content.type || "container",
+                                      purchase.content.content || "",
+                                      {
+                                        w: purchase.content.width || 300,
+                                        h: purchase.content.height || 200,
+                                        styles: purchase.content.styles || {},
+                                      },
+                                    );
+                                  }
                                 } else if (isAnimation && purchase.content) {
                                   // Provide a visually noticeable container pre-equipped with the animation
                                   handleAddElement("container", "", {

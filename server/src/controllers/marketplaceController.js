@@ -295,18 +295,25 @@ const getMyPurchases = async (req, res) => {
 
     const result = await pool.query(
       `SELECT 
-        mp.*,
+        mp.id,
+        COALESCE(mp.buyer_id, $1) as buyer_id,
+        mi.id as item_id,
+        COALESCE(mp.amount, mi.price) as amount,
+        COALESCE(mp.payment_status, 'completed') as payment_status,
+        COALESCE(mp.purchased_at, mi.created_at) as purchased_at,
         mi.title,
         mi.description,
         mi.type,
         mi.preview_images,
         mi.content,
-        u.name as seller_name
-      FROM marketplace_purchases mp
-      JOIN marketplace_items mi ON mp.item_id = mi.id
+        u.name as seller_name,
+        (mi.seller_id = $1) as is_owner
+      FROM marketplace_items mi
+      LEFT JOIN marketplace_purchases mp ON mi.id = mp.item_id AND mp.buyer_id = $1
       JOIN users u ON mi.seller_id = u.id
-      WHERE mp.buyer_id = $1
-      ORDER BY mp.purchased_at DESC`,
+      WHERE (mp.id IS NOT NULL OR mi.seller_id = $1)
+      AND mi.status = 'published'
+      ORDER BY purchased_at DESC`,
       [userId],
     );
 

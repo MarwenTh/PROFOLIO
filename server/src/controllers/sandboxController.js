@@ -101,6 +101,66 @@ exports.saveComponent = async (req, res) => {
 };
 
 /**
+ * Publish a component to the marketplace
+ */
+exports.publishToMarketplace = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, type, price } = req.body;
+    const userId = req.user.id;
+
+    // 1. Fetch the component
+    const compResult = await pool.query(
+      "SELECT * FROM sandbox_components WHERE id = $1 AND user_id = $2",
+      [id, userId],
+    );
+
+    if (compResult.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "Component not found or unauthorized" });
+    }
+
+    const component = compResult.rows[0];
+
+    // 2. Insert into marketplace_items
+    const marketplaceResult = await pool.query(
+      `INSERT INTO marketplace_items 
+        (seller_id, type, title, description, price, content, status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *`,
+      [
+        userId,
+        type,
+        title,
+        description,
+        price,
+        JSON.stringify({
+          isSandbox: true,
+          files: component.files || [],
+        }),
+        "published",
+      ],
+    );
+
+    // 3. Update component status in sandbox
+    await pool.query(
+      "UPDATE sandbox_components SET status = 'published' WHERE id = $1",
+      [id],
+    );
+
+    res.json({
+      success: true,
+      message: "Component published successfully",
+      item: marketplaceResult.rows[0],
+    });
+  } catch (error) {
+    console.error("Error publishing component:", error);
+    res.status(500).json({ message: "Failed to publish component" });
+  }
+};
+
+/**
  * Delete a component
  */
 exports.deleteComponent = async (req, res) => {

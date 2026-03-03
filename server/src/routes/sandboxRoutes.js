@@ -8,6 +8,7 @@ router.use(authenticateToken);
 router.get("/", sandboxController.getUserComponents);
 router.get("/:id", sandboxController.getComponentById);
 router.post("/save", sandboxController.saveComponent);
+router.post("/:id/publish", sandboxController.publishToMarketplace);
 router.delete("/:id", sandboxController.deleteComponent);
 
 module.exports = router;

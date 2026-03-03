@@ -697,6 +697,8 @@ const renderContent = (component: EditorComponent) => {
           }}
         />
       );
+    case "sandbox-component":
+      return <SandboxRenderer content={component.content} />;
     default:
       return (
         <div className="w-full h-full bg-neutral-800 flex items-center justify-center text-xs text-neutral-500">
@@ -704,4 +706,109 @@ const renderContent = (component: EditorComponent) => {
         </div>
       );
   }
+};
+
+const SandboxRenderer = ({ content }: { content: string }) => {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [isReady, setIsReady] = useState(false);
+  const files = React.useMemo(() => {
+    try {
+      return JSON.parse(content);
+    } catch (e) {
+      console.error("Failed to parse sandbox component files", e);
+      return [];
+    }
+  }, [content]);
+
+  useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data === "PREVIEW_READY") {
+        setIsReady(true);
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
+  useEffect(() => {
+    if (!isReady || !iframeRef.current?.contentWindow) return;
+    iframeRef.current.contentWindow.postMessage({ files }, "*");
+  }, [files, isReady]);
+
+  const srcDoc = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+        <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+        <script src="https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.min.js"></script>
+        <script src="https://unpkg.com/framer-motion@11.11.1/dist/framer-motion.js"></script>
+        <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+        <style>
+          body { margin: 0; font-family: system-ui, sans-serif; background: transparent; overflow: hidden; }
+          #root { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        </style>
+    </head>
+    <body>
+        <div id="root"></div>
+        <script type="module">
+          import * as TailwindMerge from "https://esm.sh/tailwind-merge@2.5.2";
+          window.tailwindMerge = TailwindMerge;
+          import * as clsx from "https://esm.sh/clsx@2.1.1";
+          window.clsx = clsx.clsx || clsx.default || clsx;
+          window.parent.postMessage('PREVIEW_READY', '*');
+        </script>
+        <script>
+          window.require = function(moduleName) {
+            if (moduleName === 'react') return React;
+            if (moduleName === 'react-dom') return ReactDOM;
+            if (moduleName === 'lucide-react') return window.lucide || {};
+            if (moduleName === 'framer-motion') return window.Motion || {};
+            if (moduleName === 'clsx') return window.clsx ? { clsx: window.clsx, default: window.clsx } : {};
+            if (moduleName === 'tailwind-merge') return window.tailwindMerge || {};
+            return {};
+          };
+
+          window.addEventListener('message', (event) => {
+            const { files } = event.data;
+            if (!files || !files.length) return;
+
+            try {
+              const mainFile = files.find(f => f.name === 'component.tsx');
+              if (!mainFile) return;
+
+              const transpiled = Babel.transform(mainFile.value, {
+                presets: ['react', 'typescript', ['env', { modules: 'commonjs' }]],
+                filename: 'component.tsx'
+              }).code;
+
+              const exports = {};
+              const module = { exports };
+              const wrapper = new Function('require', 'exports', 'module', transpiled);
+              wrapper(window.require, exports, module);
+
+              const App = module.exports.default || Object.values(module.exports)[0];
+              if (App) {
+                const root = ReactDOM.createRoot(document.getElementById('root'));
+                root.render(React.createElement(App));
+              }
+            } catch (err) {
+              console.error(err);
+            }
+          });
+        </script>
+    </body>
+    </html>
+  `;
+
+  return (
+    <iframe
+      ref={iframeRef}
+      srcDoc={srcDoc}
+      className="w-full h-full border-none pointer-events-none"
+      sandbox="allow-scripts allow-same-origin"
+    />
+  );
 };

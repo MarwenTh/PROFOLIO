@@ -36,6 +36,7 @@ export interface Purchase {
   preview_images?: string[];
   content?: any;
   seller_name?: string;
+  is_owner?: boolean;
 }
 
 // Browse marketplace items

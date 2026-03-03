@@ -17,6 +17,8 @@ import {
 import { motion } from "framer-motion";
 import { Panel, Group, Separator } from "react-resizable-panels";
 import LivePreview from "./LivePreview";
+import { PublishModal, PublishData } from "./PublishModal";
+import { toast } from "sonner";
 
 interface SimpleIDEProps {
   onClose: () => void;
@@ -50,6 +52,7 @@ export default function SimpleIDE({ onClose, initialId }: SimpleIDEProps) {
   const [loading, setLoading] = useState(!!initialId);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [files, setFiles] = useState([
     {
@@ -152,14 +155,38 @@ export default function SimpleIDE({ onClose, initialId }: SimpleIDEProps) {
     }
   };
 
-  const handlePublish = async () => {
-    if (publishing) return;
+  const handlePublish = () => {
+    setIsPublishModalOpen(true);
+  };
+
+  const performPublish = async (publishData: PublishData) => {
     setPublishing(true);
     try {
-      await handleSave("published", false);
-      alert("Component published successfully!");
-    } catch (error) {
-      alert("Failed to publish component");
+      // First, ensure current changes are saved as draft
+      await handleSave("draft", true);
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3001/api"}/sandbox/${id}/publish`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${(session as any)?.user?.accessToken || ""}`,
+          },
+          body: JSON.stringify(publishData),
+        },
+      );
+
+      if (res.ok) {
+        toast.success("Published to marketplace successfully!");
+      } else {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to publish");
+      }
+    } catch (error: any) {
+      console.error("Publishing error:", error);
+      toast.error(error.message || "Failed to publish to marketplace");
+      throw error;
     } finally {
       setPublishing(false);
     }
@@ -401,6 +428,12 @@ export default function SimpleIDE({ onClose, initialId }: SimpleIDEProps) {
           </Panel>
         </Group>
       </div>
+      <PublishModal
+        isOpen={isPublishModalOpen}
+        onClose={() => setIsPublishModalOpen(false)}
+        onPublish={performPublish}
+        initialData={{ title }}
+      />
     </motion.div>
   );
 }

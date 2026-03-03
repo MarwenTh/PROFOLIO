@@ -60,7 +60,9 @@ export type ComponentType =
   | "btn-pill"
   | "btn-glow"
   // Iconify icon
-  | "iconify-icon";
+  | "iconify-icon"
+  // Sandbox Component
+  | "sandbox-component";
 
 export interface EditorComponent {
   id: string;
