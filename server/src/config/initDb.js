@@ -4,9 +4,10 @@ const initDb = async () => {
   const createUsersTable = `
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
+      clerk_id VARCHAR(255) UNIQUE,
       name VARCHAR(255),
       email VARCHAR(255) UNIQUE NOT NULL,
-      password VARCHAR(255) NOT NULL,
+      password VARCHAR(255),
       is_verified BOOLEAN DEFAULT FALSE,
       image TEXT,
       email_verified TIMESTAMP WITH TIME ZONE,
@@ -19,6 +20,19 @@ const initDb = async () => {
       location VARCHAR(255),
       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
+  `;
+
+  const addClerkIdColumn = `
+    DO $$ 
+    BEGIN 
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='clerk_id') THEN
+        ALTER TABLE users ADD COLUMN clerk_id VARCHAR(255) UNIQUE;
+      END IF;
+      -- Make password nullable if it was not null
+      IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='password' AND is_nullable='NO') THEN
+        ALTER TABLE users ALTER COLUMN password DROP NOT NULL;
+      END IF;
+    END $$;
   `;
 
   const addNewUserColumns = `
@@ -385,6 +399,7 @@ const initDb = async () => {
   try {
     await pool.query(createUsersTable);
     console.log("✅ Users table initialized");
+    await pool.query(addClerkIdColumn);
     await pool.query(addNewUserColumns);
     await pool.query(createAccountsTable);
     await pool.query(createSessionsTable);

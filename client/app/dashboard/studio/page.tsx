@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useUser, useAuth } from "@clerk/nextjs";
+import api from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -69,7 +70,8 @@ const DEFAULT_FILES = [
  * tab filters, search, and a "Create New" button.
  */
 export default function StudioPage() {
-  const { data: session, status } = useSession();
+  const { isLoaded, isSignedIn } = useUser();
+  const { getToken } = useAuth();
   const router = useRouter();
   const [components, setComponents] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({
@@ -83,23 +85,15 @@ export default function StudioPage() {
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    if (status === "unauthenticated") router.push("/login");
-    if (session?.user?.id) {
+    if (isLoaded && !isSignedIn) router.push("/login");
+    if (isSignedIn) {
       fetchComponents();
     }
-  }, [session?.user?.id, status, router]);
+  }, [isSignedIn, isLoaded, router]);
 
   const fetchComponents = async () => {
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3001/api"}/sandbox`,
-        {
-          headers: {
-            Authorization: `Bearer ${(session as any)?.user?.accessToken || ""}`,
-          },
-        },
-      );
-      const data = await res.json();
+      const { data } = await api.get("/sandbox");
       if (Array.isArray(data)) {
         setComponents(data);
 
@@ -120,23 +114,12 @@ export default function StudioPage() {
     if (creating) return;
     setCreating(true);
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3001/api"}/sandbox/save`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${(session as any)?.user?.accessToken || ""}`,
-          },
-          body: JSON.stringify({
-            title: "Untitled Component",
-            files: DEFAULT_FILES,
-            status: "draft",
-          }),
-        },
-      );
-      if (res.ok) {
-        const data = await res.json();
+      const { data } = await api.post("/sandbox/save", {
+        title: "Untitled Component",
+        files: DEFAULT_FILES,
+        status: "draft",
+      });
+      if (data) {
         router.push(`/dashboard/studio/${data.id}`);
       } else {
         alert("Failed to create new component");
@@ -154,16 +137,8 @@ export default function StudioPage() {
     if (!confirm("Are you sure you want to delete this component?")) return;
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3001/api"}/sandbox/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${(session as any)?.user?.accessToken || ""}`,
-          },
-        },
-      );
-      if (res.ok) {
+      const { data } = await api.delete(`/sandbox/${id}`);
+      if (data) {
         setComponents((prev) => prev.filter((c) => c.id !== id));
       }
     } catch (error) {
@@ -191,7 +166,7 @@ export default function StudioPage() {
     { label: "Draft", value: "draft", count: stats.drafts },
   ];
 
-  if (status === "loading" || (components.length === 0 && !session)) {
+  if (!isLoaded || (components.length === 0 && !isSignedIn)) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <Loader size="lg" />

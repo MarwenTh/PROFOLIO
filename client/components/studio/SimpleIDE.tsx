@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Editor, { Monaco } from "@monaco-editor/react";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@clerk/nextjs";
+import api from "@/lib/api";
 import {
   ArrowLeft,
   Save,
@@ -46,7 +47,7 @@ export function cn(...inputs: ClassValue[]) {
 `;
 
 export default function SimpleIDE({ onClose, initialId }: SimpleIDEProps) {
-  const { data: session } = useSession();
+  const { getToken, isSignedIn } = useAuth();
   const [id, setId] = useState<string | undefined>(initialId);
   const [title, setTitle] = useState("Untitled Component");
   const [loading, setLoading] = useState(!!initialId);
@@ -70,18 +71,19 @@ export default function SimpleIDE({ onClose, initialId }: SimpleIDEProps) {
   const activeFile = files[activeFileIndex];
 
   useEffect(() => {
-    if (initialId && session?.user?.id) {
+    if (initialId && isSignedIn) {
       loadComponent();
     }
-  }, [initialId, session?.user?.id]);
+  }, [initialId, isSignedIn]);
 
   const loadComponent = async () => {
     try {
+      const token = await getToken();
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3001/api"}/sandbox/${initialId}`,
         {
           headers: {
-            Authorization: `Bearer ${(session as any)?.user?.accessToken || ""}`,
+            Authorization: `Bearer ${token || ""}`,
           },
         },
       );
@@ -127,24 +129,13 @@ export default function SimpleIDE({ onClose, initialId }: SimpleIDEProps) {
     if (!isAutoSave) setSaving(true);
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3001/api"}/sandbox/save`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${(session as any)?.user?.accessToken || ""}`,
-          },
-          body: JSON.stringify({
-            id,
-            title,
-            files,
-            status,
-          }),
-        },
-      );
-      if (res.ok) {
-        const data = await res.json();
+      const { data } = await api.post("/sandbox/save", {
+        id,
+        title,
+        files,
+        status,
+      });
+      if (data) {
         if (!id) setId(data.id);
         setLastSaved(new Date());
       }
@@ -165,23 +156,9 @@ export default function SimpleIDE({ onClose, initialId }: SimpleIDEProps) {
       // First, ensure current changes are saved as draft
       await handleSave("draft", true);
 
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3001/api"}/sandbox/${id}/publish`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${(session as any)?.user?.accessToken || ""}`,
-          },
-          body: JSON.stringify(publishData),
-        },
-      );
-
-      if (res.ok) {
+      const { data } = await api.post(`/sandbox/${id}/publish`, publishData);
+      if (data) {
         toast.success("Published to marketplace successfully!");
-      } else {
-        const error = await res.json();
-        throw new Error(error.message || "Failed to publish");
       }
     } catch (error: any) {
       console.error("Publishing error:", error);

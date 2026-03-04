@@ -15,14 +15,13 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { signOut, useSession } from "next-auth/react";
+import { useUser, useClerk } from "@clerk/nextjs";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { ModeToggle } from "@/components/ModeToggle";
 import { TopNavbar } from "@/components/dashboard/TopNavbar";
 import { CommandPalette } from "@/components/dashboard/CommandPalette";
-import { AuthSync } from "@/components/auth/AuthSync";
 
 export default function DashboardLayout({
   children,
@@ -30,17 +29,18 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { data: session, status } = useSession();
+  const { user, isLoaded, isSignedIn } = useUser();
+  const { signOut } = useClerk();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "unauthenticated") {
+    if (isLoaded && !isSignedIn) {
       router.push("/login");
     }
-  }, [status, router]);
+  }, [isLoaded, isSignedIn, router]);
 
   // Global K Shortcut for Search
   useEffect(() => {
@@ -67,7 +67,6 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen bg-[#fbfbfc] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50 selection:bg-indigo-500/30 transition-colors duration-500 relative overflow-hidden">
-      <AuthSync />
       {/* Search Palette */}
       <CommandPalette
         isOpen={isSearchOpen}
@@ -153,9 +152,9 @@ export default function DashboardLayout({
               <div className="mt-auto pt-6 border-t border-neutral-200 dark:border-white/5 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 flex-1">
                   <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center overflow-hidden border border-neutral-200 dark:border-white/10">
-                    {session?.user?.image ? (
+                    {user?.imageUrl ? (
                       <Image
-                        src={session.user.image}
+                        src={user.imageUrl}
                         alt="User"
                         width={40}
                         height={40}
@@ -167,10 +166,10 @@ export default function DashboardLayout({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold line-clamp-1">
-                      {session?.user?.name}
+                      {user?.fullName}
                     </p>
                     <p className="text-[10px] text-neutral-500 font-medium line-clamp-1 italic">
-                      {session?.user?.email}
+                      {user?.primaryEmailAddress?.emailAddress}
                     </p>
                   </div>
                 </div>

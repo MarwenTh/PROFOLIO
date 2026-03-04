@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/(.*)",
+        source: "/dashboard/studio(.*)",
         headers: [
           {
             key: "Cross-Origin-Embedder-Policy",

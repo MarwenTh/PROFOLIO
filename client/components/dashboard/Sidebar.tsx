@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { signOut } from "next-auth/react";
+import { useClerk } from "@clerk/nextjs";
 import { ModeToggle } from "@/components/ModeToggle";
 import { useTheme } from "next-themes";
 
@@ -156,6 +156,7 @@ const sidebarLinks = [
 
 export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   const pathname = usePathname();
+  const { signOut } = useClerk();
   const [hoveredItem, setHoveredItem] = React.useState<{
     name: string;
     top: number;

@@ -22,12 +22,12 @@ import {
 } from "lucide-react";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { useDomains } from "@/hooks/useDomains";
-import { useSession } from "next-auth/react";
+import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { Loader, PageLoader } from "@/components/ui/Loader";
 
 export default function DomainsPage() {
-  const { data: session } = useSession();
+  const { isLoaded, isSignedIn } = useUser();
   const { getUserPortfolios } = usePortfolio();
   const [portfolios, setPortfolios] = useState<any[]>([]);
   const [selectedPortfolio, setSelectedPortfolio] = useState<any>(null);
@@ -44,15 +44,15 @@ export default function DomainsPage() {
   const [deletingDomainId, setDeletingDomainId] = useState<number | null>(null);
 
   useEffect(() => {
-    if (session?.user?.id) {
-      getUserPortfolios(session.user.id).then((res) => {
+    if (isSignedIn) {
+      getUserPortfolios().then((res) => {
         if (res.success && res.portfolios.length > 0) {
           setPortfolios(res.portfolios);
           setSelectedPortfolio(res.portfolios[0]);
         }
       });
     }
-  }, [session?.user?.id]);
+  }, [isSignedIn]);
 
   useEffect(() => {
     if (selectedPortfolio) {
@@ -66,7 +66,7 @@ export default function DomainsPage() {
       await updateSlug(slug);
       setIsSlugModalOpen(false);
       // Refresh portfolio data
-      const res = await getUserPortfolios(session?.user?.id || "");
+      const res = await getUserPortfolios();
       if (res.success) {
         const updated = res.portfolios.find(
           (p: any) => p.id === selectedPortfolio.id,

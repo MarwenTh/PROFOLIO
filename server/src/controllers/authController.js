@@ -1,125 +1,5 @@
 const { pool } = require("../config/db");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-
-const JWT_SECRET = process.env.JWT_SECRET || "your_fallback_secret";
-const ACCESS_TOKEN_EXPIRY = "15m";
-const REFRESH_TOKEN_EXPIRY = "7d";
-
-const setTokenCookies = (res, user) => {
-  const accessToken = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
-    expiresIn: ACCESS_TOKEN_EXPIRY,
-  });
-
-  const refreshToken = jwt.sign(
-    { id: user.id, email: user.email },
-    JWT_SECRET,
-    { expiresIn: REFRESH_TOKEN_EXPIRY },
-  );
-
-  const cookieOptions = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax", // Lax is good for local dev with different ports
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days matching refresh token
-  };
-
-  res.cookie("accessToken", accessToken, {
-    ...cookieOptions,
-    maxAge: 15 * 60 * 1000, // 15 mins for access token
-  });
-
-  res.cookie("refreshToken", refreshToken, cookieOptions);
-
-  return { accessToken, refreshToken };
-};
-
-const signup = async (req, res) => {
-  const { name, email, password } = req.body;
-
-  if (!email || !password) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Email and password are required" });
-  }
-
-  try {
-    const userExists = await pool.query(
-      "SELECT * FROM users WHERE email = $1",
-      [email],
-    );
-    if (userExists.rows.length > 0) {
-      return res
-        .status(400)
-        .json({ success: false, message: "User already exists" });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const result = await pool.query(
-      "INSERT INTO users (name, email, password, is_verified) VALUES ($1, $2, $3, $4) RETURNING id, name, email, is_verified",
-      [name || email.split("@")[0], email, hashedPassword, false],
-    );
-
-    const user = result.rows[0];
-    const { accessToken } = setTokenCookies(res, user);
-
-    res.status(201).json({ success: true, user, accessToken });
-  } catch (err) {
-    console.error(err);
-    res
-      .status(500)
-      .json({ success: false, message: "Server error during signup" });
-  }
-};
-
-const login = async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Email and password are required" });
-  }
-
-  try {
-    const result = await pool.query("SELECT * FROM users WHERE email = $1", [
-      email,
-    ]);
-    const user = result.rows[0];
-
-    if (!user) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Invalid email or password" });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Invalid email or password" });
-    }
-
-    const { accessToken } = setTokenCookies(res, user);
-
-    res.json({
-      success: true,
-      user: {
-        id: user.id.toString(),
-        name: user.name,
-        email: user.email,
-        isVerified: user.is_verified,
-      },
-      accessToken,
-    });
-  } catch (err) {
-    console.error(err);
-    res
-      .status(500)
-      .json({ success: false, message: "Server error during login" });
-  }
-};
+const { Webhook } = require("svix");
 
 const getProfile = async (req, res) => {
   try {
@@ -151,20 +31,14 @@ const updateProfile = async (req, res) => {
     github,
     linkedin,
     location,
+    image,
   } = req.body;
-
   try {
     const result = await pool.query(
       `UPDATE users 
-             SET name = COALESCE($1, name),
-                 profession = COALESCE($2, profession),
-                 bio = COALESCE($3, bio),
-                 website = COALESCE($4, website),
-                 twitter = COALESCE($5, twitter),
-                 github = COALESCE($6, github),
-                 linkedin = COALESCE($7, linkedin),
-                 location = COALESCE($8, location)
-             WHERE id = $9 RETURNING id, name, email, profession, bio, website, twitter, github, linkedin, location`,
+       SET name = $1, profession = $2, bio = $3, website = $4, twitter = $5, github = $6, linkedin = $7, location = $8, image = $9
+       WHERE id = $10 
+       RETURNING *`,
       [
         name,
         profession,
@@ -174,9 +48,16 @@ const updateProfile = async (req, res) => {
         github,
         linkedin,
         location,
+        image,
         req.user.id,
       ],
     );
+
+    if (result.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
 
     res.json({ success: true, user: result.rows[0] });
   } catch (err) {
@@ -185,107 +66,129 @@ const updateProfile = async (req, res) => {
   }
 };
 
-const socialSync = async (req, res) => {
-  const { email, name, image } = req.body;
+const syncUser = async (req, res) => {
+  const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
 
-  if (!email) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Email is required" });
+  if (!WEBHOOK_SECRET) {
+    console.error("Missing CLERK_WEBHOOK_SECRET in .env");
+    return res.status(500).json({ error: "Server configuration error" });
   }
 
-  try {
-    let result = await pool.query("SELECT * FROM users WHERE email = $1", [
-      email,
-    ]);
-    let user;
+  // Get the headers and body
+  const headers = req.headers;
+  const payload = JSON.stringify(req.body);
 
-    if (result.rows.length === 0) {
-      const newUser = await pool.query(
-        "INSERT INTO users (name, email, image, password, is_verified) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, is_verified",
-        [
-          name || email.split("@")[0],
-          email,
-          image,
-          "social_login_no_password",
-          true,
-        ],
-      );
-      user = newUser.rows[0];
-    } else {
-      user = result.rows[0];
-      await pool.query(
-        "UPDATE users SET name = COALESCE($1, name), image = COALESCE($2, image) WHERE id = $3",
-        [name, image, user.id],
-      );
+  // Get the Svix headers for verification
+  const svix_id = headers["svix-id"];
+  const svix_timestamp = headers["svix-timestamp"];
+  const svix_signature = headers["svix-signature"];
+
+  // If there are no headers, error out
+  if (!svix_id || !svix_timestamp || !svix_signature) {
+    return res.status(400).json({ error: "Missing svix headers" });
+  }
+
+  const wh = new Webhook(WEBHOOK_SECRET);
+
+  let evt;
+
+  // Attempt to verify the incoming webhook
+  // If successful, the helper will return the parsed body
+  try {
+    evt = wh.verify(payload, {
+      "svix-id": svix_id,
+      "svix-timestamp": svix_timestamp,
+      "svix-signature": svix_signature,
+    });
+  } catch (err) {
+    console.error("Error verifying webhook:", err.message);
+    return res.status(400).json({ error: "Invalid signature" });
+  }
+
+  const { type, data } = evt;
+  const { id, first_name, last_name, email_addresses, image_url } = data;
+
+  try {
+    // 1. Handle User Deletion
+    if (type === "user.deleted") {
+      await pool.query("DELETE FROM users WHERE clerk_id = $1", [id]);
+      return res.json({ success: true, action: "deleted", clerk_id: id });
     }
 
-    const { accessToken } = setTokenCookies(res, user);
+    // 2. Prepare user data for Sync/Upsert
+    const email = email_addresses ? email_addresses[0]?.email_address : null;
+    const name = `${first_name || ""} ${last_name || ""}`.trim();
+
+    if (!id) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing clerk_id" });
+    }
+
+    // 3. Check if user already exists by clerk_id
+    const existingById = await pool.query(
+      "SELECT id FROM users WHERE clerk_id = $1",
+      [id],
+    );
+
+    if (existingById.rows.length > 0) {
+      // Update existing user with latest Clerk data
+      const result = await pool.query(
+        "UPDATE users SET name = $1, email = COALESCE($2, email), image = $3, is_verified = $4 WHERE clerk_id = $5 RETURNING id, name, email",
+        [name || email?.split("@")[0], email, image_url, true, id],
+      );
+      return res.json({
+        success: true,
+        user: result.rows[0],
+        action: "updated_by_clerk_id",
+      });
+    }
+
+    // 4. If not found by clerk_id, check if user exists by email (to link NextAuth accounts)
+    if (email) {
+      const existingByEmail = await pool.query(
+        "SELECT id FROM users WHERE email = $1",
+        [email],
+      );
+      if (existingByEmail.rows.length > 0) {
+        // Link the account by setting clerk_id
+        const result = await pool.query(
+          "UPDATE users SET clerk_id = $1, name = $2, image = $3, is_verified = $4 WHERE email = $5 RETURNING id, name, email",
+          [id, name || email.split("@")[0], image_url, true, email],
+        );
+        return res.json({
+          success: true,
+          user: result.rows[0],
+          action: "linked_clerk_id",
+        });
+      }
+    }
+
+    // 5. Neither clerk_id nor email matches -> Insert new user
+    if (!email) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Email required for new users" });
+    }
+
+    const result = await pool.query(
+      "INSERT INTO users (clerk_id, name, email, image, is_verified) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email",
+      [id, name || email.split("@")[0], email, image_url, true],
+    );
 
     res.json({
       success: true,
-      user: {
-        id: user.id.toString(),
-        name: user.name,
-        email: user.email,
-        isVerified: user.is_verified,
-      },
-      accessToken,
+      user: result.rows[0],
+      action: "inserted",
     });
   } catch (err) {
-    console.error("Error in socialSync:", err);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("Error syncing user:", err);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
-};
-
-const refreshToken = async (req, res) => {
-  const refresh_token = req.cookies.refreshToken;
-
-  if (!refresh_token) {
-    return res
-      .status(401)
-      .json({ success: false, message: "No refresh token provided" });
-  }
-
-  try {
-    const decoded = jwt.verify(refresh_token, JWT_SECRET);
-
-    // Fetch user to ensure they still exist
-    const result = await pool.query(
-      "SELECT id, email, name, is_verified FROM users WHERE id = $1",
-      [decoded.id],
-    );
-    const user = result.rows[0];
-
-    if (!user) {
-      return res
-        .status(401)
-        .json({ success: false, message: "User no longer exists" });
-    }
-
-    setTokenCookies(res, user);
-
-    res.json({ success: true, message: "Token refreshed successfully" });
-  } catch (err) {
-    console.error("Refresh token error:", err);
-    return res
-      .status(401)
-      .json({ success: false, message: "Invalid or expired refresh token" });
-  }
-};
-
-const logout = (req, res) => {
-  res.clearCookie("accessToken");
-  res.clearCookie("refreshToken");
-  res.json({ success: true, message: "Logged out successfully" });
 };
 
 module.exports = {
-  signup,
-  login,
   getProfile,
   updateProfile,
-  socialSync,
-  refreshToken,
-  logout,
+  syncUser,
 };
